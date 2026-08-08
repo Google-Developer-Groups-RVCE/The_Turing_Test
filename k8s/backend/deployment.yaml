@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ghcr.io/snk189/turing-test-backend:latest
+        image: ghcr.io/snk189/turing-test-backend:ab84730556fc966c7480d41ef9971d4d6ef43de1
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000

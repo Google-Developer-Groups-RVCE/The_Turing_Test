@@ -4,7 +4,7 @@ class QuestionController {
   async getQuestions(req, res, next) {
     try {
       const questions = await questionService.getQuestions(req.params.roundId);
-      res.status(200).json(questions);
+      res.status(200).json({ questions });
     } catch (err) {
       next(err);
     }
@@ -13,7 +13,7 @@ class QuestionController {
   async addQuestion(req, res, next) {
     try {
       const question = await questionService.addQuestion(req.params.roundId, req.body);
-      res.status(201).json(question);
+      res.status(201).json({ question });
     } catch (err) {
       next(err);
     }

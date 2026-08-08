@@ -21,6 +21,7 @@ router.use(roleMiddleware('admin'));
 
 // List & search users (paginated)
 router.get('/', userController.getAllUsers);
+router.post('/', userController.createUser);
 
 // CSV import
 router.post('/upload-csv', upload.single('file'), userController.uploadCsv);

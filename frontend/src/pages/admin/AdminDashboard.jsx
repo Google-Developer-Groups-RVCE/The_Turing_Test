@@ -55,7 +55,12 @@ export default function AdminDashboard() {
         getRounds(),
         getLeaderboard(),
       ]);
-      if (hRes.status === 'fulfilled') setHealth(hRes.value.data);
+      if (hRes.status === 'fulfilled') {
+        setHealth(hRes.value.data);
+        // Sync connected count from server's engine count on load
+        const clientsCount = hRes.value.data?.socketIo?.connectedClients;
+        if (typeof clientsCount === 'number') setOnlineCount(clientsCount);
+      }
       if (rRes.status === 'fulfilled') setRounds(rRes.value.data.rounds || []);
       if (lRes.status === 'fulfilled') setLeaderboard(lRes.value.data.leaderboard || []);
     } catch { /* silent */ }
@@ -74,11 +79,14 @@ export default function AdminDashboard() {
     socket.on(SOCKET_EVENTS.PRESENCE_OFFLINE, handlePresence);
     socket.on(SOCKET_EVENTS.LEADERBOARD_UPDATE, handleLeaderboard);
     socket.on(SOCKET_EVENTS.LOG_NEW, handleLog);
+    // Re-fetch health (which has connectedClients) on connection established
+    socket.on('connect', fetchData);
     return () => {
       socket.off(SOCKET_EVENTS.PRESENCE_ONLINE, handlePresence);
       socket.off(SOCKET_EVENTS.PRESENCE_OFFLINE, handlePresence);
       socket.off(SOCKET_EVENTS.LEADERBOARD_UPDATE, handleLeaderboard);
       socket.off(SOCKET_EVENTS.LOG_NEW, handleLog);
+      socket.off('connect', fetchData);
     };
   }, [socket]);
 

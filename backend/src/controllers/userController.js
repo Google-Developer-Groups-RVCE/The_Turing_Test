@@ -27,6 +27,16 @@ class UserController {
     }
   }
 
+  /** POST /users — create a new user */
+  async createUser(req, res, next) {
+    try {
+      const user = await userService.createUser(req.body, req.user?.username || 'admin');
+      res.status(201).json({ user, message: 'User created successfully' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   /** GET /users/:username */
   async getUser(req, res, next) {
     try {

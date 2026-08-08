@@ -1,14 +1,90 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  getUsers, updateUser, deleteUser, uploadCSV, exportCSV,
+  getUsers, createUser, updateUser, deleteUser, uploadCSV, exportCSV,
   bulkDeleteUsers, bulkBlockUsers, bulkUnblockUsers, bulkResetPasswords
 } from '../../api/userApi';
 import {
   Users, Search, Upload, Download, Trash2, Lock, Unlock,
-  Edit, RefreshCw, X, Check, ChevronLeft, ChevronRight, Filter
+  Edit, RefreshCw, X, ChevronLeft, ChevronRight, UserPlus
 } from 'lucide-react';
 
-function UserModal({ user, onClose, onSave }) {
+// ─── Create User Modal ───────────────────────────────────────────────────────
+function CreateUserModal({ onClose, onSave }) {
+  const [form, setForm] = useState({
+    username: '',
+    password: '',
+    name: '',
+    role: 'participant',
+    status: 'active',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.username.trim()) { setError('Username is required'); return; }
+    if (!form.password.trim()) { setError('Password is required'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      await onSave(form);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="card w-full max-w-md relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20} /></button>
+        <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2"><UserPlus size={20} className="text-primary-400" />Create New User</h2>
+        {error && <div className="mb-4 bg-rose-900/40 border border-rose-500/40 text-rose-300 p-3 rounded-lg text-sm">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Username <span className="text-rose-400">*</span></label>
+            <input className="input-field" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} placeholder="e.g. john_doe" />
+          </div>
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Password <span className="text-rose-400">*</span></label>
+            <input type="password" className="input-field" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="••••••••" />
+          </div>
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Full Name</label>
+            <input className="input-field" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Optional display name" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Role</label>
+              <select className="input-field" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
+                <option value="participant">Participant</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Status</label>
+              <select className="input-field" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                <option value="active">Active</option>
+                <option value="blocked">Blocked</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex space-x-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-dark-600 text-slate-400 hover:text-white transition-colors">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 btn-primary">
+              {saving ? 'Creating...' : 'Create User'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit User Modal ─────────────────────────────────────────────────────────
+function EditUserModal({ user, onClose, onSave }) {
   const [form, setForm] = useState({
     name: user?.name || '',
     password: '',
@@ -78,6 +154,7 @@ function UserModal({ user, onClose, onSave }) {
   );
 }
 
+// ─── Main Component ──────────────────────────────────────────────────────────
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
@@ -89,6 +166,7 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [editUser, setEditUser] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [csvResult, setCsvResult] = useState(null);
@@ -109,6 +187,13 @@ export default function UserManagement() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const showSuccess = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
+  const clearMessages = () => { setError(''); setSuccess(''); };
+
+  const handleCreateUser = async (data) => {
+    await createUser(data);
+    showSuccess(`User "${data.username}" created successfully.`);
+    fetchUsers();
+  };
 
   const handleSaveUser = async (username, data) => {
     await updateUser(username, data);
@@ -192,8 +277,14 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
+      {showCreate && (
+        <CreateUserModal
+          onClose={() => setShowCreate(false)}
+          onSave={handleCreateUser}
+        />
+      )}
       {editUser && (
-        <UserModal
+        <EditUserModal
           user={editUser}
           onClose={() => setEditUser(null)}
           onSave={handleSaveUser}
@@ -228,7 +319,13 @@ export default function UserManagement() {
           <span className="text-sm font-normal text-slate-500 ml-2">({total} users)</span>
         </h1>
         <div className="flex flex-wrap gap-2">
-          <label className="btn-primary flex items-center space-x-2 cursor-pointer px-3 py-2 text-sm">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="btn-primary flex items-center space-x-2 px-3 py-2 text-sm"
+          >
+            <UserPlus size={16} /><span>Add User</span>
+          </button>
+          <label className="flex items-center space-x-2 cursor-pointer px-3 py-2 text-sm rounded-lg border border-dark-600 text-slate-300 hover:text-white transition-colors">
             <Upload size={16} /><span>Import CSV</span>
             <input type="file" accept=".csv" className="hidden" onChange={handleCSVUpload} />
           </label>
@@ -244,7 +341,7 @@ export default function UserManagement() {
       {(error || success) && (
         <div className={`p-3 rounded-lg text-sm border ${error ? 'bg-rose-900/40 border-rose-500/40 text-rose-300' : 'bg-primary-900/40 border-primary-500/40 text-primary-300'}`}>
           {error || success}
-          <button className="ml-2 opacity-60 hover:opacity-100" onClick={() => { setError(''); setSuccess(''); }}>✕</button>
+          <button className="ml-2 opacity-60 hover:opacity-100" onClick={clearMessages}>✕</button>
         </div>
       )}
 
@@ -326,7 +423,7 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
-                    {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
+                    {u.lastLogin ? new Date(parseInt(u.lastLogin)).toLocaleString() : 'Never'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end space-x-1">

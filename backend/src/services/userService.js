@@ -40,6 +40,38 @@ class UserService {
     return { users: paginated, total, page, limit };
   }
 
+  /** Create a new user. */
+  async createUser({ username, password, name = '', role = 'participant', status = 'active' }, adminUsername = 'system') {
+    if (!username || !password) {
+      throw new Error('Username and password are required');
+    }
+    const cleanUsername = username.trim();
+    const exists = await userStore.usernameExists(cleanUsername);
+    if (exists) throw new Error('Username already taken');
+
+    const passwordHash = await hashPassword(password);
+    const user = {
+      username: cleanUsername,
+      passwordHash,
+      role: role || 'participant',
+      name: (name || cleanUsername).trim(),
+      createdAt: Date.now().toString(),
+      status: status || 'active'
+    };
+    await userStore.createUser(user);
+
+    await logStore.addLog({
+      admin: adminUsername,
+      action: 'CREATE_USER',
+      target: cleanUsername,
+      level: 'info',
+      timestamp: Date.now(),
+    });
+
+    const { passwordHash: _, ...safe } = user;
+    return safe;
+  }
+
   /** Get a single user (without password hash). */
   async getUser(username) {
     const user = await userStore.getUser(username);

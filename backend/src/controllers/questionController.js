@@ -39,8 +39,8 @@ class QuestionController {
 
   async getActiveQuestion(req, res, next) {
     try {
-      const active = await questionService.getActiveQuestion(req.params.roundId);
-      res.status(200).json(active);
+      const question = await questionService.getActiveQuestion(req.params.roundId);
+      res.status(200).json({ question });
     } catch (err) {
       next(err);
     }

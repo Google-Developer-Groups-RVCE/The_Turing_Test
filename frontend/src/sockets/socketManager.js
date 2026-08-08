@@ -1,14 +1,17 @@
 import { io } from 'socket.io-client';
-import { SOCKET_EVENTS } from '../utils/constants';
 
 class SocketManager {
   constructor() {
     this.socket = null;
+    this.token = null;
   }
 
   connect(token) {
-    if (this.socket) return;
-    // Assuming backend is served on same host/port in prod or proxy in dev
+    if (this.socket) {
+      if (this.token === token && this.socket.connected) return;
+      this.disconnect();
+    }
+    this.token = token;
     this.socket = io('/', {
       auth: { token },
       transports: ['polling', 'websocket'],
@@ -22,7 +25,12 @@ class SocketManager {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      this.token = null;
     }
+  }
+
+  isConnected() {
+    return !!(this.socket && this.socket.connected);
   }
 
   on(event, callback) {

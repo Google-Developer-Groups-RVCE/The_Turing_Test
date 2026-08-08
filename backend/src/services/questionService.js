@@ -31,10 +31,11 @@ class QuestionService {
   }
 
   async getActiveQuestion(roundId) {
-    // In a real implementation this might check event state/time to see which question is active
-    // For now, return the first question or all questions without answers
+    // Return the active question without answers for participants
     const questions = await this.getQuestions(roundId);
-    return questions.map(({ correctAnswer, ...q }) => q); // remove correct answer for participants
+    if (!questions || questions.length === 0) return null;
+    const { correctAnswer, ...questionWithoutAnswer } = questions[0];
+    return questionWithoutAnswer;
   }
 }
 

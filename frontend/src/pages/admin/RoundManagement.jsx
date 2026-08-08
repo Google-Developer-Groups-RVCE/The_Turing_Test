@@ -204,7 +204,7 @@ export default function RoundManagement() {
                       {round.status}
                     </span>
                     {round.durationSeconds && <span>{Math.floor(round.durationSeconds / 60)} min</span>}
-                    {round.startedAt && <span>Started {new Date(round.startedAt).toLocaleTimeString()}</span>}
+                    {round.startedAt && <span>Started {new Date(Number(round.startedAt) || round.startedAt).toLocaleTimeString()}</span>}
                   </div>
                 </div>
               </div>

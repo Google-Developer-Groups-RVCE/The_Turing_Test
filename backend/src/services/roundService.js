@@ -146,8 +146,12 @@ class RoundService {
 
   async getCurrentRound() {
     const roundId = await roundStore.getCurrentRound();
-    if (!roundId) return null;
-    return await roundStore.getRound(roundId);
+    if (roundId) {
+      const r = await roundStore.getRound(roundId);
+      if (r) return r;
+    }
+    const rounds = await this.getAllRounds();
+    return rounds.find(r => r.status === 'active') || null;
   }
 }
 

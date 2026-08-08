@@ -6,6 +6,7 @@ import { EventStateContext } from '../../contexts/EventStateContext';
 import { Brain, Clock, Wifi, WifiOff, Users, RefreshCw } from 'lucide-react';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { getCurrentRound } from '../../api/roundApi';
+import { getHealth } from '../../api/settingsApi';
 
 export default function WaitingScreen() {
   const { user } = useAuth();
@@ -13,7 +14,7 @@ export default function WaitingScreen() {
   const { currentRound, eventStatus } = useContext(EventStateContext);
   const navigate = useNavigate();
   const [onlineCount, setOnlineCount] = useState(0);
-  const [connected, setConnected] = useState(false);
+  const [connected, setConnected] = useState(socket?.isConnected() || false);
   const [dots, setDots] = useState('');
 
   // Animate waiting dots
@@ -24,23 +25,46 @@ export default function WaitingScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  // Track socket connection
+  // Sync initial online count & track socket connection
+  const syncHealth = useCallback(() => {
+    getHealth()
+      .then((res) => {
+        const count = res.data?.socketIo?.connectedClients;
+        if (typeof count === 'number') setOnlineCount(count);
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
+    syncHealth();
     if (!socket) return;
-    const handleConnect = () => setConnected(true);
+
+    if (socket.isConnected()) {
+      setConnected(true);
+    }
+
+    const handleConnect = () => {
+      setConnected(true);
+      syncHealth();
+    };
     const handleDisconnect = () => setConnected(false);
+
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
     return () => {
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
     };
-  }, [socket]);
+  }, [socket, syncHealth]);
 
-  // Track online count
+  // Track real-time presence count broadcasts
   useEffect(() => {
     if (!socket) return;
-    const handlePresence = (data) => setOnlineCount(data.onlineCount);
+    const handlePresence = (data) => {
+      if (typeof data?.onlineCount === 'number') {
+        setOnlineCount(data.onlineCount);
+      }
+    };
     socket.on(SOCKET_EVENTS.PRESENCE_ONLINE, handlePresence);
     socket.on(SOCKET_EVENTS.PRESENCE_OFFLINE, handlePresence);
     return () => {
@@ -60,7 +84,8 @@ export default function WaitingScreen() {
   const checkCurrentRound = useCallback(async () => {
     try {
       const res = await getCurrentRound();
-      if (res.data?.round && res.data.round.status === 'active') {
+      const r = res.data?.round || (res.data?.id ? res.data : null);
+      if (r && r.status === 'active') {
         navigate('/participant/round');
       }
     } catch {
@@ -139,7 +164,7 @@ export default function WaitingScreen() {
         <div className="bg-dark-800/60 border border-dark-700 rounded-xl p-4">
           <div className="text-sm font-semibold text-primary-400 mb-2 truncate">{user?.username}</div>
           <div className="text-xs text-slate-500">Your Username</div>
-          <div className="mt-1 text-xs text-slate-600 truncate">{user?.name}</div>
+          <div className="mt-1 text-xs text-slate-600 truncate">{user?.name || user?.username}</div>
         </div>
       </div>
 

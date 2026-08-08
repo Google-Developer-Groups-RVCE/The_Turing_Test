@@ -31,8 +31,12 @@ export default function RoundPage() {
         getActiveQuestion(currentRound.id),
         getMyResponse(currentRound.id),
       ]);
-      if (qRes.status === 'fulfilled') setQuestion(qRes.value.data.question);
-      if (rRes.status === 'fulfilled') setMyResponse(rRes.value.data.response || null);
+      if (qRes.status === 'fulfilled') {
+        const qData = qRes.value.data;
+        const q = qData?.question || (Array.isArray(qData) ? qData[0] : (qData?.id ? qData : null));
+        setQuestion(q || null);
+      }
+      if (rRes.status === 'fulfilled') setMyResponse(rRes.value.data?.response || null);
     } catch {
       // silent
     } finally {
@@ -65,7 +69,9 @@ export default function RoundPage() {
   // Countdown timer
   useEffect(() => {
     if (!currentRound?.durationSeconds || !currentRound?.startedAt) return;
-    const endTime = new Date(currentRound.startedAt).getTime() + currentRound.durationSeconds * 1000;
+    const startedAtMs = Number(currentRound.startedAt) || new Date(currentRound.startedAt).getTime();
+    if (!startedAtMs || isNaN(startedAtMs)) return;
+    const endTime = startedAtMs + currentRound.durationSeconds * 1000;
     const tick = () => {
       const remaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
       setTimeLeft(remaining);

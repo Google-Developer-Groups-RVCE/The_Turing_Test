@@ -14,7 +14,7 @@ export const EventStateProvider = ({ children }) => {
   const syncState = useCallback(async () => {
     try {
       const res = await getCurrentRound();
-      const r = res.data?.round;
+      const r = res.data?.round || (res.data?.id ? res.data : null);
       if (r) {
         setCurrentRound(r);
         setEventStatus(r.status === 'active' ? 'running' : r.status === 'paused' ? 'paused' : 'idle');
@@ -35,7 +35,8 @@ export const EventStateProvider = ({ children }) => {
     if (!socket) return;
 
     const handleRoundChanged = (data) => {
-      setCurrentRound(data.roundData || null);
+      const r = data?.roundData || (data?.roundId ? { id: data.roundId, status: 'active' } : null);
+      setCurrentRound(r);
       setEventStatus('running');
     };
 

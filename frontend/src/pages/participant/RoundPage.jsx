@@ -5,11 +5,12 @@ import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
 import { getActiveQuestion } from '../../api/questionApi';
 import { getMyResponse, submitResponse } from '../../api/responseApi';
+import { getCurrentRound } from '../../api/roundApi';
 import { SOCKET_EVENTS } from '../../utils/constants';
-import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw } from 'lucide-react';
 
 export default function RoundPage() {
-  const { currentRound, eventStatus } = useContext(EventStateContext);
+  const { currentRound, eventStatus, setCurrentRound, setEventStatus } = useContext(EventStateContext);
   const { user } = useAuth();
   const socket = useSocket();
   const navigate = useNavigate();
@@ -24,42 +25,59 @@ export default function RoundPage() {
   const [timeLeft, setTimeLeft] = useState(null);
 
   const fetchQuestion = useCallback(async () => {
-    if (!currentRound) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     try {
-      const [qRes, rRes] = await Promise.allSettled([
-        getActiveQuestion(currentRound.id),
-        getMyResponse(currentRound.id),
+      let roundToUse = currentRound;
+      // Fallback: if context round is empty, fetch directly from REST API
+      if (!roundToUse) {
+        const rRes = await getCurrentRound();
+        roundToUse = rRes.data?.round || (rRes.data?.id ? rRes.data : null);
+        if (roundToUse) {
+          setCurrentRound(roundToUse);
+          setEventStatus(roundToUse.status === 'active' ? 'running' : roundToUse.status === 'paused' ? 'paused' : 'idle');
+        }
+      }
+
+      const roundId = typeof roundToUse === 'string' ? roundToUse : roundToUse?.id;
+      if (!roundId) {
+        setQuestion(null);
+        setLoading(false);
+        return;
+      }
+
+      const [qRes, respRes] = await Promise.allSettled([
+        getActiveQuestion(roundId),
+        getMyResponse(roundId),
       ]);
+
       if (qRes.status === 'fulfilled') {
         const qData = qRes.value.data;
         const q = qData?.question || (Array.isArray(qData) ? qData[0] : (qData?.id ? qData : null));
         setQuestion(q || null);
+      } else {
+        setQuestion(null);
       }
-      if (rRes.status === 'fulfilled') setMyResponse(rRes.value.data?.response || null);
+
+      if (respRes.status === 'fulfilled') {
+        setMyResponse(respRes.value.data?.response || null);
+      }
     } catch {
-      // silent
+      setQuestion(null);
     } finally {
       setLoading(false);
     }
-  }, [currentRound]);
+  }, [currentRound, setCurrentRound, setEventStatus]);
 
   useEffect(() => {
     fetchQuestion();
   }, [fetchQuestion]);
 
-  // Auto-navigate on state changes — if no round active and idle, go to waiting screen
+  // Auto-navigate on event ended
   useEffect(() => {
-    if (!currentRound && eventStatus !== 'paused') {
-      navigate('/participant', { replace: true });
-    }
     if (eventStatus === 'ended') {
       navigate('/participant/leaderboard', { replace: true });
     }
-  }, [currentRound, eventStatus, navigate]);
+  }, [eventStatus, navigate]);
 
   // Socket: round changed — refetch question
   useEffect(() => {
@@ -92,8 +110,9 @@ export default function RoundPage() {
     }
     setSubmitting(true);
     setError('');
+    const roundId = typeof currentRound === 'string' ? currentRound : currentRound?.id;
     try {
-      const res = await submitResponse(currentRound.id, answer.trim());
+      const res = await submitResponse(roundId, answer.trim());
       setMyResponse(res.data.response);
     } catch (err) {
       setError(err.response?.data?.message || 'Submission failed. Try again.');
@@ -143,7 +162,14 @@ export default function RoundPage() {
       <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
         <AlertCircle size={48} className="text-slate-500 mb-4" />
         <h2 className="text-xl font-semibold text-slate-300 mb-2">No Question Available</h2>
-        <p className="text-slate-500 text-sm">The admin hasn't set a question for this round yet.</p>
+        <p className="text-slate-500 text-sm mb-6">The admin hasn't set a question for this round yet or event is idle.</p>
+        <button
+          onClick={fetchQuestion}
+          className="btn-primary px-4 py-2 text-sm flex items-center space-x-2"
+        >
+          <RefreshCw size={16} />
+          <span>Refresh Question</span>
+        </button>
       </div>
     );
   }

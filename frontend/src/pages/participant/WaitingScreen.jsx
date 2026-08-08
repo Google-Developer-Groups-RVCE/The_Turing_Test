@@ -5,13 +5,12 @@ import { useSocket } from '../../hooks/useSocket';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import { Brain, Clock, Wifi, WifiOff, Users, RefreshCw } from 'lucide-react';
 import { SOCKET_EVENTS } from '../../utils/constants';
-import { getCurrentRound } from '../../api/roundApi';
 import { getHealth } from '../../api/settingsApi';
 
 export default function WaitingScreen() {
   const { user } = useAuth();
   const socket = useSocket();
-  const { currentRound, eventStatus } = useContext(EventStateContext);
+  const { currentRound, eventStatus, syncState } = useContext(EventStateContext);
   const navigate = useNavigate();
   const [onlineCount, setOnlineCount] = useState(0);
   const [connected, setConnected] = useState(socket?.isConnected() || false);
@@ -81,34 +80,17 @@ export default function WaitingScreen() {
     };
   }, [socket]);
 
-  // Auto-navigate when a round becomes active
+  // Auto-navigate to active round when currentRound is active
   useEffect(() => {
-    if (currentRound && eventStatus === 'running') {
-      navigate('/participant/round');
+    if (currentRound && (currentRound.status === 'active' || eventStatus === 'running')) {
+      navigate('/participant/round', { replace: true });
     }
   }, [currentRound, eventStatus, navigate]);
-
-  // On mount: check if a round is already active (for reconnect scenario)
-  const checkCurrentRound = useCallback(async () => {
-    try {
-      const res = await getCurrentRound();
-      const r = res.data?.round || (res.data?.id ? res.data : null);
-      if (r && r.status === 'active') {
-        navigate('/participant/round');
-      }
-    } catch {
-      // No active round, stay on waiting screen
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    checkCurrentRound();
-  }, [checkCurrentRound]);
 
   // Redirect if event ended
   useEffect(() => {
     if (eventStatus === 'ended') {
-      navigate('/participant/leaderboard');
+      navigate('/participant/leaderboard', { replace: true });
     }
   }, [eventStatus, navigate]);
 
@@ -177,7 +159,7 @@ export default function WaitingScreen() {
       </div>
 
       <button
-        onClick={checkCurrentRound}
+        onClick={syncState}
         className="mt-6 flex items-center space-x-2 text-sm text-slate-500 hover:text-slate-300 transition-colors"
       >
         <RefreshCw size={14} />

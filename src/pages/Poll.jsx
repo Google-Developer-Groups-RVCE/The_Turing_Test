@@ -6,6 +6,7 @@ import { submitPollAnswer } from "../api/responseService.js";
 import PollCard from "../components/PollCard.jsx";
 import ProgressBar from "../components/ProgressBar.jsx";
 import Loader from "../components/Loader.jsx";
+import { TopNav } from "./TeamEntry.jsx";
 
 export default function Poll() {
   const { pollNumber } = useParams();
@@ -25,6 +26,7 @@ export default function Poll() {
   }
 
   const selectedOption = answers[poll.id];
+  const isLast = Number(pollNumber) === pollsData.length;
 
   const handleSelect = (optionKey) => {
     setAnswer(poll.id, optionKey);
@@ -53,14 +55,31 @@ export default function Poll() {
   };
 
   return (
-    <div>
-      <ProgressBar current={Number(pollNumber)} total={pollsData.length} />
-      <PollCard poll={poll} selectedOption={selectedOption} onSelect={handleSelect} />
-      {error ? <p role="alert">{error}</p> : null}
-      <button type="button" onClick={handleNext} disabled={submitting}>
-        {Number(pollNumber) === pollsData.length ? "Continue to Final Submission" : "Next"}
-      </button>
-      {submitting ? <Loader /> : null}
-    </div>
+    <>
+      <div className="page-bg" aria-hidden="true" />
+      <TopNav />
+      <div className="page-wrap">
+        <div className="poll-screen">
+          <ProgressBar current={Number(pollNumber)} total={pollsData.length} />
+          <PollCard poll={poll} selectedOption={selectedOption} onSelect={handleSelect} />
+
+          <div className="poll-actions">
+            {error ? <p role="alert" className="poll-error">{error}</p> : null}
+
+            <button
+              id={`next-btn-poll-${pollNumber}`}
+              type="button"
+              onClick={handleNext}
+              disabled={submitting}
+              className={`btn-glossy${isLast ? " final" : ""}`}
+            >
+              {isLast ? "Continue to Final Submission" : "Next →"}
+            </button>
+
+            {submitting ? <Loader /> : null}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

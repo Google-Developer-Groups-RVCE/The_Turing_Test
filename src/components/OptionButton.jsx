@@ -1,22 +1,22 @@
 import React from "react";
 
 /**
- * Plain, unstyled option button. No design system on purpose —
- * this is a baseline capture UI only.
+ * Glossy light-blue option button.
+ * Turns teal when selected — no "selected" label shown.
  */
 export default function OptionButton({ optionKey, question, answer, selected, onSelect }) {
   return (
     <button
       type="button"
+      id={`option-${optionKey.toLowerCase()}`}
       onClick={() => onSelect(optionKey)}
       aria-pressed={selected}
-      style={{ width: "100%", textAlign: "left", display: "block", marginBottom: "8px" }}
+      className={`option-btn${selected ? " selected" : ""}`}
     >
-      <div>
-        <strong>{optionKey}.</strong> {question}
+      <div style={{ marginBottom: "4px" }}>
+        <span className="option-key">{optionKey}.</span>
+        <span className="option-question">{question}</span>
       </div>
-      <div>{answer}</div>
-      {selected ? <div>(selected)</div> : null}
     </button>
   );
 }

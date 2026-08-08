@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useSession } from "../context/SessionContext.jsx";
 import { submitFinalGuess } from "../api/responseService.js";
 import Loader from "../components/Loader.jsx";
+import { TopNav } from "./TeamEntry.jsx";
 
 export default function FinalSubmission() {
   const { teamId } = useSession();
@@ -41,45 +42,66 @@ export default function FinalSubmission() {
   };
 
   return (
-    <div>
-      <h1>Final Submission</h1>
-      <p>Submit your team's guess for the hidden profile.</p>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="predictedAge">Predicted Age</label>
-        <br />
-        <input
-          id="predictedAge"
-          type="number"
-          min="1"
-          max="120"
-          value={predictedAge}
-          onChange={(e) => setPredictedAge(e.target.value)}
-        />
-        <br />
-        <label htmlFor="predictedProfession">Predicted Profession</label>
-        <br />
-        <input
-          id="predictedProfession"
-          type="text"
-          value={predictedProfession}
-          onChange={(e) => setPredictedProfession(e.target.value)}
-        />
-        <br />
-        <label htmlFor="predictedHobby">Predicted Hobby</label>
-        <br />
-        <input
-          id="predictedHobby"
-          type="text"
-          value={predictedHobby}
-          onChange={(e) => setPredictedHobby(e.target.value)}
-        />
-        <br />
-        {error ? <p role="alert">{error}</p> : null}
-        <button type="submit" disabled={submitting}>
-          Submit Final Guess
-        </button>
-      </form>
-      {submitting ? <Loader /> : null}
-    </div>
+    <>
+      <div className="page-bg" aria-hidden="true" />
+      <TopNav />
+      <div className="page-wrap">
+        <div className="final-screen">
+          <div className="final-card">
+            <h1 className="final-title">Final Submission</h1>
+            <p className="final-subtitle">Submit your team's guess for the hidden profile.</p>
+
+            <form onSubmit={handleSubmit} noValidate>
+              <label htmlFor="predictedAge" className="final-label">Predicted Age</label>
+              <input
+                id="predictedAge"
+                type="number"
+                min="1"
+                max="120"
+                value={predictedAge}
+                onChange={(e) => setPredictedAge(e.target.value)}
+                placeholder="e.g. 35"
+                className="final-input"
+              />
+
+              <label htmlFor="predictedProfession" className="final-label">Predicted Profession</label>
+              <input
+                id="predictedProfession"
+                type="text"
+                value={predictedProfession}
+                onChange={(e) => setPredictedProfession(e.target.value)}
+                placeholder="e.g. Doctor"
+                className="final-input"
+              />
+
+              <label htmlFor="predictedHobby" className="final-label">Predicted Hobby</label>
+              <input
+                id="predictedHobby"
+                type="text"
+                value={predictedHobby}
+                onChange={(e) => setPredictedHobby(e.target.value)}
+                placeholder="e.g. Photography"
+                className="final-input"
+              />
+
+              {error ? <p role="alert" className="poll-error" style={{ marginBottom: "16px" }}>{error}</p> : null}
+
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <button
+                  id="final-submit-btn"
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-glossy final final-guess"
+                >
+                  {submitting ? "Submitting..." : "Submit Final Guess"}
+                </button>
+              </div>
+            </form>
+
+            {submitting ? <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}><Loader /></div> : null}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

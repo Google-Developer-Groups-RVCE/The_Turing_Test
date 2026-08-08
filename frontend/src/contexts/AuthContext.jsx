@@ -21,7 +21,9 @@ export const AuthProvider = ({ children }) => {
             sessionStorage.setItem('user', JSON.stringify(userData));
           }
         } catch (error) {
-          console.error("Failed to verify session", error);
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
+          setUser(null);
         }
       }
       setLoading(false);
@@ -58,7 +60,9 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
       setUser(null);
-      window.location.href = '/login';
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
     }
   };
 

@@ -28,7 +28,10 @@ axiosClient.interceptors.response.use(
       // Auto logout if token is invalid or expired
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
-      window.location.href = '/login';
+      // Prevent infinite page reload loops when already on login/register page
+      if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

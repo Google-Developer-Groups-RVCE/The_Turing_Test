@@ -32,7 +32,7 @@ function RoundModal({ round, onClose, onSave }) {
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save round');
-    } fontally {
+    } finally {
       setSaving(false);
     }
   };

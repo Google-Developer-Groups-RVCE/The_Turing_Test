@@ -3,8 +3,10 @@ kind: Deployment
 metadata:
   name: backend
   namespace: turing-test
+  labels:
+    app: backend
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: backend
@@ -15,15 +17,15 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ghcr.io/snk189/turing-test-backend:ce1e37f5dacec8b5cc7bdf38c0a64981a835b976
+        image: ghcr.io/snk189/turing-test-backend:v6
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
         envFrom:
         - configMapRef:
-            name: turing-config
+            name: app-config
         - secretRef:
-            name: turing-secrets
+            name: app-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -31,15 +33,3 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 15
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5

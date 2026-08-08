@@ -48,6 +48,9 @@ export default function AdminDashboard() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [recentLogs, setRecentLogs] = useState([]);
 
+  const [participantsCount, setParticipantsCount] = useState(0);
+  const [adminsCount, setAdminsCount] = useState(0);
+
   const fetchData = async () => {
     try {
       const [hRes, rRes, lRes] = await Promise.allSettled([
@@ -57,9 +60,12 @@ export default function AdminDashboard() {
       ]);
       if (hRes.status === 'fulfilled') {
         setHealth(hRes.value.data);
-        // Sync connected count from server's engine count on load
-        const clientsCount = hRes.value.data?.socketIo?.connectedClients;
-        if (typeof clientsCount === 'number') setOnlineCount(clientsCount);
+        const p = hRes.value.data?.socketIo?.participantsCount;
+        const a = hRes.value.data?.socketIo?.adminsCount;
+        const total = hRes.value.data?.socketIo?.connectedClients;
+        if (typeof p === 'number') setParticipantsCount(p);
+        if (typeof a === 'number') setAdminsCount(a);
+        if (typeof total === 'number') setOnlineCount(total);
       }
       if (rRes.status === 'fulfilled') setRounds(rRes.value.data.rounds || []);
       if (lRes.status === 'fulfilled') setLeaderboard(lRes.value.data.leaderboard || []);
@@ -71,7 +77,11 @@ export default function AdminDashboard() {
   // Live socket events
   useEffect(() => {
     if (!socket) return;
-    const handlePresence = (d) => setOnlineCount(d.onlineCount);
+    const handlePresence = (d) => {
+      if (typeof d.onlineCount === 'number') setOnlineCount(d.onlineCount);
+      if (typeof d.participantsCount === 'number') setParticipantsCount(d.participantsCount);
+      if (typeof d.adminsCount === 'number') setAdminsCount(d.adminsCount);
+    };
     const handleLeaderboard = (d) => { if (d.leaderboard) setLeaderboard(d.leaderboard); };
     const handleLog = (d) => setRecentLogs((prev) => [d.logEntry, ...prev].slice(0, 10));
 
@@ -138,11 +148,18 @@ export default function AdminDashboard() {
             status={!!socket}
           />
           <StatCard
-            title="Connected Users"
-            value={onlineCount}
-            sub="Live websocket connections"
+            title="Active Participants"
+            value={participantsCount}
+            sub="Live logged-in participants"
             icon={Users}
             color="purple"
+          />
+          <StatCard
+            title="Admins Online"
+            value={adminsCount}
+            sub="Live admin connections"
+            icon={Users}
+            color="blue"
           />
           <StatCard
             title="Uptime"

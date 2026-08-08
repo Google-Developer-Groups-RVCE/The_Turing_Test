@@ -102,13 +102,19 @@ function createApp() {
   const healthHandler = async (req, res) => {
     const redisStatus = getRedisStatus();
     const socketStatus = getSocketStatus();
-    let uniqueOnlineUsers = 0;
+    let participantsCount = 0;
+    let adminsCount = 0;
     try {
       const { redisClient } = require('./config/redisClient');
-      const keys = require('./redis/keys');
-      uniqueOnlineUsers = await redisClient.scard(keys.PRESENCE_ONLINE);
+      const [pCount, aCount] = await Promise.all([
+        redisClient.scard('presence:participants'),
+        redisClient.scard('presence:admins')
+      ]);
+      participantsCount = pCount || 0;
+      adminsCount = aCount || 0;
     } catch { /* silent */ }
 
+    const uniqueOnlineUsers = participantsCount + adminsCount;
     const uptimeSeconds = Math.floor((Date.now() - startedAt) / 1000);
     const healthy = redisStatus.healthy;
     const body = {
@@ -122,8 +128,10 @@ function createApp() {
       redisDetail: redisStatus,
       socketIo: {
         ...socketStatus,
-        connectedClients: typeof uniqueOnlineUsers === 'number' && uniqueOnlineUsers > 0 ? uniqueOnlineUsers : socketStatus.connectedClients,
-        uniqueOnlineUsers
+        connectedClients: uniqueOnlineUsers > 0 ? uniqueOnlineUsers : socketStatus.connectedClients,
+        uniqueOnlineUsers,
+        participantsCount,
+        adminsCount
       },
     };
     res.status(healthy ? 200 : 503).json(body);

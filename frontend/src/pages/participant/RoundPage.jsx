@@ -87,9 +87,18 @@ export default function RoundPage() {
   useEffect(() => {
     if (!socket) return;
     const handleRoundChanged = () => fetchQuestion();
+    const handleTimeExtended = (data) => {
+      if (data?.newDurationSeconds) {
+        setCurrentRound((prev) => prev ? { ...prev, durationSeconds: data.newDurationSeconds } : prev);
+      }
+    };
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
-    return () => socket.off(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
-  }, [socket, fetchQuestion]);
+    socket.on('round:time_extended', handleTimeExtended);
+    return () => {
+      socket.off(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
+      socket.off('round:time_extended', handleTimeExtended);
+    };
+  }, [socket, fetchQuestion, setCurrentRound]);
 
   // Countdown timer
   useEffect(() => {

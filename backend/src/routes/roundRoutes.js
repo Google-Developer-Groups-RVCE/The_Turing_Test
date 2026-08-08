@@ -27,5 +27,6 @@ router.post('/:roundId/pause', roundController.pauseRound);
 router.post('/:roundId/resume', roundController.resumeRound);
 router.post('/:roundId/restart', roundController.restartRound);
 router.post('/:roundId/end', roundController.endRound);
+router.post('/:roundId/extend-time', roundController.extendRoundTime);
 
 module.exports = router;

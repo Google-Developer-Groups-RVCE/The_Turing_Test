@@ -87,6 +87,14 @@ class RoundController {
       res.status(200).json({ message: 'Event ended' });
     } catch (err) { next(err); }
   }
+
+  async extendRoundTime(req, res, next) {
+    try {
+      const { extraSeconds } = req.body;
+      const round = await roundService.extendRoundTime(req.params.roundId, extraSeconds, req.user.username);
+      res.status(200).json({ round, message: 'Time extended' });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new RoundController();

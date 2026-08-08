@@ -4,12 +4,16 @@ class SocketManager {
   constructor() {
     this.socket = null;
     this.token = null;
+    this.listeners = new Map(); // eventName -> Set<callback>
   }
 
   connect(token) {
+    if (this.socket && this.token === token && this.socket.connected) {
+      return;
+    }
     if (this.socket) {
-      if (this.token === token && this.socket.connected) return;
-      this.disconnect();
+      this.socket.disconnect();
+      this.socket = null;
     }
     this.token = token;
     this.socket = io('/', {
@@ -18,6 +22,24 @@ class SocketManager {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+    });
+
+    // Re-attach all registered event listeners to the new socket instance
+    this.listeners.forEach((callbacks, eventName) => {
+      callbacks.forEach((cb) => {
+        this.socket.on(eventName, cb);
+      });
+    });
+
+    // Handle auto re-subscription on socket reconnect
+    this.socket.on('connect', () => {
+      this.listeners.forEach((callbacks, eventName) => {
+        callbacks.forEach((cb) => {
+          if (eventName !== 'connect') {
+            this.socket.on(eventName, cb);
+          }
+        });
+      });
     });
   }
 
@@ -34,14 +56,33 @@ class SocketManager {
   }
 
   on(event, callback) {
+    if (!event || typeof callback !== 'function') return;
+
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event).add(callback);
+
     if (this.socket) {
       this.socket.on(event, callback);
     }
   }
 
   off(event, callback) {
+    if (!event) return;
+
+    if (callback && this.listeners.has(event)) {
+      this.listeners.get(event).delete(callback);
+    } else if (!callback) {
+      this.listeners.delete(event);
+    }
+
     if (this.socket) {
-      this.socket.off(event, callback);
+      if (callback) {
+        this.socket.off(event, callback);
+      } else {
+        this.socket.off(event);
+      }
     }
   }
 

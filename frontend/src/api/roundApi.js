@@ -11,6 +11,7 @@ export const pauseRound = (roundId) => axiosClient.post(`/rounds/${roundId}/paus
 export const resumeRound = (roundId) => axiosClient.post(`/rounds/${roundId}/resume`);
 export const restartRound = (roundId) => axiosClient.post(`/rounds/${roundId}/restart`);
 export const endRound = (roundId) => axiosClient.post(`/rounds/${roundId}/end`);
+export const extendRoundTime = (roundId, extraSeconds) => axiosClient.post(`/rounds/${roundId}/extend-time`, { extraSeconds });
 
 export const resetEvent = () => axiosClient.post('/event/reset');
 export const endEvent = () => axiosClient.post('/event/end');

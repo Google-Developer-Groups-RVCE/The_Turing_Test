@@ -131,6 +131,39 @@ class RoundService {
     if (io) io.emit('event:reset', {});
   }
 
+  async extendRoundTime(roundId, extraSeconds, adminUsername) {
+    const round = await roundStore.getRound(roundId);
+    if (!round) throw new Error('Round not found');
+
+    const secondsToAdd = parseInt(extraSeconds) || 30;
+    const newDurationSeconds = (parseInt(round.durationSeconds) || 300) + secondsToAdd;
+
+    await roundStore.updateRound(roundId, { durationSeconds: newDurationSeconds.toString() });
+
+    await logStore.addLog({
+      action: 'EXTEND_ROUND_TIME',
+      adminUsername,
+      timestamp: Date.now().toString(),
+      details: `Added +${secondsToAdd}s to round ${roundId} (total: ${newDurationSeconds}s)`
+    });
+
+    const updatedRound = { ...round, durationSeconds: newDurationSeconds };
+
+    const io = getIO();
+    if (io) {
+      io.emit('round:time_extended', {
+        roundId,
+        extraSeconds: secondsToAdd,
+        newDurationSeconds,
+        startedAt: round.startedAt,
+        roundData: updatedRound
+      });
+      io.emit('round:changed', { roundId, roundData: updatedRound });
+    }
+
+    return updatedRound;
+  }
+
   async endEvent(adminUsername) {
     await roundStore.setEventState('ended', adminUsername);
     await logStore.addLog({

@@ -30,8 +30,9 @@ export default function LiveResponses() {
     setLoading(true);
     try {
       const res = await getResponses(selectedRound, { search, correct: filterCorrect });
-      setResponses(res.data.responses || []);
-      setLiveCount(res.data.total || 0);
+      const list = res.data?.responses || (Array.isArray(res.data) ? res.data : []);
+      setResponses(list);
+      setLiveCount(res.data?.total || list.length);
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [selectedRound, search, filterCorrect]);

@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
 import { EventStateContext } from '../../contexts/EventStateContext';
-import { Brain, Clock, Wifi, WifiOff, Users, RefreshCw } from 'lucide-react';
+import {
+  Brain, Clock, Wifi, WifiOff, Users, RefreshCw,
+  Code, Sparkles, Award, ExternalLink
+} from 'lucide-react';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { getHealth } from '../../api/settingsApi';
 
 export default function WaitingScreen() {
   const { user } = useAuth();
   const socket = useSocket();
-  const { currentRound, eventStatus, syncState } = useContext(EventStateContext);
+  const { currentRound, eventStatus, showLeaderboard, syncState } = useContext(EventStateContext);
   const navigate = useNavigate();
   const [onlineCount, setOnlineCount] = useState(0);
   const [connected, setConnected] = useState(socket?.isConnected() || false);
@@ -87,83 +90,101 @@ export default function WaitingScreen() {
     }
   }, [currentRound, eventStatus, navigate]);
 
-  // Redirect if event ended
+  // Auto-navigate to leaderboard if admin enabled showLeaderboard
   useEffect(() => {
-    if (eventStatus === 'ended') {
+    if (showLeaderboard || eventStatus === 'ended') {
       navigate('/participant/leaderboard', { replace: true });
     }
-  }, [eventStatus, navigate]);
+  }, [showLeaderboard, eventStatus, navigate]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-      {/* Hero */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 rounded-full bg-primary-500/20 blur-3xl scale-150 animate-pulse" />
-        <div className="relative p-6 rounded-3xl bg-gradient-to-br from-dark-800 to-dark-900 border border-primary-500/20 shadow-2xl shadow-primary-500/10">
-          <Brain size={60} className="text-primary-400 mx-auto" />
+    <div className="flex-1 flex flex-col items-center justify-center py-6 text-center px-4 max-w-3xl mx-auto w-full">
+      {/* GDG Club Header */}
+      <div className="relative mb-6">
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/20 via-red-500/20 to-yellow-500/20 blur-3xl scale-150 animate-pulse" />
+        <div className="relative p-6 rounded-3xl bg-dark-800/80 border border-dark-700 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <span className="w-3 h-3 rounded-full bg-blue-500 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-yellow-500 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
+          </div>
+          <Brain size={54} className="text-primary-400 mx-auto" />
         </div>
       </div>
 
-      <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">The Turing Test</h1>
-      <p className="text-slate-400 text-lg mb-2">GDG RVCE Student Induction Program</p>
+      <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary-950/60 border border-primary-500/30 text-primary-400 text-xs font-semibold uppercase tracking-wider mb-3">
+        <Sparkles size={14} />
+        <span>GDG RVCE · Student Club</span>
+      </div>
 
-      <div className="flex items-center space-x-2 mb-10">
-        <div className={`w-2 h-2 rounded-full ${connected ? 'bg-primary-500 animate-pulse' : 'bg-rose-500'}`} />
+      <h1 className="text-4xl font-extrabold text-white mb-2 tracking-tight">The Turing Test</h1>
+      <p className="text-slate-400 text-base max-w-lg mb-4">
+        Welcome to GDG Club's flagship Student Induction Program. Test your problem-solving, logic, and speed.
+      </p>
+
+      {/* Socket Connection Badge */}
+      <div className="flex items-center space-x-2 mb-8">
+        <div className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-primary-500 animate-pulse' : 'bg-rose-500'}`} />
         <span className={`text-sm font-medium ${connected ? 'text-primary-400' : 'text-rose-400'}`}>
-          {connected ? 'Connected' : 'Reconnecting...'}
+          {connected ? 'Connected to Event Gateway' : 'Reconnecting...'}
         </span>
         {!connected && <WifiOff size={14} className="text-rose-400" />}
         {connected && <Wifi size={14} className="text-primary-400" />}
       </div>
 
-      {/* Waiting State */}
+      {/* Event Idle / Waiting State */}
       {eventStatus !== 'paused' && (
-        <div className="card max-w-md w-full mb-6">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <Clock className="text-primary-400 animate-spin-slow" size={24} />
-            <h2 className="text-xl font-semibold text-white">Waiting for Round to Start{dots}</h2>
+        <div className="card w-full mb-6 border-dark-700 bg-dark-800/70">
+          <div className="flex items-center justify-center space-x-3 mb-3">
+            <Clock className="text-primary-400 animate-spin-slow" size={22} />
+            <h2 className="text-lg font-semibold text-white">Waiting for Round to Start{dots}</h2>
           </div>
-          <p className="text-slate-400 text-sm">
-            The admin will start the event shortly. Your device will automatically transition when the round begins.
-            No refresh needed!
+          <p className="text-slate-400 text-sm leading-relaxed">
+            The GDG admin team will launch the next round shortly. Your screen will transition automatically when the round begins.
           </p>
         </div>
       )}
 
       {/* Paused State */}
       {eventStatus === 'paused' && (
-        <div className="card max-w-md w-full mb-6 border-yellow-500/30">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-6 h-6 rounded bg-yellow-500/20 flex items-center justify-center">
-              <div className="w-1.5 h-4 bg-yellow-400 rounded" style={{ marginRight: '2px' }} />
-              <div className="w-1.5 h-4 bg-yellow-400 rounded" />
+        <div className="card w-full mb-6 border-yellow-500/30 bg-yellow-500/5">
+          <div className="flex items-center justify-center space-x-3 mb-3">
+            <div className="w-5 h-5 rounded bg-yellow-500/20 flex items-center justify-center">
+              <div className="w-1 h-3 bg-yellow-400 rounded mr-0.5" />
+              <div className="w-1 h-3 bg-yellow-400 rounded" />
             </div>
-            <h2 className="text-xl font-semibold text-yellow-300">Event Paused</h2>
+            <h2 className="text-lg font-semibold text-yellow-300">Round Paused by Admin</h2>
           </div>
-          <p className="text-slate-400 text-sm">The admin has paused the event. Please wait for it to resume.</p>
+          <p className="text-slate-400 text-sm">Please stand by while the organizers pause the event timer.</p>
         </div>
       )}
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-2 gap-4 max-w-md w-full mt-2">
-        <div className="bg-dark-800/60 border border-dark-700 rounded-xl p-4">
-          <Users size={20} className="text-primary-400 mb-2 mx-auto" />
-          <div className="text-2xl font-bold text-white">{onlineCount}</div>
-          <div className="text-xs text-slate-500">Online Now</div>
+      {/* Info Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full mb-6">
+        <div className="bg-dark-800/60 border border-dark-700 rounded-xl p-4 text-center">
+          <Users size={18} className="text-primary-400 mb-1 mx-auto" />
+          <div className="text-2xl font-bold text-white font-mono">{onlineCount}</div>
+          <div className="text-xs text-slate-500 font-medium">Online Participants</div>
         </div>
-        <div className="bg-dark-800/60 border border-dark-700 rounded-xl p-4">
-          <div className="text-sm font-semibold text-primary-400 mb-2 truncate">{user?.username}</div>
-          <div className="text-xs text-slate-500">Your Username</div>
-          <div className="mt-1 text-xs text-slate-600 truncate">{user?.name || user?.username}</div>
+        <div className="bg-dark-800/60 border border-dark-700 rounded-xl p-4 text-center">
+          <Code size={18} className="text-blue-400 mb-1 mx-auto" />
+          <div className="text-sm font-semibold text-white truncate">{user?.username}</div>
+          <div className="text-xs text-slate-500 font-medium">Your Handle</div>
+        </div>
+        <div className="bg-dark-800/60 border border-dark-700 rounded-xl p-4 text-center col-span-2 sm:col-span-1">
+          <Award size={18} className="text-yellow-400 mb-1 mx-auto" />
+          <div className="text-sm font-semibold text-white">GDG RVCE</div>
+          <div className="text-xs text-slate-500 font-medium">Organizer</div>
         </div>
       </div>
 
       <button
         onClick={syncState}
-        className="mt-6 flex items-center space-x-2 text-sm text-slate-500 hover:text-slate-300 transition-colors"
+        className="flex items-center space-x-2 text-xs text-slate-400 hover:text-slate-200 transition-colors py-2 px-4 rounded-lg bg-dark-800 border border-dark-700"
       >
-        <RefreshCw size={14} />
-        <span>Check for active round</span>
+        <RefreshCw size={13} />
+        <span>Check Active Round</span>
       </button>
     </div>
   );

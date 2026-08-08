@@ -27,6 +27,10 @@ class SettingsService {
     const io = getIO();
     if (io) {
       io.emit('settings:updated', settings);
+      if (settings.showLeaderboard !== undefined) {
+        const isShow = String(settings.showLeaderboard) === 'true';
+        io.emit('leaderboard:toggle', { showLeaderboard: isShow });
+      }
     }
   }
 }

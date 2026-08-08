@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import { SocketContext } from './SocketContext';
 import { SOCKET_EVENTS } from '../utils/constants';
 import { getCurrentRound } from '../api/roundApi';
+import { getSettings } from '../api/settingsApi';
 
 export const EventStateContext = createContext(null);
 
@@ -9,18 +10,32 @@ export const EventStateProvider = ({ children }) => {
   const socket = useContext(SocketContext);
   const [currentRound, setCurrentRound] = useState(null);
   const [eventStatus, setEventStatus] = useState('idle'); // idle, running, paused, ended
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
-  // Fetch initial round state on mount or socket connection
+  // Fetch initial round & settings state on mount
   const syncState = useCallback(async () => {
     try {
-      const res = await getCurrentRound();
-      const r = res.data?.round || (res.data?.id ? res.data : null);
-      if (r) {
-        setCurrentRound(r);
-        setEventStatus(r.status === 'active' ? 'running' : r.status === 'paused' ? 'paused' : 'idle');
-      } else {
-        setCurrentRound(null);
-        setEventStatus('idle');
+      const [rRes, sRes] = await Promise.allSettled([
+        getCurrentRound(),
+        getSettings()
+      ]);
+
+      if (rRes.status === 'fulfilled') {
+        const r = rRes.value.data?.round || (rRes.value.data?.id ? rRes.value.data : null);
+        if (r) {
+          setCurrentRound(r);
+          setEventStatus(r.status === 'active' ? 'running' : r.status === 'paused' ? 'paused' : 'idle');
+        } else {
+          setCurrentRound(null);
+          setEventStatus('idle');
+        }
+      }
+
+      if (sRes.status === 'fulfilled') {
+        const settings = sRes.value.data;
+        if (settings) {
+          setShowLeaderboard(String(settings.showLeaderboard) === 'true');
+        }
       }
     } catch {
       // silent
@@ -52,12 +67,26 @@ export const EventStateProvider = ({ children }) => {
     };
     const handleEventEnded = () => setEventStatus('ended');
 
+    const handleLeaderboardToggle = (data) => {
+      if (typeof data?.showLeaderboard === 'boolean') {
+        setShowLeaderboard(data.showLeaderboard);
+      }
+    };
+
+    const handleSettingsUpdated = (settings) => {
+      if (settings?.showLeaderboard !== undefined) {
+        setShowLeaderboard(String(settings.showLeaderboard) === 'true');
+      }
+    };
+
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on(SOCKET_EVENTS.ROUND_PAUSED, handleRoundPaused);
     socket.on(SOCKET_EVENTS.ROUND_RESUMED, handleRoundResumed);
     socket.on(SOCKET_EVENTS.ROUND_ENDED, handleRoundEnded);
     socket.on(SOCKET_EVENTS.EVENT_RESET, handleEventReset);
     socket.on(SOCKET_EVENTS.EVENT_ENDED, handleEventEnded);
+    socket.on('leaderboard:toggle', handleLeaderboardToggle);
+    socket.on('settings:updated', handleSettingsUpdated);
     socket.on('connect', syncState);
 
     return () => {
@@ -67,12 +96,17 @@ export const EventStateProvider = ({ children }) => {
       socket.off(SOCKET_EVENTS.ROUND_ENDED, handleRoundEnded);
       socket.off(SOCKET_EVENTS.EVENT_RESET, handleEventReset);
       socket.off(SOCKET_EVENTS.EVENT_ENDED, handleEventEnded);
+      socket.off('leaderboard:toggle', handleLeaderboardToggle);
+      socket.off('settings:updated', handleSettingsUpdated);
       socket.off('connect', syncState);
     };
   }, [socket, syncState]);
 
   return (
-    <EventStateContext.Provider value={{ currentRound, eventStatus, setCurrentRound, setEventStatus, syncState }}>
+    <EventStateContext.Provider value={{
+      currentRound, eventStatus, showLeaderboard,
+      setCurrentRound, setEventStatus, setShowLeaderboard, syncState
+    }}>
       {children}
     </EventStateContext.Provider>
   );

@@ -99,9 +99,16 @@ function createApp() {
   // connection status, Socket.IO status, and process uptime.
   // Used by Kubernetes liveness/readiness probes.
   // --------------------------------------------------------------
-  const healthHandler = (req, res) => {
+  const healthHandler = async (req, res) => {
     const redisStatus = getRedisStatus();
     const socketStatus = getSocketStatus();
+    let uniqueOnlineUsers = 0;
+    try {
+      const { redisClient } = require('./config/redisClient');
+      const keys = require('./redis/keys');
+      uniqueOnlineUsers = await redisClient.scard(keys.PRESENCE_ONLINE);
+    } catch { /* silent */ }
+
     const uptimeSeconds = Math.floor((Date.now() - startedAt) / 1000);
     const healthy = redisStatus.healthy;
     const body = {
@@ -113,7 +120,11 @@ function createApp() {
       memoryUsage: process.memoryUsage(),
       express: { healthy: true },
       redisDetail: redisStatus,
-      socketIo: socketStatus,
+      socketIo: {
+        ...socketStatus,
+        connectedClients: typeof uniqueOnlineUsers === 'number' && uniqueOnlineUsers > 0 ? uniqueOnlineUsers : socketStatus.connectedClients,
+        uniqueOnlineUsers
+      },
     };
     res.status(healthy ? 200 : 503).json(body);
   };

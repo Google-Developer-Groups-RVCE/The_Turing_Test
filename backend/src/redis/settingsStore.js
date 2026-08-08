@@ -9,6 +9,7 @@ const DEFAULTS = {
   allowLateSubmission: 'false',
   eventName: 'The Turing Test',
   maxParticipants: '500',
+  showLeaderboard: 'false',
 };
 
 const settingsStore = {

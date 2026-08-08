@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
+import { EventStateContext } from '../../contexts/EventStateContext';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { getLeaderboard } from '../../api/leaderboardApi';
 import { Trophy, Medal, Crown } from 'lucide-react';
@@ -8,8 +10,22 @@ import { Trophy, Medal, Crown } from 'lucide-react';
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const socket = useSocket();
+  const { currentRound, showLeaderboard, eventStatus } = useContext(EventStateContext);
+  const navigate = useNavigate();
+
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Auto-navigate away when admin disables leaderboard view
+  useEffect(() => {
+    if (!showLeaderboard && eventStatus !== 'ended') {
+      if (currentRound && (currentRound.status === 'active' || eventStatus === 'running')) {
+        navigate('/participant/round', { replace: true });
+      } else {
+        navigate('/participant', { replace: true });
+      }
+    }
+  }, [showLeaderboard, currentRound, eventStatus, navigate]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -61,12 +77,12 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col py-4 space-y-6">
+    <div className="flex-1 flex flex-col py-4 space-y-6 max-w-3xl mx-auto w-full">
       <div className="text-center">
         <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/20 mb-4">
           <Trophy size={36} className="text-yellow-400" />
         </div>
-        <h1 className="text-3xl font-bold text-white">Leaderboard</h1>
+        <h1 className="text-3xl font-bold text-white">Live Leaderboard</h1>
         <p className="text-slate-400 mt-1">Live rankings — updated in real time</p>
       </div>
 

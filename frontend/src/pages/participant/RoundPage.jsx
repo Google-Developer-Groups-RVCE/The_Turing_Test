@@ -7,10 +7,10 @@ import { getActiveQuestion } from '../../api/questionApi';
 import { getMyResponse, submitResponse } from '../../api/responseApi';
 import { getCurrentRound } from '../../api/roundApi';
 import { SOCKET_EVENTS } from '../../utils/constants';
-import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock } from 'lucide-react';
 
 export default function RoundPage() {
-  const { currentRound, eventStatus, setCurrentRound, setEventStatus } = useContext(EventStateContext);
+  const { currentRound, eventStatus, showLeaderboard, setCurrentRound, setEventStatus } = useContext(EventStateContext);
   const { user } = useAuth();
   const socket = useSocket();
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ export default function RoundPage() {
     setLoading(true);
     try {
       let roundToUse = currentRound;
-      // Fallback: if context round is empty, fetch directly from REST API
       if (!roundToUse) {
         const rRes = await getCurrentRound();
         roundToUse = rRes.data?.round || (rRes.data?.id ? rRes.data : null);
@@ -59,7 +58,12 @@ export default function RoundPage() {
       }
 
       if (respRes.status === 'fulfilled') {
-        setMyResponse(respRes.value.data?.response || null);
+        const resp = respRes.value.data?.response || (respRes.value.data?.answer ? respRes.value.data : null);
+        setMyResponse(resp || null);
+        if (resp?.answer) {
+          setSelectedAnswer(resp.answer);
+          setTextAnswer(resp.answer);
+        }
       }
     } catch {
       setQuestion(null);
@@ -72,12 +76,12 @@ export default function RoundPage() {
     fetchQuestion();
   }, [fetchQuestion]);
 
-  // Auto-navigate on event ended
+  // Transition to Leaderboard if admin toggled showLeaderboard or round ended
   useEffect(() => {
-    if (eventStatus === 'ended') {
+    if (showLeaderboard || eventStatus === 'ended') {
       navigate('/participant/leaderboard', { replace: true });
     }
-  }, [eventStatus, navigate]);
+  }, [showLeaderboard, eventStatus, navigate]);
 
   // Socket: round changed — refetch question
   useEffect(() => {
@@ -103,9 +107,10 @@ export default function RoundPage() {
   }, [currentRound]);
 
   const handleSubmit = async () => {
+    if (myResponse) return; // Prevent duplicate submissions
     const answer = question?.type === 'mcq' ? selectedAnswer : textAnswer;
     if (!answer.trim()) {
-      setError('Please provide an answer before submitting.');
+      setError('Please select an option or type your answer before submitting.');
       return;
     }
     setSubmitting(true);
@@ -113,7 +118,8 @@ export default function RoundPage() {
     const roundId = typeof currentRound === 'string' ? currentRound : currentRound?.id;
     try {
       const res = await submitResponse(roundId, answer.trim());
-      setMyResponse(res.data.response);
+      const savedResp = res.data?.response || { answer: answer.trim(), submittedAt: Date.now() };
+      setMyResponse(savedResp);
     } catch (err) {
       setError(err.response?.data?.message || 'Submission failed. Try again.');
     } finally {
@@ -127,6 +133,8 @@ export default function RoundPage() {
     const s = secs % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
+
+  const isLocked = !!myResponse || submitting;
 
   if (loading) {
     return (
@@ -175,7 +183,7 @@ export default function RoundPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col space-y-6 py-4">
+    <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full">
       {/* Round Header */}
       <div className="card">
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -198,117 +206,123 @@ export default function RoundPage() {
         </div>
       </div>
 
-      {/* Already Answered State */}
-      {myResponse ? (
-        <div className="card">
-          <div className="flex items-center space-x-3 mb-4">
-            {myResponse.isCorrect
-              ? <CheckCircle size={28} className="text-primary-400" />
-              : <XCircle size={28} className="text-rose-400" />}
+      {/* Submitted Feedback Banner */}
+      {myResponse && (
+        <div className="p-4 rounded-xl border border-primary-500/40 bg-primary-950/40 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <CheckCircle size={24} className="text-primary-400" />
             <div>
-              <h3 className="text-lg font-bold text-white">
-                {myResponse.isCorrect ? 'Correct!' : 'Incorrect'}
-              </h3>
-              <p className="text-sm text-slate-400">
-                {myResponse.isCorrect
-                  ? `You earned ${myResponse.pointsAwarded} points!`
-                  : `Better luck next time. You earned 0 points.`}
-              </p>
+              <h4 className="text-sm font-bold text-white">Answer Submitted & Locked</h4>
+              <p className="text-xs text-slate-400">Your choice has been recorded. Wait for the round to conclude.</p>
             </div>
           </div>
-          <div className="bg-dark-900/50 rounded-lg p-4">
-            <p className="text-xs text-slate-500 mb-1">Your Answer</p>
-            <p className="text-white font-medium">{myResponse.answer}</p>
+          <div className="flex items-center space-x-1 text-xs text-slate-500 font-mono">
+            <Lock size={13} />
+            <span>Locked</span>
           </div>
-          <p className="text-xs text-slate-600 mt-3">
-            Submitted at {new Date(myResponse.submittedAt).toLocaleTimeString()}
-          </p>
         </div>
-      ) : (
-        <>
-          {/* Question Card */}
-          <div className="card">
-            <p className="text-lg text-white leading-relaxed font-medium">
-              {question.text}
-            </p>
-            {question.imageUrl && (
-              <img
-                src={question.imageUrl}
-                alt="Question visual"
-                className="mt-4 rounded-lg max-h-48 object-contain border border-dark-700"
-              />
-            )}
-            <div className="mt-3 flex items-center space-x-3 text-sm text-slate-500">
-              <span className="px-2 py-0.5 bg-primary-900/40 text-primary-400 rounded text-xs font-medium capitalize">
-                {question.type === 'mcq' ? 'MCQ' : 'Short Answer'}
-              </span>
-              <span>{question.points} point{question.points !== 1 ? 's' : ''}</span>
-            </div>
-          </div>
+      )}
 
-          {/* Answer Section */}
-          <div className="card">
-            <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">Your Answer</h3>
+      {/* Question Card */}
+      <div className="card">
+        <p className="text-lg text-white leading-relaxed font-medium">
+          {question.text}
+        </p>
+        {question.imageUrl && (
+          <img
+            src={question.imageUrl}
+            alt="Question visual"
+            className="mt-4 rounded-lg max-h-48 object-contain border border-dark-700"
+          />
+        )}
+        <div className="mt-3 flex items-center space-x-3 text-sm text-slate-500">
+          <span className="px-2 py-0.5 bg-primary-900/40 text-primary-400 rounded text-xs font-medium capitalize">
+            {question.type === 'mcq' ? 'MCQ' : 'Short Answer'}
+          </span>
+          <span>{question.points} point{question.points !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
 
-            {question.type === 'mcq' && question.options?.length > 0 ? (
-              <div className="space-y-3">
-                {question.options.map((opt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedAnswer(opt)}
-                    className={`w-full text-left px-4 py-3 rounded-xl border transition-all font-medium
-                      ${selectedAnswer === opt
-                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
-                        : 'border-dark-700 bg-dark-900/40 text-slate-300 hover:border-dark-600 hover:bg-dark-800/60'
-                      }`}
-                  >
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs mr-3 font-bold
-                      ${selectedAnswer === opt ? 'bg-primary-500 text-white' : 'bg-dark-700 text-slate-400'}`}>
+      {/* Answer Section */}
+      <div className="card">
+        <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
+          {isLocked ? 'Your Submitted Choice' : 'Select Your Answer'}
+        </h3>
+
+        {question.type === 'mcq' && question.options?.length > 0 ? (
+          <div className="space-y-3">
+            {question.options.map((opt, idx) => {
+              const isSelected = selectedAnswer === opt;
+              return (
+                <button
+                  key={idx}
+                  disabled={isLocked}
+                  onClick={() => !isLocked && setSelectedAnswer(opt)}
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition-all font-medium flex items-center justify-between
+                    ${isSelected
+                      ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                      : 'border-dark-700 bg-dark-900/40 text-slate-300 hover:border-dark-600 hover:bg-dark-800/60'
+                    }
+                    ${isLocked ? 'cursor-not-allowed opacity-90' : ''}
+                  `}
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                      ${isSelected ? 'bg-primary-500 text-white' : 'bg-dark-700 text-slate-400'}`}>
                       {String.fromCharCode(65 + idx)}
                     </span>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <textarea
-                className="input-field min-h-[120px] resize-none"
-                placeholder="Type your answer here..."
-                value={textAnswer}
-                onChange={(e) => setTextAnswer(e.target.value)}
-                maxLength={500}
-              />
-            )}
-
-            {error && (
-              <div className="mt-3 bg-rose-900/40 border border-rose-500/40 text-rose-300 p-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || (!selectedAnswer && !textAnswer.trim())}
-              className="btn-primary w-full mt-4 flex items-center justify-center space-x-2"
-            >
-              {submitting ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                <>
-                  <Send size={16} />
-                  <span>Submit Answer</span>
-                </>
-              )}
-            </button>
+                    <span>{opt}</span>
+                  </div>
+                  {isSelected && isLocked && <Lock size={15} className="text-primary-400" />}
+                </button>
+              );
+            })}
           </div>
-        </>
-      )}
+        ) : (
+          <textarea
+            disabled={isLocked}
+            className="input-field min-h-[120px] resize-none disabled:opacity-80 disabled:cursor-not-allowed"
+            placeholder="Type your answer here..."
+            value={textAnswer}
+            onChange={(e) => !isLocked && setTextAnswer(e.target.value)}
+            maxLength={500}
+          />
+        )}
+
+        {error && (
+          <div className="mt-3 bg-rose-900/40 border border-rose-500/40 text-rose-300 p-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        {!isLocked ? (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || (!selectedAnswer && !textAnswer.trim())}
+            className="btn-primary w-full mt-4 flex items-center justify-center space-x-2"
+          >
+            {submitting ? (
+              <>
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                <span>Submitting...</span>
+              </>
+            ) : (
+              <>
+                <Send size={16} />
+                <span>Submit Answer</span>
+              </>
+            )}
+          </button>
+        ) : (
+          <div className="mt-4 p-3 bg-dark-900/60 border border-dark-700 rounded-lg text-center text-xs text-slate-400 font-medium flex items-center justify-center space-x-2">
+            <Lock size={14} className="text-primary-400" />
+            <span>Submission locked for this round. Stay tuned for results.</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

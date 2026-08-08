@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   getRounds, createRound, updateRound, deleteRound,
   startRound, pauseRound, resumeRound, restartRound, endRound,
   resetEvent, endEvent
 } from '../../api/roundApi';
+import { getSettings, updateSettings } from '../../api/settingsApi';
 import { useSocket } from '../../hooks/useSocket';
+import { EventStateContext } from '../../contexts/EventStateContext';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
-  RefreshCw, X, AlertTriangle, SkipForward, ChevronDown, ChevronUp
+  RefreshCw, X, AlertTriangle, SkipForward, Eye, Trophy, Monitor, CheckCircle
 } from 'lucide-react';
 
 function RoundModal({ round, onClose, onSave }) {
@@ -66,12 +68,14 @@ const STATUS_COLOR = {
 
 export default function RoundManagement() {
   const socket = useSocket();
+  const { showLeaderboard, setShowLeaderboard } = useContext(EventStateContext);
   const [rounds, setRounds] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState(null); // null | 'create' | roundObject
+  const [modal, setModal] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [actionLoading, setActionLoading] = useState('');
+  const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
 
   const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 3000); };
   const showError = (m) => { setError(m); setTimeout(() => setError(''), 5000); };
@@ -85,7 +89,19 @@ export default function RoundManagement() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchRounds(); }, [fetchRounds]);
+  const fetchSettingsState = useCallback(async () => {
+    try {
+      const res = await getSettings();
+      if (res.data?.showLeaderboard !== undefined) {
+        setShowLeaderboard(String(res.data.showLeaderboard) === 'true');
+      }
+    } catch { /* silent */ }
+  }, [setShowLeaderboard]);
+
+  useEffect(() => {
+    fetchRounds();
+    fetchSettingsState();
+  }, [fetchRounds, fetchSettingsState]);
 
   // Live updates
   useEffect(() => {
@@ -116,6 +132,37 @@ export default function RoundManagement() {
     }
   };
 
+  const handleToggleLeaderboard = async () => {
+    const nextVal = !showLeaderboard;
+    setTogglingLeaderboard(true);
+    try {
+      await updateSettings({ showLeaderboard: String(nextVal) });
+      setShowLeaderboard(nextVal);
+      showSuccess(`Participant Leaderboard view ${nextVal ? 'ENABLED (Showing live scores to participants)' : 'DISABLED (Showing GDG Club Waiting Room)'}.`);
+    } catch {
+      showError('Failed to toggle leaderboard view');
+    } finally {
+      setTogglingLeaderboard(false);
+    }
+  };
+
+  const handleNextRound = async () => {
+    const activeRound = rounds.find(r => r.status === 'active');
+    const pendingRound = rounds.find(r => r.status === 'pending');
+    if (!pendingRound && !activeRound) {
+      showError('No pending or active rounds to advance to.');
+      return;
+    }
+    doAction('Advance to Next Round', async () => {
+      if (activeRound) {
+        await endRound(activeRound.id);
+      }
+      if (pendingRound) {
+        await startRound(pendingRound.id);
+      }
+    });
+  };
+
   const handleSaveRound = async (roundData) => {
     if (modal === 'create') {
       await createRound(roundData);
@@ -142,6 +189,8 @@ export default function RoundManagement() {
     doAction('End event', () => endEvent());
   };
 
+  const activeRound = rounds.find(r => r.status === 'active');
+
   return (
     <div className="space-y-6">
       {modal && (
@@ -155,7 +204,7 @@ export default function RoundManagement() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
           <Layers size={24} className="text-primary-400" />
-          <span>Round Management</span>
+          <span>Round & Stage Control</span>
         </h1>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setModal('create')} className="btn-primary flex items-center space-x-2 text-sm">
@@ -173,16 +222,92 @@ export default function RoundManagement() {
         </div>
       )}
 
-      {/* Event Global Controls */}
-      <div className="card">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Global Event Controls</h2>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={handleEventReset} className="flex items-center space-x-2 px-4 py-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-sm">
-            <AlertTriangle size={15} /><span>Reset Event</span>
-          </button>
-          <button onClick={handleEventEnd} className="flex items-center space-x-2 px-4 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors text-sm">
-            <Square size={15} /><span>End Event</span>
-          </button>
+      {/* Admin Master Stage Control & Live Participant Simulation */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Stage Controls */}
+        <div className="card space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center space-x-2">
+            <Monitor size={16} className="text-primary-400" />
+            <span>Live Stage & Broadcast Controls</span>
+          </h2>
+
+          <div className="p-4 rounded-xl bg-dark-900/60 border border-dark-700 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-bold text-white flex items-center space-x-2">
+                <Trophy size={16} className="text-yellow-400" />
+                <span>Show Participant Leaderboard</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {showLeaderboard ? 'ON — Participants currently see Live Scores' : 'OFF — Participants see GDG Club Room'}
+              </p>
+            </div>
+            <button
+              onClick={handleToggleLeaderboard}
+              disabled={togglingLeaderboard}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showLeaderboard ? 'bg-primary-500' : 'bg-dark-700'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showLeaderboard ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              onClick={handleNextRound}
+              disabled={!!actionLoading}
+              className="flex-1 btn-primary py-2 text-sm flex items-center justify-center space-x-2"
+            >
+              <SkipForward size={16} />
+              <span>Advance to Next Round</span>
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-dark-700">
+            <button onClick={handleEventReset} className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-xs font-semibold">
+              <AlertTriangle size={14} /><span>Reset Event</span>
+            </button>
+            <button onClick={handleEventEnd} className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors text-xs font-semibold">
+              <Square size={14} /><span>End Event</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Live Simulation View */}
+        <div className="card bg-dark-800/80 border-primary-500/20 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary-400 flex items-center space-x-1">
+                <Eye size={14} /><span>Participant Screen Simulation</span>
+              </span>
+              <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+            </div>
+
+            <div className="p-4 rounded-xl bg-dark-900 border border-dark-700 text-center space-y-2">
+              {showLeaderboard ? (
+                <div>
+                  <Trophy size={32} className="text-yellow-400 mx-auto mb-1" />
+                  <div className="text-sm font-bold text-white">Showing Live Leaderboard View</div>
+                  <div className="text-xs text-slate-500">Participants see rank standings & scores live</div>
+                </div>
+              ) : activeRound ? (
+                <div>
+                  <Play size={32} className="text-primary-400 mx-auto mb-1 animate-pulse" />
+                  <div className="text-sm font-bold text-white">Active Round: {activeRound.name}</div>
+                  <div className="text-xs text-slate-400">Participants are answering question for this round</div>
+                </div>
+              ) : (
+                <div>
+                  <CheckCircle size={32} className="text-blue-400 mx-auto mb-1" />
+                  <div className="text-sm font-bold text-white">GDG RVCE Club Waiting Room</div>
+                  <div className="text-xs text-slate-400">Event is Idle — Participants see GDG branding & online count</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-dark-700 text-xs text-slate-500 flex justify-between items-center">
+            <span>State: <strong className="text-slate-300 capitalize">{activeRound ? 'Round Active' : showLeaderboard ? 'Leaderboard Display' : 'Idle'}</strong></span>
+            <span>Rounds Configured: <strong className="text-slate-300">{rounds.length}</strong></span>
+          </div>
         </div>
       </div>
 

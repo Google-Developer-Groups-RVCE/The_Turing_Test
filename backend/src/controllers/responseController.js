@@ -17,7 +17,7 @@ class ResponseController {
   async getResponses(req, res, next) {
     try {
       const responses = await responseService.getResponses(req.params.roundId);
-      res.status(200).json(responses);
+      res.status(200).json({ responses, total: responses.length });
     } catch (err) {
       next(err);
     }

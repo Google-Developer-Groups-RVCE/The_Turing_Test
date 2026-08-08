@@ -52,7 +52,14 @@ class ResponseService {
 
     const io = getIO();
     if (io) {
-      io.emit('response:received', { roundId, username, submittedAt });
+      io.emit('response:received', {
+        roundId,
+        username,
+        answer,
+        isCorrect,
+        pointsAwarded,
+        submittedAt
+      });
     }
 
     return { isCorrect, pointsAwarded };

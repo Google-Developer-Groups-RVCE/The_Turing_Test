@@ -62,6 +62,10 @@ kubectl apply -f k8s/ingress/ingress.yaml
 ```
 For local testing, add `127.0.0.1 turing-test.local` to your local `/etc/hosts` file and access via `http://turing-test.local`.
 
+### 🔄 ArgoCD GitOps Continuous Deployment
+The project includes a complete ArgoCD GitOps setup where any push to the `main` branch automatically builds Docker images, pushes them to `ghcr.io`, updates deployment manifests, and syncs to your Kubernetes cluster.
+See [ArgoCD Setup & Deployment Guide](file:///c:/Users/santn/Desktop/New%20folder/k8s/argocd/ARGOCD_GUIDE.md) for full instructions.
+
 ## 🛠 Tech Stack
 * **Frontend:** React, Vite, Tailwind CSS, Socket.IO Client.
 * **Backend:** Node.js, Express, Socket.IO, Redis (as Primary DB).

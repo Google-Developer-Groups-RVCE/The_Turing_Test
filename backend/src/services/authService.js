@@ -14,18 +14,30 @@ class AuthService {
       username,
       passwordHash: hashed,
       role: 'participant',
-      name,
+      name: name || username,
       createdAt: Date.now().toString(),
       status: 'active'
     };
     
     await userStore.createUser(user);
     const token = generateToken({ username: user.username, role: user.role });
-    return { token, role: user.role };
+    return {
+      token,
+      role: user.role,
+      user: {
+        username: user.username,
+        role: user.role,
+        name: user.name,
+        status: user.status
+      }
+    };
   }
 
   async login(username, password) {
-    const user = await userStore.getUser(username);
+    let user = await userStore.getUser(username);
+    if (!user && typeof username === 'string') {
+      user = await userStore.getUser(username.toLowerCase()) || await userStore.getUser(username.toUpperCase());
+    }
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -40,7 +52,16 @@ class AuthService {
     }
 
     const token = generateToken({ username: user.username, role: user.role });
-    return { token, role: user.role };
+    return {
+      token,
+      role: user.role,
+      user: {
+        username: user.username,
+        role: user.role,
+        name: user.name,
+        status: user.status
+      }
+    };
   }
 }
 

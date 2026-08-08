@@ -17,18 +17,18 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!/^RVCE26B.+$/i.test(form.username)) {
-      setError('Username must follow the format: RVCE26BXXXXX');
+    if (!form.username.trim()) {
+      setError('Username is required');
       return;
     }
-    if (form.password.length < 4) {
-      setError('Password must be at least 4 characters');
+    if (form.password.length < 1) {
+      setError('Password is required');
       return;
     }
     setIsLoading(true);
     try {
-      const user = await register(form.username, form.password, form.name);
-      if (user.role === 'admin') navigate('/admin');
+      const user = await register(form.username.trim(), form.password, form.name);
+      if (user && user.role === 'admin') navigate('/admin');
       else navigate('/participant');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Try again.');
@@ -81,7 +81,7 @@ export default function RegisterPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Username <span className="text-slate-600 text-xs">(RVCE26BXXXXX format)</span>
+            Username
           </label>
           <div className="relative">
             <UserPlus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -89,10 +89,10 @@ export default function RegisterPage() {
               type="text"
               name="username"
               required
-              className="input-field pl-9 uppercase"
+              className="input-field pl-9"
               value={form.username}
               onChange={handleChange}
-              placeholder="RVCE26B12345"
+              placeholder="Choose a username"
             />
           </div>
         </div>

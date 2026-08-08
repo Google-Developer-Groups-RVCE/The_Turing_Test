@@ -17,8 +17,8 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
     try {
-      const user = await login(username, password);
-      if (user.role === 'admin') navigate('/admin');
+      const user = await login(username.trim(), password);
+      if (user && user.role === 'admin') navigate('/admin');
       else navigate('/participant');
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
@@ -66,7 +66,7 @@ export default function LoginPage() {
               className="input-field pl-9"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. A or RVCE26B12345"
+              placeholder="Enter username (e.g. a or b)"
             />
           </div>
         </div>

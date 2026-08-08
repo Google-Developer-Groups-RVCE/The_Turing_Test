@@ -12,12 +12,14 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
       if (token && savedUser) {
-        setUser(JSON.parse(savedUser));
-        // Optionally, fetch latest user profile from /auth/me
         try {
+          setUser(JSON.parse(savedUser));
           const res = await axiosClient.get('/auth/me');
-          setUser(res.data.user);
-          localStorage.setItem('user', JSON.stringify(res.data.user));
+          const userData = res.data.user || res.data;
+          if (userData && userData.username) {
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+          }
         } catch (error) {
           console.error("Failed to verify session", error);
         }
@@ -29,7 +31,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     const res = await axiosClient.post('/auth/login', { username, password });
-    const { token, user: userData } = res.data;
+    const token = res.data.token;
+    const userData = res.data.user || { username, role: res.data.role };
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
@@ -38,7 +41,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, password, name) => {
     const res = await axiosClient.post('/auth/register', { username, password, name });
-    const { token, user: userData } = res.data;
+    const token = res.data.token;
+    const userData = res.data.user || { username, role: res.data.role || 'participant', name };
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);

@@ -26,6 +26,49 @@ const logger = require('./utils/logger');
 const { redisClient, disconnectRedis } = require('./config/redisClient');
 const { initSocket } = require('./config/socket');
 
+const userStore = require('./redis/userStore');
+const { hashPassword } = require('./utils/hashPassword');
+
+async function autoSeed() {
+  try {
+    const adminUsernames = ['a', 'A'];
+    for (const u of adminUsernames) {
+      const exists = await userStore.usernameExists(u);
+      if (!exists) {
+        const hashed = await hashPassword('a');
+        await userStore.createUser({
+          username: u,
+          passwordHash: hashed,
+          role: 'admin',
+          name: 'Super Admin',
+          createdAt: Date.now().toString(),
+          status: 'active'
+        });
+        logger.info(`[autoSeed] Admin user '${u}' seeded successfully (password: 'a').`);
+      }
+    }
+
+    const participantUsernames = ['b', 'B'];
+    for (const u of participantUsernames) {
+      const pExists = await userStore.usernameExists(u);
+      if (!pExists) {
+        const pHashed = await hashPassword('b');
+        await userStore.createUser({
+          username: u,
+          passwordHash: pHashed,
+          role: 'participant',
+          name: 'Test Participant B',
+          createdAt: Date.now().toString(),
+          status: 'active'
+        });
+        logger.info(`[autoSeed] Participant user '${u}' seeded successfully (password: 'b').`);
+      }
+    }
+  } catch (err) {
+    logger.warn(`[autoSeed] Skipping automatic seeding: ${err.message}`);
+  }
+}
+
 // --------------------------------------------------------------------
 // Bootstrap
 // --------------------------------------------------------------------
@@ -38,6 +81,7 @@ let isShuttingDown = false;
 httpServer.listen(env.PORT, () => {
   logger.info(`[server] Turing Test backend listening on port ${env.PORT} (${env.NODE_ENV})`);
   logger.info(`[server] CORS origin(s): ${env.CORS_ORIGIN}`);
+  autoSeed();
 });
 
 // --------------------------------------------------------------------

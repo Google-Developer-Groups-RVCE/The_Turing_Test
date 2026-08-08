@@ -8,44 +8,45 @@ const logger = require('../src/utils/logger');
 
 async function seed() {
   try {
-    const adminUsername = 'A';
-    const adminPassword = 'a';
-
-    const exists = await userStore.usernameExists(adminUsername);
-    if (!exists) {
-      const hashed = await hashPassword(adminPassword);
-      await userStore.createUser({
-        username: adminUsername,
-        passwordHash: hashed,
-        role: 'admin',
-        name: 'Super Admin',
-        createdAt: Date.now().toString(),
-        status: 'active'
-      });
-      logger.info('Admin user A seeded successfully. Username: A | Password: a');
-    } else {
-      logger.info('Admin user A already exists.');
+    const adminUsernames = ['a', 'A'];
+    for (const u of adminUsernames) {
+      const exists = await userStore.usernameExists(u);
+      if (!exists) {
+        const hashed = await hashPassword('a');
+        await userStore.createUser({
+          username: u,
+          passwordHash: hashed,
+          role: 'admin',
+          name: 'Super Admin',
+          createdAt: Date.now().toString(),
+          status: 'active'
+        });
+        logger.info(`Admin user '${u}' seeded successfully. Username: ${u} | Password: a`);
+      } else {
+        logger.info(`Admin user '${u}' already exists.`);
+      }
     }
 
-    const participantUsername = 'B';
-    const participantPassword = 'b';
-    const pExists = await userStore.usernameExists(participantUsername);
-    if (!pExists) {
-      const pHashed = await hashPassword(participantPassword);
-      await userStore.createUser({
-        username: participantUsername,
-        passwordHash: pHashed,
-        role: 'participant',
-        name: 'Test Participant B',
-        createdAt: Date.now().toString(),
-        status: 'active'
-      });
-      logger.info('Participant user B seeded successfully. Username: B | Password: b');
-    } else {
-      logger.info('Participant user B already exists.');
+    const participantUsernames = ['b', 'B'];
+    for (const u of participantUsernames) {
+      const pExists = await userStore.usernameExists(u);
+      if (!pExists) {
+        const pHashed = await hashPassword('b');
+        await userStore.createUser({
+          username: u,
+          passwordHash: pHashed,
+          role: 'participant',
+          name: 'Test Participant B',
+          createdAt: Date.now().toString(),
+          status: 'active'
+        });
+        logger.info(`Participant user '${u}' seeded successfully. Username: ${u} | Password: b`);
+      } else {
+        logger.info(`Participant user '${u}' already exists.`);
+      }
     }
   } catch (err) {
-    logger.error(`Error seeding admin user: ${err.message}`);
+    logger.error(`Error seeding admin/user: ${err.message}`);
   } finally {
     await disconnectRedis();
     process.exit(0);

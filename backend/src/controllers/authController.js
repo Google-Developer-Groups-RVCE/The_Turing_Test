@@ -41,12 +41,15 @@ class AuthController {
   async getMe(req, res, next) {
     try {
       const username = req.user.username;
-      const user = await userStore.getUser(username);
+      let user = await userStore.getUser(username);
+      if (!user) {
+        user = await userStore.getUser(username.toLowerCase()) || await userStore.getUser(username.toUpperCase());
+      }
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
       const { passwordHash, ...safeUser } = user;
-      res.status(200).json(safeUser);
+      res.status(200).json({ user: safeUser, ...safeUser });
     } catch (err) {
       next(err);
     }

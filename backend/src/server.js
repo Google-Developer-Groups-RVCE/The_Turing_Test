@@ -64,6 +64,20 @@ async function autoSeed() {
         logger.info(`[autoSeed] Participant user '${u}' seeded successfully (password: 'b').`);
       }
     }
+
+    const roundStore = require('./redis/roundStore');
+    const rounds = await roundStore.getRoundsOrder();
+    if (!rounds || rounds.length === 0) {
+      const defaultRound = {
+        id: `r_${Date.now()}`,
+        name: 'Round 1: Turing Test',
+        durationSeconds: 300,
+        status: 'active'
+      };
+      await roundStore.createRound(defaultRound);
+      await roundStore.setCurrentRound(defaultRound.id);
+      logger.info(`[autoSeed] Default Round 1 seeded successfully.`);
+    }
   } catch (err) {
     logger.warn(`[autoSeed] Skipping automatic seeding: ${err.message}`);
   }

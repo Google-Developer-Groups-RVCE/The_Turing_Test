@@ -24,17 +24,22 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.text.trim()) { setError('Question text is required'); return; }
-    if (!form.correctAnswer.trim()) { setError('Correct answer is required'); return; }
-    if (form.type === 'mcq' && form.options.some(o => !o.trim())) { setError('All MCQ options are required'); return; }
+    const validOptions = form.type === 'mcq' ? form.options.filter(o => o.trim()) : [];
+    if (form.type === 'mcq' && validOptions.length === 0) { setError('At least one option is required for MCQ'); return; }
+    let answer = form.correctAnswer.trim();
+    if (form.type === 'mcq' && (!answer || !validOptions.includes(answer))) {
+      answer = validOptions[0] || '';
+    }
+    if (!answer) { setError('Correct answer is required'); return; }
     setSaving(true);
     try {
       const payload = {
         text: form.text,
         type: form.type,
-        correctAnswer: form.correctAnswer,
+        correctAnswer: answer,
         points: form.points,
         order: form.order,
-        options: form.type === 'mcq' ? form.options.filter(o => o.trim()) : [],
+        options: validOptions,
       };
       await onSave(payload);
       onClose();

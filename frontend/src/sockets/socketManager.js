@@ -11,7 +11,7 @@ class SocketManager {
     // Assuming backend is served on same host/port in prod or proxy in dev
     this.socket = io('/', {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,

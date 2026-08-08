@@ -48,6 +48,14 @@ const questionStore = {
   async getQuestionsOrder(roundId) {
     return await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
   },
+
+  async setActiveQuestionId(roundId, questionId) {
+    await redisClient.set(`round:${roundId}:active_question`, String(questionId));
+  },
+
+  async getActiveQuestionId(roundId) {
+    return await redisClient.get(`round:${roundId}:active_question`);
+  },
 };
 
 module.exports = questionStore;

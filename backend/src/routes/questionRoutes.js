@@ -16,5 +16,8 @@ router.get('/:roundId', questionController.getQuestions);
 router.post('/:roundId', questionController.addQuestion);
 router.put('/:roundId/:questionId', questionController.updateQuestion);
 router.delete('/:roundId/:questionId', questionController.deleteQuestion);
+router.post('/:roundId/next', questionController.nextQuestion);
+router.post('/:roundId/previous', questionController.previousQuestion);
+router.post('/:roundId/activate/:questionId', questionController.setActiveQuestion);
 
 module.exports = router;

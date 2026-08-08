@@ -83,19 +83,34 @@ export default function RoundPage() {
     }
   }, [showLeaderboard, eventStatus, navigate]);
 
-  // Socket: round changed — refetch question
+  // Socket: round changed & question changed — update question live
   useEffect(() => {
     if (!socket) return;
     const handleRoundChanged = () => fetchQuestion();
+    const handleQuestionChanged = (data) => {
+      if (data?.question) {
+        setQuestion(data.question);
+        setSelectedAnswer('');
+        setTextAnswer('');
+        setMyResponse(null);
+        setError('');
+      } else {
+        fetchQuestion();
+      }
+    };
     const handleTimeExtended = (data) => {
       if (data?.newDurationSeconds) {
         setCurrentRound((prev) => prev ? { ...prev, durationSeconds: data.newDurationSeconds } : prev);
       }
     };
+
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
+    socket.on('question:changed', handleQuestionChanged);
     socket.on('round:time_extended', handleTimeExtended);
+
     return () => {
       socket.off(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
+      socket.off('question:changed', handleQuestionChanged);
       socket.off('round:time_extended', handleTimeExtended);
     };
   }, [socket, fetchQuestion, setCurrentRound]);

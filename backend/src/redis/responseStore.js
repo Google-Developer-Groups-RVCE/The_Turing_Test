@@ -29,6 +29,25 @@ const responseStore = {
   async getRespondedUsers(roundId) {
     return await redisClient.smembers(keys.RESPONSES(roundId));
   },
+
+  async clearRoundResponses(roundId) {
+    const users = await this.getRespondedUsers(roundId);
+    for (const u of users) {
+      await redisClient.del(keys.RESPONSE(roundId, u));
+    }
+    await redisClient.del(keys.RESPONSES(roundId));
+  },
+
+  async clearAllResponses() {
+    const keysToDel = await redisClient.keys('response:*');
+    if (keysToDel && keysToDel.length > 0) {
+      await redisClient.del(...keysToDel);
+    }
+    const setKeysToDel = await redisClient.keys('responses:*');
+    if (setKeysToDel && setKeysToDel.length > 0) {
+      await redisClient.del(...setKeysToDel);
+    }
+  },
 };
 
 module.exports = responseStore;

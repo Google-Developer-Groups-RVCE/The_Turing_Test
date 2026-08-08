@@ -45,6 +45,33 @@ class QuestionController {
       next(err);
     }
   }
+
+  async nextQuestion(req, res, next) {
+    try {
+      const question = await questionService.nextQuestion(req.params.roundId);
+      res.status(200).json({ question, message: 'Advanced to next question' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async previousQuestion(req, res, next) {
+    try {
+      const question = await questionService.previousQuestion(req.params.roundId);
+      res.status(200).json({ question, message: 'Moved to previous question' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async setActiveQuestion(req, res, next) {
+    try {
+      const question = await questionService.setActiveQuestion(req.params.roundId, req.params.questionId);
+      res.status(200).json({ question, message: 'Question activated' });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new QuestionController();

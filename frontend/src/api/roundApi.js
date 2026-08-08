@@ -15,3 +15,5 @@ export const extendRoundTime = (roundId, extraSeconds) => axiosClient.post(`/rou
 
 export const resetEvent = () => axiosClient.post('/event/reset');
 export const endEvent = () => axiosClient.post('/event/end');
+export const seedSampleData = () => axiosClient.post('/event/seed-samples');
+export const clearAllLiveData = () => axiosClient.delete('/event/clear-data');

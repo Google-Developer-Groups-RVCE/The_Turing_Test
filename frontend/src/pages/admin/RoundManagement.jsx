@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   getRounds, createRound, updateRound, deleteRound,
   startRound, pauseRound, resumeRound, restartRound, endRound,
-  extendRoundTime, resetEvent, endEvent
+  extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData
 } from '../../api/roundApi';
-import { getActiveQuestion } from '../../api/questionApi';
+import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { getSettings, updateSettings } from '../../api/settingsApi';
 import { useSocket } from '../../hooks/useSocket';
@@ -12,8 +12,8 @@ import { EventStateContext } from '../../contexts/EventStateContext';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
-  RefreshCw, X, AlertTriangle, SkipForward, Eye, Trophy, Monitor, CheckCircle,
-  Clock, PlusCircle
+  RefreshCw, X, AlertTriangle, SkipForward, SkipBack, Eye, Trophy, Monitor, CheckCircle,
+  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle
 } from 'lucide-react';
 
 function RoundModal({ round, onClose, onSave }) {
@@ -32,7 +32,7 @@ function RoundModal({ round, onClose, onSave }) {
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save round');
-    } finally {
+    } fontally {
       setSaving(false);
     }
   };
@@ -79,7 +79,9 @@ export default function RoundManagement() {
   const [success, setSuccess] = useState('');
   const [actionLoading, setActionLoading] = useState('');
   const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
-  const [activeQuestion, setActiveQuestion] = useState(null);
+
+  const [activeQuestion, setActiveQuestionState] = useState(null);
+  const [roundQuestions, setRoundQuestions] = useState([]);
   const [responseCount, setResponseCount] = useState(0);
 
   const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 3000); };
@@ -94,11 +96,15 @@ export default function RoundManagement() {
 
       const active = list.find(r => r.status === 'active');
       if (active) {
+        getQuestions(active.id).then(qListRes => {
+          setRoundQuestions(qListRes.data?.questions || []);
+        }).catch(() => setRoundQuestions([]));
+
         getActiveQuestion(active.id)
           .then(qRes => {
             const q = qRes.data?.question || (Array.isArray(qRes.data) ? qRes.data[0] : null);
-            setActiveQuestion(q || null);
-          }).catch(() => setActiveQuestion(null));
+            setActiveQuestionState(q || null);
+          }).catch(() => setActiveQuestionState(null));
 
         getResponses(active.id)
           .then(respRes => {
@@ -106,7 +112,8 @@ export default function RoundManagement() {
             setResponseCount(count);
           }).catch(() => setResponseCount(0));
       } else {
-        setActiveQuestion(null);
+        setActiveQuestionState(null);
+        setRoundQuestions([]);
         setResponseCount(0);
       }
     } catch { showError('Failed to load rounds'); }
@@ -127,17 +134,21 @@ export default function RoundManagement() {
     fetchSettingsState();
   }, [fetchRounds, fetchSettingsState]);
 
-  // Live updates
+  // Socket live updates
   useEffect(() => {
     if (!socket) return;
     const refresh = () => fetchRounds();
     const handleNewResponse = () => setResponseCount(c => c + 1);
+    const handleQuestionChanged = (data) => {
+      if (data?.question) setActiveQuestionState(data.question);
+    };
 
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, refresh);
     socket.on(SOCKET_EVENTS.ROUND_PAUSED, refresh);
     socket.on(SOCKET_EVENTS.ROUND_RESUMED, refresh);
     socket.on(SOCKET_EVENTS.ROUND_ENDED, refresh);
     socket.on(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
+    socket.on('question:changed', handleQuestionChanged);
 
     return () => {
       socket.off(SOCKET_EVENTS.ROUND_CHANGED, refresh);
@@ -145,6 +156,7 @@ export default function RoundManagement() {
       socket.off(SOCKET_EVENTS.ROUND_RESUMED, refresh);
       socket.off(SOCKET_EVENTS.ROUND_ENDED, refresh);
       socket.off(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
+      socket.off('question:changed', handleQuestionChanged);
     };
   }, [socket, fetchRounds]);
 
@@ -167,7 +179,7 @@ export default function RoundManagement() {
     try {
       await updateSettings({ showLeaderboard: String(nextVal) });
       setShowLeaderboard(nextVal);
-      showSuccess(`Participant Leaderboard view ${nextVal ? 'ENABLED (Live scores broadcasted to participants)' : 'DISABLED (Participant devices return to waiting room)'}.`);
+      showSuccess(`Participant Leaderboard view ${nextVal ? 'ENABLED' : 'DISABLED'}.`);
     } catch {
       showError('Failed to toggle leaderboard view');
     } finally {
@@ -184,6 +196,53 @@ export default function RoundManagement() {
     doAction(`Added +${extraSecs}s extra time`, () => extendRoundTime(activeRound.id, extraSecs));
   };
 
+  const handleNextQuestion = async () => {
+    const activeRound = rounds.find(r => r.status === 'active');
+    if (!activeRound) {
+      showError('No active round. Please start a round first.');
+      return;
+    }
+    doAction('Next Question', async () => {
+      const res = await nextQuestion(activeRound.id);
+      if (res.data?.question) {
+        setActiveQuestionState(res.data.question);
+      }
+    });
+  };
+
+  const handlePrevQuestion = async () => {
+    const activeRound = rounds.find(r => r.status === 'active');
+    if (!activeRound) {
+      showError('No active round.');
+      return;
+    }
+    doAction('Previous Question', async () => {
+      const res = await previousQuestion(activeRound.id);
+      if (res.data?.question) {
+        setActiveQuestionState(res.data.question);
+      }
+    });
+  };
+
+  const handleSelectQuestion = async (qId) => {
+    const activeRound = rounds.find(r => r.status === 'active');
+    if (!activeRound) return;
+    doAction('Set Active Question', async () => {
+      const res = await setActiveQuestion(activeRound.id, qId);
+      if (res.data?.question) setActiveQuestionState(res.data.question);
+    });
+  };
+
+  const handleSeedSamples = () => {
+    if (!window.confirm('Create 3 sample rounds with 3 sample questions each?')) return;
+    doAction('Seed sample rounds', () => seedSampleData());
+  };
+
+  const handleClearAllData = () => {
+    if (!window.confirm('Wipe all live responses and reset the leaderboard?')) return;
+    doAction('Clear all live data', () => clearAllLiveData());
+  };
+
   const handleNextRound = async () => {
     const activeRound = rounds.find(r => r.status === 'active');
     const pendingRound = rounds.find(r => r.status === 'pending');
@@ -192,12 +251,8 @@ export default function RoundManagement() {
       return;
     }
     doAction('Advance to Next Round', async () => {
-      if (activeRound) {
-        await endRound(activeRound.id);
-      }
-      if (pendingRound) {
-        await startRound(pendingRound.id);
-      }
+      if (activeRound) await endRound(activeRound.id);
+      if (pendingRound) await startRound(pendingRound.id);
     });
   };
 
@@ -242,9 +297,13 @@ export default function RoundManagement() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
           <Layers size={24} className="text-primary-400" />
-          <span>Stage Control & Round Manager</span>
+          <span>Stage Master Control & Round Manager</span>
         </h1>
         <div className="flex flex-wrap gap-2">
+          <button onClick={handleSeedSamples} className="btn-secondary flex items-center space-x-1.5 text-xs font-semibold">
+            <Sparkles size={14} className="text-yellow-400" />
+            <span>Seed 3 Sample Rounds</span>
+          </button>
           <button onClick={() => setModal('create')} className="btn-primary flex items-center space-x-2 text-sm">
             <Plus size={16} /><span>New Round</span>
           </button>
@@ -260,16 +319,63 @@ export default function RoundManagement() {
         </div>
       )}
 
-      {/* Admin Stage Controls & Live Simulation */}
+      {/* Admin Stage Controls & Screen Simulator */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Stage Controls */}
         <div className="card space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center space-x-2">
             <Monitor size={16} className="text-primary-400" />
-            <span>Master Stage & Broadcast Controls</span>
+            <span>Live Stage & Question Controls</span>
           </h2>
 
-          {/* Leaderboard Memory Switch */}
+          {/* Question-by-Question Progression */}
+          <div className="p-4 rounded-xl bg-dark-900/60 border border-dark-700 space-y-3">
+            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className="flex items-center space-x-1"><HelpCircle size={14} className="text-primary-400" /><span>Question Progression</span></span>
+              {activeRound && (
+                <span className="text-primary-300 font-mono">
+                  Question {roundQuestions.findIndex(q => q.id === activeQuestion?.id) + 1} of {roundQuestions.length}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handlePrevQuestion}
+                disabled={!!actionLoading || !activeRound}
+                className="flex-1 py-2 px-3 rounded-lg border border-dark-600 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
+              >
+                <SkipBack size={14} /><span>Previous Question</span>
+              </button>
+              <button
+                onClick={handleNextQuestion}
+                disabled={!!actionLoading || !activeRound}
+                className="flex-1 py-2 px-3 rounded-lg border border-primary-500/40 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
+              >
+                <span>Next Question</span><SkipForward size={14} />
+              </button>
+            </div>
+
+            {/* Direct Question Selector */}
+            {roundQuestions.length > 0 && (
+              <div className="flex items-center space-x-2 pt-1">
+                <span className="text-xs text-slate-500 font-medium">Jump to Question:</span>
+                <select
+                  value={activeQuestion?.id || ''}
+                  onChange={(e) => handleSelectQuestion(e.target.value)}
+                  className="input-field py-1 text-xs bg-dark-800 border-dark-700 text-slate-300 flex-1"
+                >
+                  {roundQuestions.map((q, idx) => (
+                    <option key={q.id} value={q.id}>
+                      Q{idx + 1}: {q.text.length > 35 ? q.text.substring(0, 35) + '...' : q.text}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Show Leaderboard Toggle Switch */}
           <div className="p-4 rounded-xl bg-dark-900/60 border border-dark-700 flex items-center justify-between">
             <div>
               <div className="text-sm font-bold text-white flex items-center space-x-2">
@@ -289,7 +395,7 @@ export default function RoundManagement() {
             </button>
           </div>
 
-          {/* Live Extra Time Customization */}
+          {/* Live Extra Time */}
           {activeRound && (
             <div className="p-4 rounded-xl bg-dark-900/60 border border-primary-500/30 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-primary-400 uppercase tracking-wider">
@@ -323,74 +429,83 @@ export default function RoundManagement() {
             </button>
           </div>
 
+          {/* Maintenance & Data Cleanup */}
           <div className="flex flex-wrap gap-2 pt-2 border-t border-dark-700">
+            <button onClick={handleClearAllData} className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors text-xs font-semibold">
+              <Trash size={14} /><span>Clear Live Responses & Scores</span>
+            </button>
             <button onClick={handleEventReset} className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-xs font-semibold">
               <AlertTriangle size={14} /><span>Reset Event</span>
-            </button>
-            <button onClick={handleEventEnd} className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors text-xs font-semibold">
-              <Square size={14} /><span>End Event</span>
             </button>
           </div>
         </div>
 
-        {/* Live Simulation View */}
+        {/* Live Simulation View Mockup */}
         <div className="card bg-dark-800/80 border-primary-500/20 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-primary-400 flex items-center space-x-1">
-                <Eye size={14} /><span>Live Participant Screen Simulation</span>
+                <Eye size={14} /><span>Participant Device Simulation</span>
               </span>
               <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-pulse" />
             </div>
 
-            <div className="p-4 rounded-xl bg-dark-900 border border-dark-700 space-y-3">
+            {/* Smartphone Bezel Simulator Frame */}
+            <div className="p-4 rounded-2xl bg-dark-950 border border-dark-700 shadow-2xl relative space-y-3 min-h-[300px] flex flex-col justify-between">
               {showLeaderboard ? (
-                <div className="text-center py-4">
-                  <Trophy size={36} className="text-yellow-400 mx-auto mb-2" />
-                  <div className="text-base font-bold text-white">Showing Live Leaderboard View</div>
+                <div className="text-center py-8">
+                  <Trophy size={42} className="text-yellow-400 mx-auto mb-2 animate-bounce" />
+                  <div className="text-base font-bold text-white">Live Leaderboard View</div>
                   <div className="text-xs text-slate-400 mt-1">Participants see live scores and rankings</div>
                 </div>
               ) : activeRound ? (
-                <div className="space-y-2 text-left">
+                <div className="space-y-3 text-left">
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 rounded bg-primary-900/60 text-primary-400 text-xs font-bold uppercase">
-                      Round Active: {activeRound.name}
+                      {activeRound.name}
                     </span>
                     <span className="text-xs text-slate-400 font-mono">
                       Submissions: <strong className="text-white">{responseCount}</strong>
                     </span>
                   </div>
                   {activeQuestion ? (
-                    <div className="pt-2 border-t border-dark-800">
-                      <div className="text-sm font-semibold text-white truncate">{activeQuestion.text}</div>
+                    <div className="space-y-3 pt-2 border-t border-dark-800">
+                      <div className="text-sm font-semibold text-white leading-snug">{activeQuestion.text}</div>
                       {activeQuestion.options?.length > 0 && (
-                        <div className="grid grid-cols-2 gap-1.5 mt-2">
+                        <div className="space-y-1.5">
                           {activeQuestion.options.map((opt, i) => (
-                            <div key={i} className="px-2 py-1 rounded bg-dark-800 text-xs text-slate-300 truncate">
-                              <span className="font-bold text-primary-400 mr-1">{String.fromCharCode(65 + i)}:</span>
-                              {opt}
+                            <div key={i} className="px-3 py-2 rounded-lg bg-dark-900 border border-dark-800 text-xs text-slate-300 font-medium flex items-center justify-between">
+                              <span><strong className="text-primary-400 mr-2">{String.fromCharCode(65 + i)}:</strong>{opt}</span>
+                              {activeQuestion.correctAnswer === opt && <span className="text-xs text-primary-400 font-bold">✓</span>}
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-500 py-2">Loading active question preview...</div>
+                    <div className="text-xs text-slate-500 py-6 text-center">Loading active question preview...</div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  <CheckCircle size={36} className="text-blue-400 mx-auto mb-2" />
+                <div className="text-center py-8">
+                  <CheckCircle size={42} className="text-blue-400 mx-auto mb-2" />
                   <div className="text-base font-bold text-white">GDG RVCE Club Waiting Room</div>
                   <div className="text-xs text-slate-400 mt-1">Event is Idle — Participants see GDG branding & online count</div>
                 </div>
               )}
+
+              <div className="pt-2 border-t border-dark-800 flex justify-between items-center text-[11px] text-slate-500">
+                <span>Mode: <strong className="text-slate-300 capitalize">{showLeaderboard ? 'Leaderboard' : activeRound ? 'Question Answering' : 'GDG Waiting Room'}</strong></span>
+                <span>GDG RVCE Gateway</span>
+              </div>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-dark-700 text-xs text-slate-500 flex justify-between items-center">
-            <span>Participant Mode: <strong className="text-slate-300 capitalize">{showLeaderboard ? 'Leaderboard' : activeRound ? 'Answering Round' : 'GDG Waiting Room'}</strong></span>
-            <span>Rounds Total: <strong className="text-slate-300">{rounds.length}</strong></span>
+            <span>Configured Rounds: <strong className="text-slate-300">{rounds.length}</strong></span>
+            <button onClick={fetchRounds} className="text-primary-400 hover:text-primary-300 font-medium flex items-center space-x-1">
+              <RefreshCw size={12} /><span>Sync State</span>
+            </button>
           </div>
         </div>
       </div>
@@ -459,7 +574,10 @@ export default function RoundManagement() {
         {!loading && rounds.length === 0 && (
           <div className="card text-center py-12 text-slate-500">
             <Layers size={40} className="mx-auto mb-3 opacity-30" />
-            <p>No rounds created yet. Click "New Round" to get started.</p>
+            <p className="mb-3">No rounds created yet.</p>
+            <button onClick={handleSeedSamples} className="btn-primary inline-flex items-center space-x-2 text-sm">
+              <Sparkles size={16} /><span>Seed 3 Sample Rounds & Questions</span>
+            </button>
           </div>
         )}
       </div>

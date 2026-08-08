@@ -3,19 +3,16 @@ kind: Application
 metadata:
   name: turing-test
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/snk189/dgdg.git'
-    targetRevision: HEAD
+    repoURL: https://github.com/snk189/dgdg.git
+    targetRevision: main
     path: k8s
     directory:
       recurse: true
-      exclude: 'argocd/*'
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: https://kubernetes.default.svc
     namespace: turing-test
   syncPolicy:
     automated:

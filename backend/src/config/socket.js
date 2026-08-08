@@ -71,13 +71,24 @@ function initSocket(httpServer) {
       logger.error(`[socket] failed to attach Redis adapter: ${err.message}`);
     });
 
-  // Minimal connection lifecycle logging for Module 1.
-  // Actual auth + event handlers are registered in Module 8.
+  const socketAuth = require('../sockets/socketAuth');
+  const presenceHandlers = require('../sockets/handlers/presenceHandlers');
+  const responseHandlers = require('../sockets/handlers/responseHandlers');
+
+  io.use(socketAuth);
+
   io.on('connection', (socket) => {
-    logger.debug(`[socket] client connected: ${socket.id}`);
+    logger.debug(`[socket] authenticated client connected: ${socket.id} (user: ${socket.user?.username})`);
+    
+    presenceHandlers.handleConnection(io, socket);
+
+    socket.on('response:submitted', (payload) => {
+      responseHandlers.handleResponseSubmit(io, socket, payload);
+    });
 
     socket.on('disconnect', (reason) => {
       logger.debug(`[socket] client disconnected: ${socket.id} (${reason})`);
+      presenceHandlers.handleDisconnect(io, socket);
     });
   });
 

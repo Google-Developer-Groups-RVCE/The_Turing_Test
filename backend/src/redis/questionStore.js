@@ -6,15 +6,19 @@ const keys = require('./keys');
 const questionStore = {
   async addQuestion(roundId, question) {
     const key = keys.QUESTION(roundId, question.id);
-    await redisClient.hmset(key,
-      'id', question.id,
-      'text', question.text,
-      'type', question.type || 'mcq',
-      'options', JSON.stringify(question.options || []),
-      'correctAnswer', question.correctAnswer,
-      'points', String(question.points || 10),
-      'order', String(question.order || 1)
-    );
+    const entries = Object.entries({
+      id: question.id,
+      text: question.text,
+      type: question.type || 'mcq',
+      options: JSON.stringify(question.options || []),
+      correctAnswer: question.correctAnswer,
+      points: String(question.points || 10),
+      order: String(question.order || 1)
+    }).filter(([_, v]) => v !== undefined && v !== null).map(([k, v]) => [k, String(v)]).flat();
+    
+    if (entries.length > 0) {
+      await redisClient.hmset(key, ...entries);
+    }
     await redisClient.rpush(keys.QUESTIONS(roundId), question.id);
   },
 

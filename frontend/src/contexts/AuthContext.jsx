@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
+      const token = sessionStorage.getItem('token');
+      const savedUser = sessionStorage.getItem('user');
       if (token && savedUser) {
         try {
           setUser(JSON.parse(savedUser));
@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
           const userData = res.data.user || res.data;
           if (userData && userData.username) {
             setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
+            sessionStorage.setItem('user', JSON.stringify(userData));
           }
         } catch (error) {
           console.error("Failed to verify session", error);
@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }) => {
     const res = await axiosClient.post('/auth/login', { username, password });
     const token = res.data.token;
     const userData = res.data.user || { username, role: res.data.role };
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     return userData;
   };
@@ -43,8 +43,8 @@ export const AuthProvider = ({ children }) => {
     const res = await axiosClient.post('/auth/register', { username, password, name });
     const token = res.data.token;
     const userData = res.data.user || { username, role: res.data.role || 'participant', name };
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     return userData;
   };
@@ -55,8 +55,8 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error(e);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       setUser(null);
     }
   };

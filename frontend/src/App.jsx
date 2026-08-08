@@ -7,14 +7,14 @@ import AppRoutes from './routes/AppRoutes';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <EventStateProvider>
-          <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <SocketProvider>
+          <EventStateProvider>
             <AppRoutes />
-          </BrowserRouter>
-        </EventStateProvider>
-      </SocketProvider>
-    </AuthProvider>
+          </EventStateProvider>
+        </SocketProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

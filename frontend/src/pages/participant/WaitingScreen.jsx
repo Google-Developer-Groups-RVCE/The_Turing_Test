@@ -37,11 +37,16 @@ export default function WaitingScreen() {
 
   useEffect(() => {
     syncHealth();
-    if (!socket) return;
+    const healthInterval = setInterval(syncHealth, 5000);
 
-    if (socket.isConnected()) {
-      setConnected(true);
-    }
+    if (!socket) return () => clearInterval(healthInterval);
+
+    const checkConnection = () => {
+      const isConn = socket.isConnected();
+      setConnected(isConn);
+    };
+    checkConnection();
+    const connInterval = setInterval(checkConnection, 1000);
 
     const handleConnect = () => {
       setConnected(true);
@@ -51,7 +56,10 @@ export default function WaitingScreen() {
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
+
     return () => {
+      clearInterval(healthInterval);
+      clearInterval(connInterval);
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
     };

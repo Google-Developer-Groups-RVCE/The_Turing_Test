@@ -24,7 +24,10 @@ export default function RoundPage() {
   const [timeLeft, setTimeLeft] = useState(null);
 
   const fetchQuestion = useCallback(async () => {
-    if (!currentRound) return;
+    if (!currentRound) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [qRes, rRes] = await Promise.allSettled([
@@ -48,13 +51,13 @@ export default function RoundPage() {
     fetchQuestion();
   }, [fetchQuestion]);
 
-  // Auto-navigate on state changes
+  // Auto-navigate on state changes — if no round active and idle, go to waiting screen
   useEffect(() => {
     if (!currentRound && eventStatus !== 'paused') {
-      navigate('/participant');
+      navigate('/participant', { replace: true });
     }
     if (eventStatus === 'ended') {
-      navigate('/participant/leaderboard');
+      navigate('/participant/leaderboard', { replace: true });
     }
   }, [currentRound, eventStatus, navigate]);
 

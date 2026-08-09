@@ -31,11 +31,11 @@ const { hashPassword } = require('./utils/hashPassword');
 
 async function autoSeed() {
   try {
-    const adminUsernames = ['a', 'A'];
+    const adminUsernames = ['a', 'A', 'aa', 'AA'];
     for (const u of adminUsernames) {
       const exists = await userStore.usernameExists(u);
       if (!exists) {
-        const hashed = await hashPassword('a');
+        const hashed = await hashPassword(u.toLowerCase());
         await userStore.createUser({
           username: u,
           passwordHash: hashed,
@@ -44,15 +44,15 @@ async function autoSeed() {
           createdAt: Date.now().toString(),
           status: 'active'
         });
-        logger.info(`[autoSeed] Admin user '${u}' seeded successfully (password: 'a').`);
+        logger.info(`[autoSeed] Admin user '${u}' seeded successfully.`);
       }
     }
 
-    const participantUsernames = ['b', 'B'];
+    const participantUsernames = ['b', 'B', 'bb', 'BB'];
     for (const u of participantUsernames) {
       const pExists = await userStore.usernameExists(u);
       if (!pExists) {
-        const pHashed = await hashPassword('b');
+        const pHashed = await hashPassword(u.toLowerCase());
         await userStore.createUser({
           username: u,
           passwordHash: pHashed,
@@ -61,7 +61,7 @@ async function autoSeed() {
           createdAt: Date.now().toString(),
           status: 'active'
         });
-        logger.info(`[autoSeed] Participant user '${u}' seeded successfully (password: 'b').`);
+        logger.info(`[autoSeed] Participant user '${u}' seeded successfully.`);
       }
     }
 

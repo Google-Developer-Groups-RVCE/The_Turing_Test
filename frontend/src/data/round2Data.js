@@ -1,8 +1,8 @@
-import serverAi from "../../reference/r2/image1.webp";
-import serverReal from "../../reference/r2/image2.webp";
-import tiger from "../../reference/r2/image3.webp";
-import street from "../../reference/r2/image4.webp";
-import bird from "../../reference/r2/image5.webp";
+const serverAi = "/reference/r2/image1.webp";
+const serverReal = "/reference/r2/image2.webp";
+const tiger = "/reference/r2/image3.webp";
+const street = "/reference/r2/image4.webp";
+const bird = "/reference/r2/image5.webp";
 
 // Round 2 — Image Challenge.
 // Q3 is evaluated server-side from the submitted prompt text.

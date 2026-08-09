@@ -52,7 +52,8 @@ function createApp() {
     cors({
       origin(origin, callback) {
         // Allow requests with no origin (curl, server-to-server, health checks).
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Also allow if CORS_ORIGIN is '*'
+        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
         logger.warn(`[cors] blocked request from disallowed origin: ${origin}`);

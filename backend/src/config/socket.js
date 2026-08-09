@@ -38,9 +38,10 @@ let ioInstance = null;
  * @returns {import('socket.io').Server}
  */
 function initSocket(httpServer) {
+  const allowedOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
   const io = new Server(httpServer, {
     cors: {
-      origin: env.CORS_ORIGIN.split(',').map((origin) => origin.trim()),
+      origin: allowedOrigins.includes('*') ? '*' : allowedOrigins,
       methods: ['GET', 'POST'],
       credentials: true,
     },

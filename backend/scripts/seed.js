@@ -8,39 +8,39 @@ const logger = require('../src/utils/logger');
 
 async function seed() {
   try {
-    const adminUsernames = ['a', 'A'];
+    const adminUsernames = ['a', 'A', 'aa'];
     for (const u of adminUsernames) {
       const exists = await userStore.usernameExists(u);
       if (!exists) {
-        const hashed = await hashPassword('a');
+        const hashed = await hashPassword(u.toLowerCase());
         await userStore.createUser({
           username: u,
           passwordHash: hashed,
           role: 'admin',
-          name: 'Super Admin',
+          name: `Admin ${u}`,
           createdAt: Date.now().toString(),
           status: 'active'
         });
-        logger.info(`Admin user '${u}' seeded successfully. Username: ${u} | Password: a`);
+        logger.info(`Admin user '${u}' seeded successfully. Username: ${u} | Password: ${u.toLowerCase()}`);
       } else {
         logger.info(`Admin user '${u}' already exists.`);
       }
     }
 
-    const participantUsernames = ['b', 'B'];
+    const participantUsernames = ['b', 'B', 'bb'];
     for (const u of participantUsernames) {
       const pExists = await userStore.usernameExists(u);
       if (!pExists) {
-        const pHashed = await hashPassword('b');
+        const pHashed = await hashPassword(u.toLowerCase());
         await userStore.createUser({
           username: u,
           passwordHash: pHashed,
           role: 'participant',
-          name: 'Test Participant B',
+          name: `Participant ${u}`,
           createdAt: Date.now().toString(),
           status: 'active'
         });
-        logger.info(`Participant user '${u}' seeded successfully. Username: ${u} | Password: b`);
+        logger.info(`Participant user '${u}' seeded successfully. Username: ${u} | Password: ${u.toLowerCase()}`);
       } else {
         logger.info(`Participant user '${u}' already exists.`);
       }

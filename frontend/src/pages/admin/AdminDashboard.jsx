@@ -54,8 +54,8 @@ export default function AdminDashboard() {
 
   const [ngrokStatus, setNgrokStatus] = useState(null);
   const [ngrokUrl, setNgrokUrl] = useState(null);
-  const [ngrokAuthtoken, setNgrokAuthtoken] = useState(localStorage.getItem('ngrok_authtoken') || '');
   const [isNgrokLoading, setIsNgrokLoading] = useState(false);
+  const [ngrokError, setNgrokError] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -85,13 +85,14 @@ export default function AdminDashboard() {
 
   const handleStartNgrok = async () => {
     setIsNgrokLoading(true);
+    setNgrokError(null);
     try {
-      if (ngrokAuthtoken) localStorage.setItem('ngrok_authtoken', ngrokAuthtoken);
-      const res = await startNgrok({ authtoken: ngrokAuthtoken });
+      // No authtoken needed — system ngrok binary reads ~/.config/ngrok/ngrok.yml automatically
+      const res = await startNgrok({ target: 'http://localhost:80' });
       setNgrokStatus(res.data.status);
       setNgrokUrl(res.data.url);
     } catch (err) {
-      alert('Failed to start Ngrok: ' + (err.response?.data?.error || err.message));
+      setNgrokError(err.response?.data?.error || err.message);
     } finally {
       setIsNgrokLoading(false);
     }
@@ -99,12 +100,13 @@ export default function AdminDashboard() {
 
   const handleStopNgrok = async () => {
     setIsNgrokLoading(true);
+    setNgrokError(null);
     try {
       await stopNgrok();
       setNgrokStatus('offline');
       setNgrokUrl(null);
     } catch (err) {
-      alert('Failed to stop Ngrok: ' + (err.response?.data?.error || err.message));
+      setNgrokError(err.response?.data?.error || err.message);
     } finally {
       setIsNgrokLoading(false);
     }
@@ -215,7 +217,6 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* Public Hosting (Ngrok) */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4 flex items-center space-x-2">
           <Globe size={14} />
@@ -225,7 +226,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white font-semibold">Ngrok Tunnel</p>
-              <p className="text-sm text-slate-400">Expose your local server to the internet securely.</p>
+              <p className="text-sm text-slate-400">Expose your app to participants outside your network.</p>
             </div>
             <div className="flex items-center space-x-2">
               <span className={`px-2 py-1 text-xs font-bold rounded uppercase ${ngrokStatus === 'online' ? 'bg-primary-500/20 text-primary-400' : 'bg-slate-700 text-slate-400'}`}>
@@ -233,52 +234,45 @@ export default function AdminDashboard() {
               </span>
             </div>
           </div>
-          
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Ngrok Authtoken (Optional if already set)</label>
-              <input 
-                type="password" 
-                value={ngrokAuthtoken} 
-                onChange={(e) => setNgrokAuthtoken(e.target.value)} 
-                placeholder="Authtoken..."
-                className="w-full bg-dark-900 border border-dark-700 rounded p-2 text-sm text-white focus:outline-none focus:border-primary-500"
-              />
+
+          {ngrokError && (
+            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded text-rose-400 text-sm">
+              {ngrokError}
             </div>
-            
-            {ngrokStatus === 'online' && ngrokUrl && (
-              <div className="p-3 bg-dark-900 rounded border border-dark-700 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-500">Public URL</p>
-                  <a href={ngrokUrl} target="_blank" rel="noreferrer" className="text-primary-400 font-mono text-sm hover:underline flex items-center space-x-1 mt-0.5">
-                    <span>{ngrokUrl}</span>
-                    <ExternalLink size={12} />
-                  </a>
-                </div>
+          )}
+
+          {ngrokStatus === 'online' && ngrokUrl && (
+            <div className="p-3 bg-dark-900 rounded border border-primary-500/30 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-500">Public URL — Share with participants</p>
+                <a href={ngrokUrl} target="_blank" rel="noreferrer" className="text-primary-400 font-mono text-sm hover:underline flex items-center space-x-1 mt-0.5">
+                  <span>{ngrokUrl}</span>
+                  <ExternalLink size={12} />
+                </a>
               </div>
-            )}
-            
-            <div className="flex space-x-2 pt-2">
-              {ngrokStatus !== 'online' ? (
-                <button 
-                  onClick={handleStartNgrok} 
-                  disabled={isNgrokLoading}
-                  className="flex-1 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
-                >
-                  <Play size={16} />
-                  <span>{isNgrokLoading ? 'Starting...' : 'Host on Ngrok'}</span>
-                </button>
-              ) : (
-                <button 
-                  onClick={handleStopNgrok} 
-                  disabled={isNgrokLoading}
-                  className="flex-1 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
-                >
-                  <Square size={16} />
-                  <span>{isNgrokLoading ? 'Stopping...' : 'Stop Hosting'}</span>
-                </button>
-              )}
             </div>
+          )}
+
+          <div className="flex space-x-2 pt-2">
+            {ngrokStatus !== 'online' ? (
+              <button
+                onClick={handleStartNgrok}
+                disabled={isNgrokLoading}
+                className="flex-1 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
+              >
+                <Play size={16} />
+                <span>{isNgrokLoading ? 'Starting Tunnel...' : 'Host on Ngrok'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleStopNgrok}
+                disabled={isNgrokLoading}
+                className="flex-1 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
+              >
+                <Square size={16} />
+                <span>{isNgrokLoading ? 'Stopping...' : 'Stop Hosting'}</span>
+              </button>
+            )}
           </div>
         </div>
       </section>

@@ -5,6 +5,24 @@ class SocketManager {
     this.socket = null;
     this.token = null;
     this.listeners = new Map(); // eventName -> Set<callback>
+    this._heartbeatInterval = null;
+  }
+
+  _startHeartbeat() {
+    this._stopHeartbeat();
+    // Send a no-op ping every 15s to keep connection alive through proxies/firewalls
+    this._heartbeatInterval = setInterval(() => {
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('ping_keepalive');
+      }
+    }, 15000);
+  }
+
+  _stopHeartbeat() {
+    if (this._heartbeatInterval) {
+      clearInterval(this._heartbeatInterval);
+      this._heartbeatInterval = null;
+    }
   }
 
   connect(token, query = {}) {
@@ -19,10 +37,20 @@ class SocketManager {
     this.socket = io('/', {
       auth: { token },
       query,
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 45000,
+    });
+
+    this.socket.on('connect', () => {
+      this._startHeartbeat();
+    });
+
+    this.socket.on('disconnect', () => {
+      this._stopHeartbeat();
     });
 
     // Re-attach all registered event listeners to the new socket instance
@@ -34,6 +62,7 @@ class SocketManager {
   }
 
   disconnect() {
+    this._stopHeartbeat();
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;

@@ -81,68 +81,99 @@ router.get('/logs', async (req, res) => {
   }
 });
 
-// Proxy routes for Kubernetes
-const ns = 'turing-test';
-
-router.get('/k8s/api/v1/namespaces/websocket-app/pods', async (req, res) => {
-  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedPod(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
-});
-router.get('/k8s/apis/apps/v1/namespaces/websocket-app/deployments', async (req, res) => {
-  try { const { k8sAppsApi } = await getK8sClients(); const r = await k8sAppsApi.listNamespacedDeployment(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
-});
-router.get('/k8s/api/v1/namespaces/websocket-app/services', async (req, res) => {
-  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedService(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
-});
-router.get('/k8s/api/v1/namespaces/websocket-app/configmaps', async (req, res) => {
-  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedConfigMap(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
-});
-router.get('/k8s/api/v1/namespaces/websocket-app/events', async (req, res) => {
-  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedEvent(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
-});
-router.get('/k8s/api/v1/nodes', async (req, res) => {
-  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNode(); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
-});
-router.get('/k8s/apis/metrics.k8s.io/v1beta1/namespaces/websocket-app/pods', async (req, res) => {
+// Alias used by ops.html
+router.get('/admin/logs', async (req, res) => {
   try {
-      res.send(execSync(`kubectl get --raw /apis/metrics.k8s.io/v1beta1/namespaces/${ns}/pods`).toString());
-  } catch(e) { res.status(500).json({error: e.message}); }
-});
-
-router.get('/k8s/raw/:type/:name/:action', async (req, res) => {
-  try {
-      const { type, name, action } = req.params;
-      let result = '';
-      if (action === 'yaml') {
-          result = execSync(`kubectl get ${type} ${name} -n ${ns} -o yaml`).toString();
-      } else if (action === 'describe') {
-          result = execSync(`kubectl describe ${type} ${name} -n ${ns}`).toString();
-      } else if (action === 'logs') {
-          try {
-              result = execSync(`kubectl logs ${type === 'pods' ? name : `${type}/${name}`} -n ${ns} --tail=200`).toString();
-          } catch (e) {
-              result = e.stderr ? e.stderr.toString() : e.message;
-          }
-      } else {
-          return res.status(400).send('Invalid action');
-      }
-      res.type('text/plain').send(result);
+    const logs = await redisClient.lrange('admin_logs', -200, -1);
+    const parsed = logs.map(l => { try { return JSON.parse(l); } catch(e) { return { rawText: l }; } });
+    res.json(parsed.reverse());
   } catch(err) {
-      res.status(500).send(err.message || 'Error executing kubectl');
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Redis Topology Mock (using current primary instance as we don't have sentinels in turing-test yet)
+// Live connections — also accessible at /api/connections/live
+router.get('/connections/live', async (req, res) => {
+  try {
+    const participants = await redisClient.smembers('presence:participants');
+    const admins = await redisClient.smembers('presence:admins');
+    res.json({
+      count: participants.length + admins.length,
+      participants,
+      admins,
+      details: [
+        ...participants.map(p => ({ id: p, user: p, role: 'participant' })),
+        ...admins.map(a => ({ id: a, user: a, role: 'admin' }))
+      ]
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Proxy routes for Kubernetes — use kubectl CLI directly (avoids ESM issues with k8s client)
+const ns = 'turing-test';
+function kubectlExec(cmd) {
+  try {
+    return { ok: true, data: execSync(`kubectl ${cmd} -n ${ns}`, { timeout: 8000 }).toString() };
+  } catch(e) {
+    return { ok: false, error: e.stderr ? e.stderr.toString() : e.message };
+  }
+}
+
+router.get('/k8s/api/v1/namespaces/websocket-app/pods', (req, res) => {
+  const r = kubectlExec('get pods -o json');
+  if (!r.ok) return res.status(500).json({ error: r.error });
+  try { res.json(JSON.parse(r.data)); } catch { res.json({}); }
+});
+router.get('/k8s/apis/apps/v1/namespaces/websocket-app/deployments', (req, res) => {
+  const r = kubectlExec('get deployments -o json');
+  if (!r.ok) return res.status(500).json({ error: r.error });
+  try { res.json(JSON.parse(r.data)); } catch { res.json({}); }
+});
+router.get('/k8s/api/v1/namespaces/websocket-app/services', (req, res) => {
+  const r = kubectlExec('get services -o json');
+  if (!r.ok) return res.status(500).json({ error: r.error });
+  try { res.json(JSON.parse(r.data)); } catch { res.json({}); }
+});
+router.get('/k8s/api/v1/namespaces/websocket-app/configmaps', (req, res) => {
+  const r = kubectlExec('get configmaps -o json');
+  if (!r.ok) return res.status(500).json({ error: r.error });
+  try { res.json(JSON.parse(r.data)); } catch { res.json({}); }
+});
+router.get('/k8s/api/v1/namespaces/websocket-app/events', (req, res) => {
+  const r = kubectlExec('get events -o json');
+  if (!r.ok) return res.status(500).json({ error: r.error });
+  try { res.json(JSON.parse(r.data)); } catch { res.json({}); }
+});
+router.get('/k8s/api/v1/nodes', (req, res) => {
+  try { const data = execSync('kubectl get nodes -o json', { timeout: 8000 }).toString(); res.json(JSON.parse(data)); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+router.get('/k8s/apis/metrics.k8s.io/v1beta1/namespaces/websocket-app/pods', (req, res) => {
+  const r = kubectlExec('top pods --no-headers');
+  res.type('text/plain').send(r.ok ? r.data : r.error);
+});
+
+router.get('/k8s/raw/:type/:name/:action', (req, res) => {
+  const { type, name, action } = req.params;
+  if (!/^[\w.-]+$/.test(type) || !/^[\w.-]+$/.test(name) || !/^[\w.-]+$/.test(action)) {
+    return res.status(400).send('Invalid parameters');
+  }
+  let cmd;
+  if (action === 'yaml') cmd = `get ${type} ${name} -o yaml`;
+  else if (action === 'describe') cmd = `describe ${type} ${name}`;
+  else if (action === 'logs') cmd = `logs ${name} --tail=200`;
+  else return res.status(400).send('Invalid action');
+  const r = kubectlExec(cmd);
+  res.type('text/plain').send(r.ok ? r.data : r.error);
+});
+
 router.get('/admin/redis/topology', (req, res) => {
   res.json({
-    primary: 'redis-0',
-    replica: 'Unknown',
-    status: 'ok',
-    leader: 'Unknown',
-    sentinels: 0,
-    latency: 0,
-    failovers: 0,
-    lastChange: Date.now(),
-    podStats: {}
+    primary: 'redis-0', replica: 'None', status: 'ok',
+    leader: 'redis-0', sentinels: 0, latency: 0,
+    failovers: 0, lastChange: Date.now(), podStats: {}
   });
 });
 

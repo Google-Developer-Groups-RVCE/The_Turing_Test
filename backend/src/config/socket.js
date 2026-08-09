@@ -39,15 +39,17 @@ let ioInstance = null;
  */
 function initSocket(httpServer) {
   const allowedOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
+  const isWildcard = allowedOrigins.includes('*');
   const io = new Server(httpServer, {
     cors: {
-      origin: allowedOrigins.includes('*') ? '*' : allowedOrigins,
+      origin: isWildcard ? true : allowedOrigins,
       methods: ['GET', 'POST'],
-      credentials: true,
+      credentials: !isWildcard,
     },
-    // Sensible defaults for a live-event app with unreliable conference wifi.
-    pingInterval: 25000,
-    pingTimeout: 20000,
+    // Very generous timeouts — we NEVER want to disconnect due to inactivity
+    pingInterval: 10000,   // send heartbeat every 10s
+    pingTimeout: 60000,    // allow 60s for response before disconnecting
+    connectTimeout: 45000,
     transports: ['websocket', 'polling'],
   });
 

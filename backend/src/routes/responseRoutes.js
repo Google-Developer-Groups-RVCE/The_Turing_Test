@@ -13,5 +13,6 @@ router.get('/:roundId/mine', responseController.getMyResponse);
 
 // Admin routes
 router.get('/:roundId', roleMiddleware('admin'), responseController.getResponses);
+router.delete('/:roundId', roleMiddleware('admin'), responseController.deleteResponses);
 
 module.exports = router;

@@ -95,6 +95,14 @@ class RoundController {
       res.status(200).json({ round, message: 'Time extended' });
     } catch (err) { next(err); }
   }
+
+  async getStage(req, res, next) {
+    try {
+      const roundStore = require('../redis/roundStore');
+      const stage = await roundStore.getActiveStage(req.params.roundId) || 'question';
+      res.status(200).json({ stage });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new RoundController();

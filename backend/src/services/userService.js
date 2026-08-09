@@ -181,13 +181,14 @@ class UserService {
     return results;
   }
 
-  /** Bulk reset passwords to a default (username = new password for simplicity). */
-  async bulkResetPasswords(usernames, adminUsername = 'system') {
+  /** Bulk reset passwords to a specified password or default to "ChangeMe123!". */
+  async bulkResetPasswords(usernames, newPasswordStr, adminUsername = 'system') {
     const results = { success: 0, failed: 0, newPasswords: [] };
+    const defaultPassword = newPasswordStr && newPasswordStr.trim() !== '' ? newPasswordStr : 'ChangeMe123!';
+    const hashed = await hashPassword(defaultPassword);
+    
     for (const username of usernames) {
       try {
-        const defaultPassword = username.toLowerCase().slice(-6); // last 6 chars of username
-        const hashed = await hashPassword(defaultPassword);
         await userStore.updateUser(username, { passwordHash: hashed });
         results.newPasswords.push({ username, newPassword: defaultPassword });
         results.success++;

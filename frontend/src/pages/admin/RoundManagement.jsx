@@ -451,53 +451,12 @@ export default function RoundManagement() {
             </div>
 
             {/* Smartphone Bezel Simulator Frame */}
-            <div className="p-4 rounded-2xl bg-dark-950 border border-dark-700 shadow-2xl relative space-y-3 min-h-[300px] flex flex-col justify-between">
-              {showLeaderboard ? (
-                <div className="text-center py-8">
-                  <Trophy size={42} className="text-yellow-400 mx-auto mb-2 animate-bounce" />
-                  <div className="text-base font-bold text-white">Live Leaderboard View</div>
-                  <div className="text-xs text-slate-400 mt-1">Participants see live scores and rankings</div>
-                </div>
-              ) : activeRound ? (
-                <div className="space-y-3 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded bg-primary-900/60 text-primary-400 text-xs font-bold uppercase">
-                      {activeRound.name}
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">
-                      Submissions: <strong className="text-white">{responseCount}</strong>
-                    </span>
-                  </div>
-                  {activeQuestion ? (
-                    <div className="space-y-3 pt-2 border-t border-dark-800">
-                      <div className="text-sm font-semibold text-white leading-snug">{activeQuestion.text}</div>
-                      {activeQuestion.options?.length > 0 && (
-                        <div className="space-y-1.5">
-                          {activeQuestion.options.map((opt, i) => (
-                            <div key={i} className="px-3 py-2 rounded-lg bg-dark-900 border border-dark-800 text-xs text-slate-300 font-medium flex items-center justify-between">
-                              <span><strong className="text-primary-400 mr-2">{String.fromCharCode(65 + i)}:</strong>{opt}</span>
-                              {activeQuestion.correctAnswer === opt && <span className="text-xs text-primary-400 font-bold">✓</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-slate-500 py-6 text-center">Loading active question preview...</div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <CheckCircle size={42} className="text-blue-400 mx-auto mb-2" />
-                  <div className="text-base font-bold text-white">GDG RVCE Club Waiting Room</div>
-                  <div className="text-xs text-slate-400 mt-1">Event is Idle — Participants see GDG branding & online count</div>
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-dark-800 flex justify-between items-center text-[11px] text-slate-500">
-                <span>Mode: <strong className="text-slate-300 capitalize">{showLeaderboard ? 'Leaderboard' : activeRound ? 'Question Answering' : 'GDG Waiting Room'}</strong></span>
-                <span>GDG RVCE Gateway</span>
-              </div>
+            <div className="p-1 rounded-3xl bg-dark-950 border-[6px] border-dark-700 shadow-2xl relative h-[450px] flex flex-col justify-between overflow-hidden">
+              <iframe
+                src="/participant?isSimulation=true"
+                className="w-full h-full border-0 rounded-2xl bg-dark-900"
+                title="Participant Simulator"
+              />
             </div>
           </div>
 
@@ -528,7 +487,7 @@ export default function RoundManagement() {
                       {round.status}
                     </span>
                     {round.durationSeconds && <span>{Math.floor(round.durationSeconds / 60)}m {(round.durationSeconds % 60)}s</span>}
-                    {round.startedAt && <span>Started {new Date(Number(round.startedAt) || round.startedAt).toLocaleTimeString()}</span>}
+                    {round.startedAt && <span>Started {isNaN(Number(round.startedAt)) ? new Date(round.startedAt).toLocaleTimeString() : new Date(Number(round.startedAt)).toLocaleTimeString()}</span>}
                   </div>
                 </div>
               </div>

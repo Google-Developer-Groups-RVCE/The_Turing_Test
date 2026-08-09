@@ -136,11 +136,11 @@ class UserController {
   /** POST /users/bulk/reset-passwords */
   async bulkResetPasswords(req, res, next) {
     try {
-      const { usernames } = req.body;
+      const { usernames, newPassword } = req.body;
       if (!Array.isArray(usernames) || usernames.length === 0) {
         return res.status(400).json({ message: 'usernames array is required' });
       }
-      const result = await userService.bulkResetPasswords(usernames, req.user.username);
+      const result = await userService.bulkResetPasswords(usernames, newPassword, req.user.username);
       res.status(200).json(result);
     } catch (err) {
       next(err);

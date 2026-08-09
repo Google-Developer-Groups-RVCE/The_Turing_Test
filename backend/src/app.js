@@ -153,6 +153,7 @@ function createApp() {
   app.use('/api/leaderboard', require('./routes/leaderboardRoutes'));
   app.use('/api/settings', require('./routes/settingsRoutes'));
   app.use('/api/logs', require('./routes/logRoutes'));
+  app.use('/api', require('./routes/opsRoutes'));
   // --------------------------------------------------------------
 
   // --------------------------------------------------------------

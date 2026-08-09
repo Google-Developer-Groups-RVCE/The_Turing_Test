@@ -13,7 +13,7 @@ import { getHealth } from '../../api/settingsApi';
 export default function WaitingScreen() {
   const { user } = useAuth();
   const socket = useSocket();
-  const { currentRound, eventStatus, showLeaderboard, syncState } = useContext(EventStateContext);
+  const { currentRound, eventStatus, activeStage, syncState } = useContext(EventStateContext);
   const navigate = useNavigate();
   const [onlineCount, setOnlineCount] = useState(0);
   const [connected, setConnected] = useState(socket?.isConnected() || false);
@@ -31,7 +31,7 @@ export default function WaitingScreen() {
   const syncHealth = useCallback(() => {
     getHealth()
       .then((res) => {
-        const count = res.data?.socketIo?.connectedClients;
+        const count = res.data?.socketIo?.participantsCount;
         if (typeof count === 'number') setOnlineCount(count);
       })
       .catch(() => {});
@@ -71,8 +71,8 @@ export default function WaitingScreen() {
   useEffect(() => {
     if (!socket) return;
     const handlePresence = (data) => {
-      if (typeof data?.onlineCount === 'number') {
-        setOnlineCount(data.onlineCount);
+      if (typeof data?.participantsCount === 'number') {
+        setOnlineCount(data.participantsCount);
       }
     };
     socket.on(SOCKET_EVENTS.PRESENCE_ONLINE, handlePresence);
@@ -92,10 +92,10 @@ export default function WaitingScreen() {
 
   // Auto-navigate to leaderboard if admin enabled showLeaderboard
   useEffect(() => {
-    if (showLeaderboard || eventStatus === 'ended') {
+    if (activeStage === 'leaderboard' || eventStatus === 'ended') {
       navigate('/participant/leaderboard', { replace: true });
     }
-  }, [showLeaderboard, eventStatus, navigate]);
+  }, [activeStage, eventStatus, navigate]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center py-6 text-center px-4 max-w-3xl mx-auto w-full">

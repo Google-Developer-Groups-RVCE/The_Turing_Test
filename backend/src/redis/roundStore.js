@@ -63,6 +63,14 @@ const roundStore = {
     const state = await redisClient.hgetall(keys.EVENT_STATE);
     return state && Object.keys(state).length ? state : null;
   },
+
+  async setActiveStage(roundId, stage) {
+    await redisClient.hset(keys.ROUND(roundId), 'activeStage', stage);
+  },
+
+  async getActiveStage(roundId) {
+    return await redisClient.hget(keys.ROUND(roundId), 'activeStage');
+  }
 };
 
 module.exports = roundStore;

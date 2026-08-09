@@ -12,8 +12,9 @@ export const AuthProvider = ({ children }) => {
       const token = sessionStorage.getItem('token');
       const savedUser = sessionStorage.getItem('user');
       if (token && savedUser) {
+        setUser(JSON.parse(savedUser));
+        setLoading(false); // Unblock the UI immediately using cached user
         try {
-          setUser(JSON.parse(savedUser));
           const res = await axiosClient.get('/auth/me');
           const userData = res.data.user || res.data;
           if (userData && userData.username) {
@@ -25,8 +26,9 @@ export const AuthProvider = ({ children }) => {
           sessionStorage.removeItem('user');
           setUser(null);
         }
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
     initAuth();
   }, []);
@@ -51,18 +53,16 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const logout = async () => {
-    try {
-      await axiosClient.post('/auth/logout');
-    } catch (e) {
-      console.error(e);
-    } finally {
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
-      setUser(null);
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
-      }
+  const logout = () => {
+    // Non-blocking background logout call
+    axiosClient.post('/auth/logout').catch(console.error);
+    
+    // Immediately clear session and redirect
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    setUser(null);
+    if (!window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login';
     }
   };
 

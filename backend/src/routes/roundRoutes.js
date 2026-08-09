@@ -22,8 +22,9 @@ router.use(roleMiddleware('admin'));
 router.post('/', roundController.createRound);
 router.put('/:roundId', roundController.updateRound);
 router.delete('/:roundId', roundController.deleteRound);
+router.get('/:roundId/stage', roundController.getStage);
+
 router.post('/:roundId/start', roundController.startRound);
-router.post('/:roundId/pause', roundController.pauseRound);
 router.post('/:roundId/resume', roundController.resumeRound);
 router.post('/:roundId/restart', roundController.restartRound);
 router.post('/:roundId/end', roundController.endRound);

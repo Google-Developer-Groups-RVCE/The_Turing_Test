@@ -23,6 +23,7 @@ export default function AdminLayout() {
     { to: '/admin/leaderboard', icon: Trophy, label: 'Leaderboard' },
     { to: '/admin/settings', icon: Settings, label: 'Settings' },
     { to: '/admin/logs', icon: FileText, label: 'Logs' },
+    { href: '/ops.html', icon: Activity, label: 'K8s Ops Center', external: true },
   ];
 
   return (
@@ -33,21 +34,35 @@ export default function AdminLayout() {
         </div>
         <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-3 custom-scrollbar">
           {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.exact}
-              className={({ isActive }) => 
-                `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'bg-primary-900/50 text-primary-400 border border-primary-500/20' 
-                    : 'hover:bg-dark-700 text-slate-400 hover:text-slate-200'
-                }`
-              }
-            >
-              <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
-            </NavLink>
+            item.external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors hover:bg-dark-700 text-slate-400 hover:text-slate-200"
+              >
+                <item.icon size={20} />
+                <span className="font-medium flex-1">{item.label}</span>
+                <span className="text-xs text-slate-500">↗</span>
+              </a>
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.exact}
+                className={({ isActive }) => 
+                  `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    isActive 
+                      ? 'bg-primary-900/50 text-primary-400 border border-primary-500/20' 
+                      : 'hover:bg-dark-700 text-slate-400 hover:text-slate-200'
+                  }`
+                }
+              >
+                <item.icon size={20} />
+                <span className="font-medium">{item.label}</span>
+              </NavLink>
+            )
           ))}
         </nav>
         <div className="p-4 border-t border-dark-700">

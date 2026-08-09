@@ -7,7 +7,7 @@ class SocketManager {
     this.listeners = new Map(); // eventName -> Set<callback>
   }
 
-  connect(token) {
+  connect(token, query = {}) {
     if (this.socket && this.token === token && this.socket.connected) {
       return;
     }
@@ -18,6 +18,7 @@ class SocketManager {
     this.token = token;
     this.socket = io('/', {
       auth: { token },
+      query,
       transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -28,17 +29,6 @@ class SocketManager {
     this.listeners.forEach((callbacks, eventName) => {
       callbacks.forEach((cb) => {
         this.socket.on(eventName, cb);
-      });
-    });
-
-    // Handle auto re-subscription on socket reconnect
-    this.socket.on('connect', () => {
-      this.listeners.forEach((callbacks, eventName) => {
-        callbacks.forEach((cb) => {
-          if (eventName !== 'connect') {
-            this.socket.on(eventName, cb);
-          }
-        });
       });
     });
   }

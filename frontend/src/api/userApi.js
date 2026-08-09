@@ -23,5 +23,5 @@ export const bulkBlockUsers = (usernames) =>
 export const bulkUnblockUsers = (usernames) =>
   axiosClient.post('/users/bulk/unblock', { usernames });
 
-export const bulkResetPasswords = (usernames) =>
-  axiosClient.post('/users/bulk/reset-passwords', { usernames });
+export const bulkResetPasswords = (usernames, newPassword) =>
+  axiosClient.post('/users/bulk/reset-passwords', { usernames, newPassword });

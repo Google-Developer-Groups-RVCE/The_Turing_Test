@@ -10,7 +10,9 @@ const handleConnection = async (io, socket) => {
   if (role === 'admin') {
     await redisClient.sadd('presence:admins', username);
   } else {
-    await redisClient.sadd('presence:participants', username);
+    if (socket.handshake?.query?.isSimulation !== 'true') {
+      await redisClient.sadd('presence:participants', username);
+    }
   }
 
   const [participantsCount, adminsCount] = await Promise.all([

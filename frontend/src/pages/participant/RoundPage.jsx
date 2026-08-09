@@ -10,7 +10,7 @@ import { SOCKET_EVENTS } from '../../utils/constants';
 import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock } from 'lucide-react';
 
 export default function RoundPage() {
-  const { currentRound, eventStatus, showLeaderboard, setCurrentRound, setEventStatus } = useContext(EventStateContext);
+  const { currentRound, eventStatus, activeStage, setCurrentRound, setEventStatus } = useContext(EventStateContext);
   const { user } = useAuth();
   const socket = useSocket();
   const navigate = useNavigate();
@@ -76,12 +76,12 @@ export default function RoundPage() {
     fetchQuestion();
   }, [fetchQuestion]);
 
-  // Transition to Leaderboard if admin toggled showLeaderboard or round ended
+  // Transition to Leaderboard if active stage is leaderboard or round ended
   useEffect(() => {
-    if (showLeaderboard || eventStatus === 'ended') {
+    if (activeStage === 'leaderboard' || eventStatus === 'ended') {
       navigate('/participant/leaderboard', { replace: true });
     }
-  }, [showLeaderboard, eventStatus, navigate]);
+  }, [activeStage, eventStatus, navigate]);
 
   // Socket: round changed & question changed — update question live
   useEffect(() => {

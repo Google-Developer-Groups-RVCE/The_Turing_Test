@@ -10,7 +10,7 @@ import { Trophy, Medal, Crown } from 'lucide-react';
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const socket = useSocket();
-  const { currentRound, showLeaderboard, eventStatus } = useContext(EventStateContext);
+  const { currentRound, activeStage, eventStatus } = useContext(EventStateContext);
   const navigate = useNavigate();
 
   const [entries, setEntries] = useState([]);
@@ -18,14 +18,14 @@ export default function LeaderboardPage() {
 
   // Auto-navigate away when admin disables leaderboard view
   useEffect(() => {
-    if (!showLeaderboard && eventStatus !== 'ended') {
+    if (activeStage !== 'leaderboard' && eventStatus !== 'ended') {
       if (currentRound && (currentRound.status === 'active' || eventStatus === 'running')) {
         navigate('/participant/round', { replace: true });
       } else {
         navigate('/participant', { replace: true });
       }
     }
-  }, [showLeaderboard, currentRound, eventStatus, navigate]);
+  }, [activeStage, currentRound, eventStatus, navigate]);
 
   const fetchLeaderboard = async () => {
     try {

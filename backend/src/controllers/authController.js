@@ -19,6 +19,15 @@ class AuthController {
     try {
       const { username, password } = req.body;
       const result = await authService.login(username, password);
+      
+      const { redisClient } = require('../config/redisClient');
+      await redisClient.rpush('admin_logs', JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        event: 'USER_LOGIN',
+        message: `User logged in: ${username}`
+      }));
+      
       res.status(200).json(result);
     } catch (err) {
       if (err.message === 'Invalid credentials' || err.message === 'Account is blocked') {
@@ -30,8 +39,14 @@ class AuthController {
 
   async logout(req, res, next) {
     try {
-      // With JWT, logout is mostly handled client-side by deleting the token.
-      // We could add the token to a Redis blacklist if strictly required.
+      const username = req.user?.username || 'Unknown';
+      const { redisClient } = require('../config/redisClient');
+      await redisClient.rpush('admin_logs', JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        event: 'USER_LOGOUT',
+        message: `User logged out: ${username}`
+      }));
       res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
       next(err);

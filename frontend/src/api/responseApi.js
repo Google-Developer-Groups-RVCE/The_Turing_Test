@@ -11,3 +11,6 @@ export const getMyResponse = (roundId) =>
 
 export const exportResponses = (roundId) =>
   axiosClient.get(`/responses/${roundId}/export`, { responseType: 'blob' });
+
+export const deleteResponses = (roundId, usernames) =>
+  axiosClient.delete(`/responses/${roundId}`, { data: { usernames } });

@@ -74,6 +74,33 @@ class ResponseService {
   async getMyResponse(roundId, username) {
     return await responseStore.getResponse(roundId, username);
   }
+
+  async deleteResponses(roundId, usernames) {
+    const { redisClient } = require('../config/redisClient');
+    const keys = require('../redis/keys');
+    if (!usernames || !usernames.length) return 0;
+    
+    let deletedCount = 0;
+    for (const u of usernames) {
+      const resp = await responseStore.getResponse(roundId, u);
+      if (resp) {
+        await redisClient.del(keys.RESPONSE(roundId, u));
+        await redisClient.srem(keys.RESPONSES(roundId), u);
+        // Also deduct points from leaderboard
+        if (resp.pointsAwarded && parseInt(resp.pointsAwarded) > 0) {
+          await leaderboardService.updateScore(u, roundId, -parseInt(resp.pointsAwarded));
+        }
+        deletedCount++;
+      }
+    }
+    
+    const io = getIO();
+    if (io) {
+      io.emit('responses:deleted', { roundId, usernames });
+    }
+    
+    return deletedCount;
+  }
 }
 
 module.exports = new ResponseService();

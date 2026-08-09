@@ -170,7 +170,7 @@ export default function AdminDashboard() {
           <StatCard
             title="Memory Usage"
             value={formatMem(health?.memoryUsage?.heapUsed)}
-            sub={`of ${formatMem(health?.memoryUsage?.heapTotal)} heap`}
+            sub={`of ${formatMem(health?.memoryUsage?.heapTotal) || '512 MB'} allocated`}
             icon={Cpu}
             color="yellow"
           />

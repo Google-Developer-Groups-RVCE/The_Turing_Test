@@ -31,6 +31,16 @@ class ResponseController {
       next(err);
     }
   }
+
+  async deleteResponses(req, res, next) {
+    try {
+      const { usernames } = req.body; // array of usernames to delete
+      const deletedCount = await responseService.deleteResponses(req.params.roundId, usernames);
+      res.status(200).json({ message: `Deleted ${deletedCount} responses`, deletedCount });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new ResponseController();

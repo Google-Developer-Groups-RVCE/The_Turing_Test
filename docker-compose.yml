@@ -24,7 +24,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=localdevpassword
       - JWT_SECRET=localdevsecret
-      - CORS_ORIGIN=http://localhost:5173
+      - CORS_ORIGIN=*
     depends_on:
       - redis
 

@@ -223,12 +223,19 @@ export default function UserManagement() {
   const handleBulk = async (action) => {
     if (selected.size === 0) return;
     const usernames = [...selected];
+    let newPassword = undefined;
+
     if (action === 'delete' && !window.confirm(`Delete ${usernames.length} users?`)) return;
+    if (action === 'reset') {
+      newPassword = window.prompt(`Reset passwords for ${usernames.length} users.\nEnter new password (leave blank for default 'ChangeMe123!'):`);
+      if (newPassword === null) return; // User cancelled prompt
+    }
+
     try {
       if (action === 'delete') await bulkDeleteUsers(usernames);
       else if (action === 'block') await bulkBlockUsers(usernames);
       else if (action === 'unblock') await bulkUnblockUsers(usernames);
-      else if (action === 'reset') await bulkResetPasswords(usernames);
+      else if (action === 'reset') await bulkResetPasswords(usernames, newPassword);
       showSuccess(`Bulk ${action} applied to ${usernames.length} users.`);
       setSelected(new Set());
       fetchUsers();

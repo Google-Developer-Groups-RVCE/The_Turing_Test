@@ -10,7 +10,10 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (user && token) {
-      socketManager.connect(token);
+      // Parse query params safely from window.location
+      const searchParams = window.location.search;
+      const query = searchParams ? Object.fromEntries(new URLSearchParams(searchParams)) : {};
+      socketManager.connect(token, query);
     } else {
       socketManager.disconnect();
     }

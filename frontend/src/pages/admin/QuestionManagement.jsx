@@ -10,6 +10,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
     options: question?.options || ['', '', '', ''],
     correctAnswer: question?.correctAnswer || '',
     points: question?.points || 10,
+    durationSeconds: question?.durationSeconds || 300,
     order: question?.order || 1,
   });
   const [saving, setSaving] = useState(false);
@@ -38,6 +39,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
         type: form.type,
         correctAnswer: answer,
         points: form.points,
+        durationSeconds: form.durationSeconds,
         order: form.order,
         options: validOptions,
       };
@@ -61,7 +63,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
             <label className="block text-sm text-slate-400 mb-1">Question Text</label>
             <textarea required rows={3} className="input-field resize-none" value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="Enter your question here..." />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Type</label>
               <select className="input-field" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
@@ -72,6 +74,10 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
             <div>
               <label className="block text-sm text-slate-400 mb-1">Points</label>
               <input type="number" min="1" max="1000" className="input-field" value={form.points} onChange={e => setForm(f => ({ ...f, points: parseInt(e.target.value) || 10 }))} />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Time (seconds)</label>
+              <input type="number" min="5" max="3600" className="input-field" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: parseInt(e.target.value) || 300 }))} />
             </div>
           </div>
           {form.type === 'mcq' && (
@@ -223,6 +229,7 @@ export default function QuestionManagement() {
                     {q.type === 'mcq' ? 'MCQ' : 'Short Answer'}
                   </span>
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-primary-500/10 text-primary-400">{q.points} pts</span>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-400">{q.durationSeconds || 300}s</span>
                 </div>
                 <p className="text-white font-medium">{q.text}</p>
                 {q.type === 'mcq' && q.options?.length > 0 && (

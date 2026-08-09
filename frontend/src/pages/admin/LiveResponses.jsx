@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '../../hooks/useSocket';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { getRounds } from '../../api/roundApi';
-import { getResponses, exportResponses } from '../../api/responseApi';
-import { Activity, Download, RefreshCw, CheckCircle, XCircle, Search, Filter } from 'lucide-react';
+import { getResponses, exportResponses, deleteResponses } from '../../api/responseApi';
+import { Activity, Download, RefreshCw, CheckCircle, XCircle, Search, Filter, Trash2 } from 'lucide-react';
 
 export default function LiveResponses() {
   const socket = useSocket();
@@ -14,6 +14,7 @@ export default function LiveResponses() {
   const [search, setSearch] = useState('');
   const [filterCorrect, setFilterCorrect] = useState('');
   const [liveCount, setLiveCount] = useState(0);
+  const [selectedUsers, setSelectedUsers] = useState(new Set());
 
   useEffect(() => {
     getRounds().then(res => {
@@ -33,6 +34,7 @@ export default function LiveResponses() {
       const list = res.data?.responses || (Array.isArray(res.data) ? res.data : []);
       setResponses(list);
       setLiveCount(res.data?.total || list.length);
+      setSelectedUsers(new Set());
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [selectedRound, search, filterCorrect]);
@@ -52,8 +54,23 @@ export default function LiveResponses() {
         setLiveCount(c => c + 1);
       }
     };
+    const handleDeleted = (data) => {
+      if (data.roundId === selectedRound) {
+        setResponses(prev => prev.filter(r => !data.usernames.includes(r.username)));
+        setLiveCount(c => Math.max(0, c - data.usernames.length));
+        setSelectedUsers(prev => {
+          const next = new Set(prev);
+          data.usernames.forEach(u => next.delete(u));
+          return next;
+        });
+      }
+    };
     socket.on(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
-    return () => socket.off(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
+    socket.on('responses:deleted', handleDeleted);
+    return () => {
+      socket.off(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
+      socket.off('responses:deleted', handleDeleted);
+    };
   }, [socket, selectedRound]);
 
   const handleExport = async () => {
@@ -65,6 +82,33 @@ export default function LiveResponses() {
       a.href = url; a.download = `responses_${selectedRound}.csv`; a.click();
       URL.revokeObjectURL(url);
     } catch { /* silent */ }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedRound || selectedUsers.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedUsers.size} response(s)?`)) return;
+    try {
+      await deleteResponses(selectedRound, Array.from(selectedUsers));
+    } catch (err) {
+      alert('Failed to delete responses');
+    }
+  };
+
+  const toggleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedUsers(new Set(responses.map(r => r.username)));
+    } else {
+      setSelectedUsers(new Set());
+    }
+  };
+
+  const toggleSelectUser = (username) => {
+    setSelectedUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(username)) next.delete(username);
+      else next.add(username);
+      return next;
+    });
   };
 
   const correctCount = responses.filter(r => r.isCorrect).length;
@@ -79,6 +123,11 @@ export default function LiveResponses() {
           <span className="text-sm font-normal text-slate-500">({liveCount} total)</span>
         </h1>
         <div className="flex gap-2">
+          {selectedUsers.size > 0 && (
+            <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors text-sm font-semibold">
+              <Trash2 size={16} /><span>Delete ({selectedUsers.size})</span>
+            </button>
+          )}
           <button onClick={handleExport} className="flex items-center space-x-2 px-3 py-2 rounded-lg border border-dark-600 text-slate-300 hover:text-white transition-colors text-sm">
             <Download size={16} /><span>Export CSV</span>
           </button>
@@ -128,6 +177,12 @@ export default function LiveResponses() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-dark-700 bg-dark-900/50">
+                <th className="px-4 py-3 text-left w-10">
+                  <input type="checkbox" className="w-4 h-4 rounded border-dark-600 bg-dark-800 checked:bg-primary-500" 
+                    checked={responses.length > 0 && selectedUsers.size === responses.length} 
+                    onChange={toggleSelectAll} 
+                  />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Username</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Answer</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Result</th>
@@ -137,9 +192,15 @@ export default function LiveResponses() {
             </thead>
             <tbody className="divide-y divide-dark-700/50">
               {loading && <tr><td colSpan={5} className="text-center py-10 text-slate-500">Loading...</td></tr>}
-              {!loading && responses.length === 0 && <tr><td colSpan={5} className="text-center py-10 text-slate-500">No responses yet. Waiting for participants...</td></tr>}
+              {!loading && responses.length === 0 && <tr><td colSpan={6} className="text-center py-10 text-slate-500">No responses yet. Waiting for participants...</td></tr>}
               {!loading && responses.map((r, i) => (
                 <tr key={`${r.username}-${i}`} className="hover:bg-dark-800/40 transition-colors">
+                  <td className="px-4 py-3">
+                    <input type="checkbox" className="w-4 h-4 rounded border-dark-600 bg-dark-800 checked:bg-primary-500" 
+                      checked={selectedUsers.has(r.username)} 
+                      onChange={() => toggleSelectUser(r.username)} 
+                    />
+                  </td>
                   <td className="px-4 py-3 font-mono text-white text-xs">{r.username}</td>
                   <td className="px-4 py-3 text-slate-300 max-w-xs truncate">{r.answer}</td>
                   <td className="px-4 py-3">
@@ -149,7 +210,7 @@ export default function LiveResponses() {
                   </td>
                   <td className="px-4 py-3 font-mono text-white">{r.pointsAwarded ?? 0}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
-                    {r.submittedAt ? new Date(r.submittedAt).toLocaleTimeString() : '—'}
+                    {r.submittedAt ? (isNaN(Number(r.submittedAt)) ? new Date(r.submittedAt) : new Date(Number(r.submittedAt))).toLocaleTimeString() : '—'}
                   </td>
                 </tr>
               ))}

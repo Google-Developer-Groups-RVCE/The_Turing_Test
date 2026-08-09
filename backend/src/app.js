@@ -123,7 +123,10 @@ function createApp() {
       uptime: uptimeSeconds,
       uptimeSeconds,
       redis: healthy ? 'ok' : 'error',
-      memoryUsage: process.memoryUsage(),
+      memoryUsage: {
+        ...process.memoryUsage(),
+        heap_size_limit: require('v8').getHeapStatistics().heap_size_limit
+      },
       express: { healthy: true },
       redisDetail: redisStatus,
       socketIo: {
@@ -152,7 +155,9 @@ function createApp() {
   app.use('/api/responses', require('./routes/responseRoutes'));
   app.use('/api/leaderboard', require('./routes/leaderboardRoutes'));
   app.use('/api/settings', require('./routes/settingsRoutes'));
+  app.use('/api/k8s', require('./routes/k8sRoutes'));
   app.use('/api/logs', require('./routes/logRoutes'));
+  app.use('/api/ngrok', require('./routes/ngrokRoutes'));
   app.use('/api', require('./routes/opsRoutes'));
   // --------------------------------------------------------------
 

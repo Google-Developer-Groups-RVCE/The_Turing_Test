@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ops Center - Production Platform</title>
+  <link rel="stylesheet" href="/ops-center.css">
+</head>
+<body>
+  
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Ops Center
+    </div>
+    <ul class="nav-links">
+      <li class="nav-item active" onclick="switchView('dashboard')">Dashboard</li>
+      <li class="nav-item" onclick="switchView('topology')">Live Topology</li>
+      <li class="nav-item" onclick="switchView('resources')">Resource Explorer</li>
+      <li class="nav-item" onclick="switchView('operations')">Operations & Chaos</li>
+      <li class="nav-item" onclick="switchView('logs')">Live Logs</li>
+      <li class="nav-item" onclick="switchView('inspector')">Request Inspector</li>
+      <li class="nav-item" onclick="switchView('connections')">Live Connections</li>
+
+    </ul>
+  </div>
+  <div id="sidebar-resizer" style="width: 5px; cursor: col-resize; background: var(--border-color); transition: background 0.2s; flex-shrink:0;" onmouseenter="this.style.background='#60a5fa'" onmouseleave="this.style.background='var(--border-color)'"></div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div><strong>Cluster Health: </strong><span id="healthStatus" class="badge green">HEALTHY</span>&nbsp;&nbsp;<span id="polling-status-badge" style="padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold; background:rgba(16,185,129,0.2); color:#10b981;">LIVE</span></div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+         <button id="btn-toggle-polling" class="action-btn" onclick="togglePolling()" style="background:rgba(59,130,246,0.2); border-color:#3b82f6; color:#3b82f6; padding:5px 14px; font-size:0.85rem;">⏸ Pause Polling</button>
+         <input type="text" id="admin-name" placeholder="Admin Name" value="Admin" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;" oninput="localStorage.setItem('adminName', this.value)">
+         <button onclick="refreshData()">Refresh</button>
+      </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="view-dashboard" class="view-container active">
+        <h2>Cluster Overview</h2>
+        
+        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px;">
+            <!-- App Pods -->
+            <div style="flex: 1; min-width: 300px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 15px; border-radius: 8px;">
+                <h3 style="margin-top:0; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 5px; color: #60a5fa;">App Deployments</h3>
+                <div id="app-pod-cards" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+            
+            <!-- Redis Pods -->
+            <div style="flex: 1; min-width: 300px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 15px; border-radius: 8px;">
+                <h3 style="margin-top:0; border-bottom: 1px solid rgba(239, 68, 68, 0.3); padding-bottom: 5px; color: #f87171;">Redis System</h3>
+                <div id="redis-pod-cards" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+
+            <!-- Sentinel Pods -->
+            <div style="flex: 1; min-width: 300px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 15px; border-radius: 8px;">
+                <h3 style="margin-top:0; border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding-bottom: 5px; color: #fbbf24;">Sentinels</h3>
+                <div id="sentinel-pod-cards" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+        </div>
+        
+        <h2>Redis State</h2>
+      <div id="redis-overview-grid" style="display:flex; flex-wrap:wrap; gap:15px;"></div>
+    </div>
+    
+    <!-- Live Topology View -->
+    <div id="view-topology" class="view-container">
+      <h2>Animated Architecture Flow</h2>
+      <div class="topology-container" style="overflow:auto; min-height: 0;">
+         <div class="node-layer">
+            <div class="arch-node">
+               <div class="arch-title">Ingress</div>
+               <div class="arch-meta">nginx-controller</div>
+            </div>
+         </div>
+         <div class="node-layer" id="topo-app-layer" style="flex-wrap:wrap;">
+            <!-- App pods here -->
+         </div>
+         <div class="node-layer" id="topo-redis-layer" style="flex-wrap:wrap;">
+            <!-- Redis primary here -->
+         </div>
+         <div class="node-layer" id="topo-replica-layer" style="flex-wrap:wrap;">
+            <!-- Redis replicas here -->
+         </div>
+      </div>
+    </div>
+
+    <!-- Resource Explorer View -->
+    <div id="view-resources" class="view-container">
+      <h2>Resource Explorer</h2>
+      <hr>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+         <select id="resourceType" style="padding: 8px;">
+            <option value="pods">Pods</option>
+            <option value="deployments">Deployments</option>
+            <option value="services">Services</option>
+            <option value="configmaps">ConfigMaps</option>
+            <option value="events">Events</option>
+            <option value="nodes">Nodes</option>
+         </select>
+         <button onclick="fetchResources()">Load</button>
+      </div>
+      <div id="resource-table-container"></div>
+    </div>
+
+    <!-- Operations View -->
+    <div id="view-operations" class="view-container">
+      <h2>Operations & Chaos</h2>
+      <div style="display: flex; gap: 40px;">
+        <div style="flex: 1;">
+          
+          <h3>Application Deployment</h3>
+          <div class="card-panel">
+             <div class="config-row">
+               <span>Rollout Restart</span>
+               <button class="action-btn" onclick="confirmAction('Restart Deployment', 'app-deployment', 'deployment', 'restart')">Restart</button>
+             </div>
+             <div class="config-row">
+               <span>Scale Replicas</span>
+               <div>
+                 <input type="number" id="scale-val" value="3" style="width:60px;">
+                 <button class="action-btn" onclick="confirmAction('Scale Deployment', 'app-deployment', 'deployment', 'scale_app', document.getElementById('scale-val').value)">Apply</button>
+               </div>
+             </div>
+             <hr style="border-color: var(--border-color); margin: 15px 0;">
+             <div class="config-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+               <strong>Pod Level Controls</strong>
+               <select id="target-app-pod" style="padding: 5px; width: 100%; border-radius: 4px; background: #222; color: #fff; border: 1px solid #444;">
+                  <option value="all">All App Pods</option>
+               </select>
+               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                 <button class="action-btn" onclick="applyPodControl('START_POD')">Start Process</button>
+                 <button class="action-btn" onclick="applyPodControl('STOP_POD')">Stop (Freeze)</button>
+                 <button class="action-btn danger" onclick="applyPodControl('DELETE_POD')">Delete Pod</button>
+               </div>
+             </div>
+          </div>
+          
+          <h3 style="margin-top: 20px;">Redis Sentinel</h3>
+          <div class="card-panel">
+             <div class="config-row">
+               <span>Force Sentinel Failover</span>
+               <button class="action-btn danger" onclick="confirmAction('Trigger Sentinel Failover', 'redis-primary-0', 'pod', 'failover')">Trigger</button>
+             </div>
+             <div class="config-row" style="margin-top:10px;">
+               <span>Force Switch Roles (Bypass Sentinel)</span>
+               <button class="action-btn danger" onclick="confirmAction('Switch Redis Roles', 'Cluster', 'redis', 'switch_redis_roles')" style="background:#dc2626; color:white;">Switch Primary</button>
+             </div>
+             <div class="config-row" style="margin-top:10px;">
+               <span>Reset Redis Primary (fixes disconnected replica)</span>
+               <button class="action-btn danger" onclick="resetRedisPod('primary')" style="background:#dc2626; color:white;">Reset Primary</button>
+             </div>
+             <div class="config-row" style="margin-top:10px;">
+               <span>Reset Redis Replica (re-sync to primary)</span>
+               <button class="action-btn danger" onclick="resetRedisPod('replica')" style="background:#b45309; color:white;">Reset Replica</button>
+             </div>
+             <div class="config-row" style="margin-top:10px;">
+               <span>Reset Entire Redis Cluster (both nodes)</span>
+               <button class="action-btn danger" onclick="resetRedisPod('both')" style="background:#7f1d1d; color:white;">Reset Cluster</button>
+             </div>
+          </div>
+          
+          <h3 style="margin-top: 20px;">Chaos Engineering</h3>
+          <div class="card-panel">
+             <h4>Network Chaos (eth0)</h4>
+             <div class="config-row" style="flex-wrap: wrap;">
+               <input type="number" id="net-delay" placeholder="Delay (ms)">
+               <input type="number" id="net-loss" placeholder="Loss (%)">
+               <button class="action-btn danger" onclick="confirmAction('Apply Chaos', 'cluster', 'network', 'chaos')">Inject Chaos</button>
+               <button class="action-btn" onclick="confirmAction('Clear Chaos', 'cluster', 'network', 'clearchaos')">Clear</button>
+             </div>
+             <div id="chaos-status" style="margin-top:10px; font-size: 0.9rem; color: var(--color-red);"></div>
+             <hr style="border-color: var(--border-color); margin: 15px 0;">
+             
+             <h4>CPU Stress</h4>
+             <div class="config-row">
+               <span>Worker Loop</span>
+               <button class="action-btn" id="btn-cpu-chaos" onclick="toggleChaos('cpu', this)">Start CPU Stress</button>
+             </div>
+             
+             <h4>Memory Stress</h4>
+             <div class="config-row">
+               <span>Leak 100MB Chunks</span>
+               <button class="action-btn" id="btn-mem-chaos" onclick="toggleChaos('memory', this)">Start Mem Leak</button>
+             </div>
+           </div>
+         </div>
+      </div>
+    </div>
+    
+    <!-- Logs View -->
+    <div id="view-logs" class="view-container">
+         <h2>Live Operations Log</h2>
+          <!-- Redis Status Banner -->
+          <div id="redis-status-banner" style="display:flex; gap:20px; align-items:center; background: rgba(33,150,243,0.08); border: 1px solid rgba(33,150,243,0.3); padding:10px 15px; border-radius:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span style="color:#9ca3af; font-size:0.8rem;">MASTER</span>
+              <span id="rs-master" style="font-family:monospace; color:#60a5fa; font-weight:600;">—</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span style="color:#9ca3af; font-size:0.8rem;">REPLICA</span>
+              <span id="rs-replica" style="font-family:monospace; color:#4ade80; font-weight:600;">—</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span style="color:#9ca3af; font-size:0.8rem;">SYNC</span>
+              <span id="rs-sync" style="font-family:monospace; color:#fbbf24; font-weight:600;">—</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span style="color:#9ca3af; font-size:0.8rem;">LATENCY</span>
+              <span id="rs-latency" style="font-family:monospace; color:#a78bfa; font-weight:600;">—</span>
+            </div>
+            <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+              <span id="rs-last-fetch" style="color:#6b7280; font-size:0.75rem;">Not yet fetched</span>
+              <button class="action-btn" onclick="manualFetchRedisStatus()" style="padding:4px 12px; font-size:0.8rem;">⟳ Refresh Redis</button>
+            </div>
+          </div>
+          <div style="display: flex; gap: 15px; margin-bottom: 10px; align-items: center; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 4px;">
+              <strong style="color: #9ca3af;">Show Logs From:</strong>
+              <button id="filter-user" class="action-btn active" onclick="toggleFilter('filter-user')" style="border-radius: 20px; background: var(--color-primary); color: #fff; border-color: var(--color-primary);">Users</button>
+              <button id="filter-admin" class="action-btn active" onclick="toggleFilter('filter-admin')" style="border-radius: 20px; background: var(--color-primary); color: #fff; border-color: var(--color-primary);">Admins</button>
+              <button id="filter-redis" class="action-btn active" onclick="toggleFilter('filter-redis')" style="border-radius: 20px; background: var(--color-primary); color: #fff; border-color: var(--color-primary);">Redis System</button>
+              <button id="filter-app" class="action-btn active" onclick="toggleFilter('filter-app')" style="border-radius: 20px; background: var(--color-primary); color: #fff; border-color: var(--color-primary);">App Deployments</button>
+           </div>
+         <div class="log-viewer" id="logViewer">
+          <!-- Logs populate here -->
+       </div>
+    </div>
+    
+    <!-- 6. Request Inspector -->
+    <div id="view-inspector" class="view-container">
+        <h2>Request Inspector (Tempo / OTEL)</h2>
+        <div style="margin-bottom: 20px;">
+          <button class="action-btn" onclick="simulateRequest()">Simulate Distributed Request</button>
+        </div>
+        <div id="trace-viewer" style="background: #111; padding: 15px; border-radius: 8px; color: #fff; min-height: 100px;">
+            Click 'Simulate Distributed Request' to trace a new request.
+        </div>
+    </div>
+
+    <!-- Live Connections View -->
+    <div id="view-connections" class="view-container">
+      <h2>Live WebSocket Connections</h2>
+          
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                <button class="action-btn" onclick="fetchLiveConnections()">Refresh</button>
+                <button class="action-btn danger" onclick="killSelectedConnections()">Kill Selected</button>
+                <div style="width: 1px; height: 30px; background: var(--border-color); margin: 0 10px;"></div>
+                <input type="number" id="random-kill-count" placeholder="Random N..." style="width: 100px; padding: 6px; border-radius: 4px; background: var(--bg-dark); color: #fff; border: 1px solid var(--border-color);">
+                <button class="action-btn danger" onclick="killRandomConnections()">Kill Random</button>
+                <div style="width: 1px; height: 30px; background: var(--border-color); margin: 0 10px;"></div>
+                <input type="text" id="block-username" placeholder="Username to block" style="width: 150px; padding: 6px; border-radius: 4px; background: var(--bg-dark); color: #fff; border: 1px solid var(--border-color);">
+                <button class="action-btn danger" onclick="blockUser()">Block User</button>
+                <input type="text" id="unblock-username" placeholder="Username to unblock" style="width: 150px; padding: 6px; border-radius: 4px; background: var(--bg-dark); color: #fff; border: 1px solid var(--border-color);">
+                <button class="action-btn primary" onclick="unblockUserDirect()">Unblock User</button>
+            </div>
+          <div style="background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+            <table class="data-table" style="width:100%; text-align:left; border-collapse: collapse;">
+               <thead>
+                   <tr style="background: rgba(0,0,0,0.2);">
+                      <th style="padding: 12px; width: 50px; text-align: center;"><input type="checkbox" id="selectAllConns" onclick="toggleAllConns(this)"></th>
+                      <th style="padding: 12px;">User</th>
+                      <th style="padding: 12px;">Connection ID</th>
+                      <th style="padding: 12px;">Node IP</th>
+                      <th style="padding: 12px; width: 80px;">Action</th>
+                   </tr>
+               </thead>
+               <tbody id="connections-tbody">
+                   <!-- Rows populated via JS -->
+               </tbody>
+            </table>
+          </div>
+
+          <h3 style="margin-top: 30px; margin-bottom: 15px;">Blocked Users</h3>
+          <div style="background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+             <table class="data-table" style="width:100%; text-align:left; border-collapse: collapse;">
+                 <thead>
+                     <tr style="background: rgba(0,0,0,0.2);">
+                        <th style="padding: 12px;">User</th>
+                        <th style="padding: 12px; width: 100px;">Action</th>
+                     </tr>
+                 </thead>
+                 <tbody id="blocked-tbody">
+                     <!-- Blocked rows populated via JS -->
+                 </tbody>
+             </table>
+          </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="generic-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
+        <div class="modal-content" style="background:var(--bg-panel); width:80%; max-width:1000px; height:80%; border-radius:8px; display:flex; flex-direction:column; overflow:hidden;">
+            <div class="modal-header" style="padding:15px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;">
+                <h3 id="modal-title" style="margin:0;">Details</h3>
+                <button onclick="document.getElementById('generic-modal').style.display='none'">Close</button>
+            </div>
+            <div class="modal-body" id="modal-body" style="flex:1; padding:20px; overflow-y:auto; font-family:monospace; background:#000; color:#0f0; white-space:pre;"></div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
+        <div class="modal-content" style="background:var(--bg-panel); width:400px; border-radius:8px; padding: 20px; text-align: center;">
+            <h3 style="margin-top:0;">Confirm Action</h3>
+            <p id="confirm-text" style="margin: 20px 0;"></p>
+            <div style="display:flex; justify-content: space-around;">
+                <button onclick="document.getElementById('confirm-modal').style.display='none'">Cancel</button>
+                <button class="action-btn danger" id="confirm-btn">Execute</button>
+            </div>
+        </div>
+    </div>
+
+  </div>
+  <script src="/ops-api.js"></script>
+  <script src="/ops-app.js"></script>
+</body>
+</html>

@@ -210,7 +210,7 @@ export default function LiveResponses() {
                   </td>
                   <td className="px-4 py-3 font-mono text-white">{r.pointsAwarded ?? 0}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
-                    {r.submittedAt ? (isNaN(Number(r.submittedAt)) ? new Date(r.submittedAt) : new Date(Number(r.submittedAt))).toLocaleTimeString() : '—'}
+                    {r.submittedAt ? (isNaN(parseInt(r.submittedAt, 10)) ? new Date(r.submittedAt) : new Date(parseInt(r.submittedAt, 10))).toLocaleTimeString() : '—'}
                   </td>
                 </tr>
               ))}

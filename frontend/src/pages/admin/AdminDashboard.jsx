@@ -7,8 +7,9 @@ import { getLeaderboard } from '../../api/leaderboardApi';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import {
   Activity, Server, Wifi, Database, Users, Trophy,
-  CheckCircle, XCircle, Clock, Cpu, HardDrive, BarChart2
+  CheckCircle, XCircle, Clock, Cpu, HardDrive, BarChart2, Globe, Play, Square, ExternalLink
 } from 'lucide-react';
+import { getNgrokStatus, startNgrok, stopNgrok } from '../../api/ngrokApi';
 
 function StatCard({ title, value, sub, icon: Icon, color = 'primary', status }) {
   const colorMap = {
@@ -51,12 +52,18 @@ export default function AdminDashboard() {
   const [participantsCount, setParticipantsCount] = useState(0);
   const [adminsCount, setAdminsCount] = useState(0);
 
+  const [ngrokStatus, setNgrokStatus] = useState(null);
+  const [ngrokUrl, setNgrokUrl] = useState(null);
+  const [ngrokAuthtoken, setNgrokAuthtoken] = useState(localStorage.getItem('ngrok_authtoken') || '');
+  const [isNgrokLoading, setIsNgrokLoading] = useState(false);
+
   const fetchData = async () => {
     try {
-      const [hRes, rRes, lRes] = await Promise.allSettled([
+      const [hRes, rRes, lRes, nRes] = await Promise.allSettled([
         getHealth(),
         getRounds(),
         getLeaderboard(),
+        getNgrokStatus(),
       ]);
       if (hRes.status === 'fulfilled') {
         setHealth(hRes.value.data);
@@ -69,7 +76,38 @@ export default function AdminDashboard() {
       }
       if (rRes.status === 'fulfilled') setRounds(rRes.value.data.rounds || []);
       if (lRes.status === 'fulfilled') setLeaderboard(lRes.value.data.leaderboard || []);
+      if (nRes.status === 'fulfilled') {
+        setNgrokStatus(nRes.value.data.status);
+        setNgrokUrl(nRes.value.data.url);
+      }
     } catch { /* silent */ }
+  };
+
+  const handleStartNgrok = async () => {
+    setIsNgrokLoading(true);
+    try {
+      if (ngrokAuthtoken) localStorage.setItem('ngrok_authtoken', ngrokAuthtoken);
+      const res = await startNgrok({ authtoken: ngrokAuthtoken });
+      setNgrokStatus(res.data.status);
+      setNgrokUrl(res.data.url);
+    } catch (err) {
+      alert('Failed to start Ngrok: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setIsNgrokLoading(false);
+    }
+  };
+
+  const handleStopNgrok = async () => {
+    setIsNgrokLoading(true);
+    try {
+      await stopNgrok();
+      setNgrokStatus('offline');
+      setNgrokUrl(null);
+    } catch (err) {
+      alert('Failed to stop Ngrok: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setIsNgrokLoading(false);
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -170,10 +208,78 @@ export default function AdminDashboard() {
           <StatCard
             title="Memory Usage"
             value={formatMem(health?.memoryUsage?.heapUsed)}
-            sub={`of ${formatMem(health?.memoryUsage?.heapTotal) || '512 MB'} allocated`}
+            sub={`of ${formatMem(health?.memoryUsage?.heap_size_limit) || '512 MB'} allocated`}
             icon={Cpu}
             color="yellow"
           />
+        </div>
+      </section>
+
+      {/* Public Hosting (Ngrok) */}
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4 flex items-center space-x-2">
+          <Globe size={14} />
+          <span>Public Hosting (Ngrok)</span>
+        </h2>
+        <div className="card space-y-4 border-dark-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-semibold">Ngrok Tunnel</p>
+              <p className="text-sm text-slate-400">Expose your local server to the internet securely.</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className={`px-2 py-1 text-xs font-bold rounded uppercase ${ngrokStatus === 'online' ? 'bg-primary-500/20 text-primary-400' : 'bg-slate-700 text-slate-400'}`}>
+                {ngrokStatus || 'OFFLINE'}
+              </span>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Ngrok Authtoken (Optional if already set)</label>
+              <input 
+                type="password" 
+                value={ngrokAuthtoken} 
+                onChange={(e) => setNgrokAuthtoken(e.target.value)} 
+                placeholder="Authtoken..."
+                className="w-full bg-dark-900 border border-dark-700 rounded p-2 text-sm text-white focus:outline-none focus:border-primary-500"
+              />
+            </div>
+            
+            {ngrokStatus === 'online' && ngrokUrl && (
+              <div className="p-3 bg-dark-900 rounded border border-dark-700 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500">Public URL</p>
+                  <a href={ngrokUrl} target="_blank" rel="noreferrer" className="text-primary-400 font-mono text-sm hover:underline flex items-center space-x-1 mt-0.5">
+                    <span>{ngrokUrl}</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex space-x-2 pt-2">
+              {ngrokStatus !== 'online' ? (
+                <button 
+                  onClick={handleStartNgrok} 
+                  disabled={isNgrokLoading}
+                  className="flex-1 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
+                >
+                  <Play size={16} />
+                  <span>{isNgrokLoading ? 'Starting...' : 'Host on Ngrok'}</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={handleStopNgrok} 
+                  disabled={isNgrokLoading}
+                  className="flex-1 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
+                >
+                  <Square size={16} />
+                  <span>{isNgrokLoading ? 'Stopping...' : 'Stop Hosting'}</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 

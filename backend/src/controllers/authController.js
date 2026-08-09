@@ -20,13 +20,16 @@ class AuthController {
       const { username, password } = req.body;
       const result = await authService.login(username, password);
       
-      const { redisClient } = require('../config/redisClient');
-      await redisClient.rpush('admin_logs', JSON.stringify({
-        timestamp: new Date().toISOString(),
+      const logStore = require('../redis/logStore');
+      await logStore.addLog({
+        timestamp: Date.now(),
         level: 'info',
-        event: 'USER_LOGIN',
-        message: `User logged in: ${username}`
-      }));
+        action: 'USER_LOGIN',
+        adminUsername: username,
+        details: `User logged in: ${username}`
+      });
+      const io = require('../sockets/socketServer').getIO();
+      if (io) io.emit('log:new', { logEntry: { action: 'USER_LOGIN', admin: username, timestamp: Date.now() } });
       
       res.status(200).json(result);
     } catch (err) {
@@ -40,13 +43,16 @@ class AuthController {
   async logout(req, res, next) {
     try {
       const username = req.user?.username || 'Unknown';
-      const { redisClient } = require('../config/redisClient');
-      await redisClient.rpush('admin_logs', JSON.stringify({
-        timestamp: new Date().toISOString(),
+      const logStore = require('../redis/logStore');
+      await logStore.addLog({
+        timestamp: Date.now(),
         level: 'info',
-        event: 'USER_LOGOUT',
-        message: `User logged out: ${username}`
-      }));
+        action: 'USER_LOGOUT',
+        adminUsername: username,
+        details: `User logged out: ${username}`
+      });
+      const io = require('../sockets/socketServer').getIO();
+      if (io) io.emit('log:new', { logEntry: { action: 'USER_LOGOUT', admin: username, timestamp: Date.now() } });
       res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
       next(err);

@@ -487,7 +487,7 @@ export default function RoundManagement() {
                       {round.status}
                     </span>
                     {round.durationSeconds && <span>{Math.floor(round.durationSeconds / 60)}m {(round.durationSeconds % 60)}s</span>}
-                    {round.startedAt && <span>Started {isNaN(Number(round.startedAt)) ? new Date(round.startedAt).toLocaleTimeString() : new Date(Number(round.startedAt)).toLocaleTimeString()}</span>}
+                    {round.startedAt && <span>Started {isNaN(parseInt(round.startedAt, 10)) ? new Date(round.startedAt).toLocaleTimeString() : new Date(parseInt(round.startedAt, 10)).toLocaleTimeString()}</span>}
                   </div>
                 </div>
               </div>

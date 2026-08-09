@@ -20,6 +20,16 @@ const handleConnection = async (io, socket) => {
     redisClient.scard('presence:admins')
   ]);
   const onlineCount = participantsCount + adminsCount;
+  
+  const logStore = require('../../redis/logStore');
+  await logStore.addLog({
+    timestamp: Date.now(),
+    level: 'info',
+    action: 'SOCKET_CONNECT',
+    adminUsername: username,
+    details: `User connected via WebSocket: ${username} (${role})`
+  });
+  io.emit('log:new', { logEntry: { action: 'SOCKET_CONNECT', admin: username, timestamp: Date.now() } });
 
   io.emit('presence:online', {
     username,
@@ -44,6 +54,16 @@ const handleDisconnect = async (io, socket) => {
     redisClient.scard('presence:admins')
   ]);
   const onlineCount = participantsCount + adminsCount;
+  
+  const logStore = require('../../redis/logStore');
+  await logStore.addLog({
+    timestamp: Date.now(),
+    level: 'info',
+    action: 'SOCKET_DISCONNECT',
+    adminUsername: username,
+    details: `User disconnected from WebSocket: ${username} (${role})`
+  });
+  io.emit('log:new', { logEntry: { action: 'SOCKET_DISCONNECT', admin: username, timestamp: Date.now() } });
 
   io.emit('presence:offline', {
     username,

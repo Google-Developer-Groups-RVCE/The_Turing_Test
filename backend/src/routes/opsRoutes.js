@@ -1,7 +1,6 @@
 'use strict';
 
 const express = require('express');
-const k8s = require('@kubernetes/client-node');
 const { execSync } = require('child_process');
 const { redisClient } = require('../config/redisClient');
 const Redis = require('ioredis');
@@ -9,14 +8,21 @@ const Redis = require('ioredis');
 const router = express.Router();
 
 // ── Kubernetes Client ────────────────────────────────────────────────────────
-const kc = new k8s.KubeConfig();
-if (process.env.KUBERNETES_SERVICE_HOST) {
-  kc.loadFromCluster();
-} else {
-  kc.loadFromDefault();
+let k8sApi, k8sAppsApi;
+
+async function getK8sClients() {
+  if (k8sApi && k8sAppsApi) return { k8sApi, k8sAppsApi };
+  const k8s = await import('@kubernetes/client-node');
+  const kc = new k8s.KubeConfig();
+  if (process.env.KUBERNETES_SERVICE_HOST) {
+    kc.loadFromCluster();
+  } else {
+    kc.loadFromDefault();
+  }
+  k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+  k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api);
+  return { k8sApi, k8sAppsApi };
 }
-const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api);
 
 // ── Ops Center Enhanced APIs ────────────────────────────────────────────────────────
 
@@ -79,22 +85,22 @@ router.get('/logs', async (req, res) => {
 const ns = 'turing-test';
 
 router.get('/k8s/api/v1/namespaces/websocket-app/pods', async (req, res) => {
-  try { const r = await k8sApi.listNamespacedPod(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
+  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedPod(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
 });
 router.get('/k8s/apis/apps/v1/namespaces/websocket-app/deployments', async (req, res) => {
-  try { const r = await k8sAppsApi.listNamespacedDeployment(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
+  try { const { k8sAppsApi } = await getK8sClients(); const r = await k8sAppsApi.listNamespacedDeployment(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
 });
 router.get('/k8s/api/v1/namespaces/websocket-app/services', async (req, res) => {
-  try { const r = await k8sApi.listNamespacedService(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
+  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedService(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
 });
 router.get('/k8s/api/v1/namespaces/websocket-app/configmaps', async (req, res) => {
-  try { const r = await k8sApi.listNamespacedConfigMap(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
+  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedConfigMap(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
 });
 router.get('/k8s/api/v1/namespaces/websocket-app/events', async (req, res) => {
-  try { const r = await k8sApi.listNamespacedEvent(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
+  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNamespacedEvent(ns); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
 });
 router.get('/k8s/api/v1/nodes', async (req, res) => {
-  try { const r = await k8sApi.listNode(); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
+  try { const { k8sApi } = await getK8sClients(); const r = await k8sApi.listNode(); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }
 });
 router.get('/k8s/apis/metrics.k8s.io/v1beta1/namespaces/websocket-app/pods', async (req, res) => {
   try {

@@ -5,7 +5,7 @@ const logStore = require('../redis/logStore');
 // For this design, let's keep it simple or require the socket module lazily to avoid circular dependency.
 const getIO = () => {
   try {
-    return require('../sockets/socketServer').getIO();
+    return require('../config/socket').getIO();
   } catch(e) {
     return null;
   }

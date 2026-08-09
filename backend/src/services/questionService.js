@@ -3,7 +3,7 @@ const roundStore = require('../redis/roundStore');
 
 const getIO = () => {
   try {
-    return require('./socketService').getIO ? require('./socketService').getIO() : require('../config/socket').getIO();
+    return require('../config/socket').getIO();
   } catch(e) {
     return null;
   }
@@ -70,12 +70,17 @@ class QuestionService {
     // Reset round timer to question duration if round is active
     const round = await roundStore.getRound(roundId);
     if (round && round.status === 'active' && question?.durationSeconds) {
-      await roundStore.updateRound(roundId, {
+      const updatedRound = {
+        ...round,
         durationSeconds: question.durationSeconds,
-        startedAt: Date.now()
+        startedAt: Date.now().toString()
+      };
+      await roundStore.updateRound(roundId, {
+        durationSeconds: updatedRound.durationSeconds,
+        startedAt: updatedRound.startedAt
       });
       const io = getIO();
-      if (io) io.emit('round:changed');
+      if (io) io.emit('round:changed', { roundId, roundData: updatedRound });
     }
 
     const io = getIO();

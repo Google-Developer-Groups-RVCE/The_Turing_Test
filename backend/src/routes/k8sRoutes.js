@@ -1,18 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const k8s = require('@kubernetes/client-node');
 const { execSync } = require('child_process');
-
-const kc = new k8s.KubeConfig();
-try {
-  kc.loadFromDefault();
-} catch (e) {
-  console.error("KubeConfig load error:", e.message);
-}
-
-const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api);
+let k8sApi;
+let k8sAppsApi;
 const NAMESPACE = 'turing-test';
+
+import('@kubernetes/client-node').then((k8s) => {
+  const kc = new k8s.KubeConfig();
+  try {
+    kc.loadFromDefault();
+  } catch (e) {
+    console.error("KubeConfig load error:", e.message);
+  }
+  k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+  k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api);
+}).catch(console.error);
 
 router.get('/api/v1/namespaces/websocket-app/pods', async (req, res) => {
     try { const r = await k8sApi.listNamespacedPod(NAMESPACE); res.json(r.body); } catch(e) { res.status(500).json({error: e.message}); }

@@ -1,13 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* ============================
    Cutepunch Font
 ============================= */
 @font-face {
   font-family: "Cutepunch";
-  src: url("/cutepunch/Cutepunch Personal Use Only.ttf") format("truetype");
+  src: url("../cutepunch-personal-use-only/Cutepunch Personal Use Only.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -18,7 +14,7 @@
 ============================= */
 @font-face {
   font-family: "Racing58";
-  src: url("/racing-58/Racing-58-Regular.otf") format("opentype");
+  src: url("../racing-58/Racing-58-Regular.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -29,8 +25,8 @@
 ============================= */
 @font-face {
   font-family: "Tastoine";
-  src: url("/tastoine/Tastoine.otf") format("opentype"),
-       url("/tastoine/Tastoine.ttf") format("truetype");
+  src: url("../tastoine/Tastoine.otf") format("opentype"),
+       url("../tastoine/Tastoine.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -41,7 +37,7 @@
 ============================= */
 @font-face {
   font-family: "Borghan";
-  src: url("/borghan/Borghan.otf") format("opentype");
+  src: url("../borghan/Borghan.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -106,7 +102,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image: url("/reference/Background.avif");
+  background-image: url("../reference/Background.avif");
   background-size: cover;
   background-position: center;
   opacity: 0.10;
@@ -924,5 +920,123 @@ body {
   .team-entry-card,
   .final-card {
     padding: 36px 28px;
+  }
+}
+
+/* ============================
+   Multi-round challenge UI
+============================= */
+.round-heading {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--clr-text-muted);
+  letter-spacing: 2px;
+  font-family: var(--font-cute);
+}
+
+.round-heading strong {
+  color: var(--clr-accent);
+  font-size: 1rem;
+}
+
+.challenge-card {
+  width: 100%;
+  max-width: 900px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 36px 40px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.challenge-prompt {
+  margin: 20px 0 24px;
+  padding: 18px 20px;
+  border-left: 3px solid var(--clr-btn-teal);
+  background: rgba(0, 201, 177, 0.08);
+  border-radius: 10px;
+  color: var(--clr-text-white);
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+
+.challenge-image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 24px 0;
+}
+
+.challenge-image-item,
+.challenge-single-image {
+  margin: 0;
+}
+
+.challenge-image-item img,
+.challenge-single-image img {
+  display: block;
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0,0,0,0.18);
+}
+
+.challenge-image-item figcaption {
+  margin-top: 8px;
+  text-align: center;
+  color: var(--clr-text-muted);
+  font-family: var(--font-cute);
+}
+
+.challenge-single-image {
+  margin: 20px auto 26px;
+  max-width: 820px;
+}
+
+.challenge-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 180px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(91, 200, 245, 0.4);
+  background: rgba(0, 35, 65, 0.35);
+  color: var(--clr-text-white);
+  font: inherit;
+  line-height: 1.6;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.challenge-textarea::placeholder {
+  color: var(--clr-text-muted);
+}
+
+.challenge-textarea:focus {
+  border-color: var(--clr-btn-teal);
+  box-shadow: 0 0 0 3px rgba(0, 201, 177, 0.14);
+}
+
+@media (max-width: 700px) {
+  .round-heading {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .challenge-card {
+    padding: 28px 20px;
+  }
+
+  .challenge-image-grid {
+    grid-template-columns: 1fr;
   }
 }

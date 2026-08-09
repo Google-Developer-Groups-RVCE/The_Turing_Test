@@ -7,7 +7,15 @@ import { getActiveQuestion } from '../../api/questionApi';
 import { getMyResponse, submitResponse } from '../../api/responseApi';
 import { getCurrentRound } from '../../api/roundApi';
 import { SOCKET_EVENTS } from '../../utils/constants';
-import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock, Sparkles } from 'lucide-react';
+
+import round1Data from '../../data/round1Data';
+import round2Data from '../../data/round2Data';
+import pollsData from '../../data/pollsData';
+import ChallengeCard from '../../components/ChallengeCard';
+import PollCard from '../../components/PollCard';
+
+const allRichData = [...round1Data, ...round2Data, ...pollsData];
 
 export default function RoundPage() {
   const { currentRound, eventStatus, activeStage, setCurrentRound, setEventStatus } = useContext(EventStateContext);
@@ -253,83 +261,107 @@ export default function RoundPage() {
         </div>
       )}
 
-      {/* Question Card */}
-      <div className="poll-card">
-        <h2 className="poll-title text-3xl mb-4">{question.text}</h2>
+      {/* Question Card & Answer Section */}
+      {(() => {
+        const richData = allRichData.find((d) => d.id === question.id);
         
-        {question.imageUrl && (
-          <img
-            src={question.imageUrl}
-            alt="Question visual"
-            className="mt-4 rounded-xl max-h-56 object-contain border border-glass-border"
-          />
-        )}
-        <div className="mt-4 flex items-center space-x-3 text-sm text-slate-400">
-          <span className="px-2 py-0.5 bg-primary-900/40 text-primary-400 border border-primary-500/20 rounded text-xs font-medium capitalize">
-            {question.type === 'mcq' ? 'MCQ' : question.type === 'poll' ? 'Poll' : 'Short Answer'}
-          </span>
-          <span>{question.points} point{question.points !== 1 ? 's' : ''}</span>
-        </div>
-      </div>
+        if (richData) {
+          if (question.type === 'poll') {
+            return (
+              <div className="poll-screen" style={{ width: '100%' }}>
+                <PollCard
+                  poll={richData}
+                  selectedOption={selectedAnswer}
+                  onSelect={(key) => !isLocked && setSelectedAnswer(key)}
+                />
+              </div>
+            );
+          } else {
+            return (
+              <div className="poll-screen" style={{ width: '100%' }}>
+                <ChallengeCard
+                  challenge={richData}
+                  selectedOption={selectedAnswer}
+                  textValue={textAnswer}
+                  onSelect={(key) => !isLocked && setSelectedAnswer(key)}
+                  onTextChange={(val) => !isLocked && setTextAnswer(val)}
+                />
+              </div>
+            );
+          }
+        }
 
-      {/* Answer Section */}
-      <div className="poll-card">
-        <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
-          {isLocked ? 'Your Submitted Choice' : 'Select Your Answer'}
-        </h3>
+        // Fallback for non-rich questions (if any)
+        return (
+          <>
+            <div className="poll-card">
+              <h2 className="poll-title text-3xl mb-4">{question.text}</h2>
+              {question.imageUrl && (
+                <img
+                  src={question.imageUrl}
+                  alt="Question visual"
+                  className="mt-4 rounded-xl max-h-56 object-contain border border-glass-border"
+                />
+              )}
+            </div>
 
-        {(question.type === 'mcq' || question.type === 'poll') && question.options?.length > 0 ? (
-          <div className="options-list">
-            {question.options.map((opt, idx) => {
-              const isPoll = question.type === 'poll';
-              const optValue = isPoll ? opt.key : opt;
-              const optDisplay = isPoll ? opt.question : opt;
-              const isSelected = selectedAnswer === optValue;
+            <div className="poll-card mt-6">
+              <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
+                {isLocked ? 'Your Submitted Choice' : 'Select Your Answer'}
+              </h3>
+              {(question.type === 'mcq' || question.type === 'poll') && question.options?.length > 0 ? (
+                <div className="options-list">
+                  {question.options.map((opt, idx) => {
+                    const isPoll = question.type === 'poll';
+                    const optValue = isPoll ? opt.key : opt;
+                    const optDisplay = isPoll ? opt.question : opt;
+                    const isSelected = selectedAnswer === optValue;
 
-              return (
-                <button
-                  key={idx}
+                    return (
+                      <button
+                        key={idx}
+                        disabled={isLocked}
+                        onClick={() => !isLocked && setSelectedAnswer(optValue)}
+                        className={`option-btn ${isSelected ? 'selected' : ''} ${isLocked ? 'cursor-not-allowed opacity-90' : ''}`}
+                      >
+                        <div className="flex items-center">
+                          <span className="option-key shrink-0">
+                            {isPoll ? opt.key : String.fromCharCode(65 + idx)}.
+                          </span>
+                          <span className="option-answer">{optDisplay}</span>
+                        </div>
+                        {isSelected && isLocked && (
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <Lock size={16} className="text-teal-400 opacity-80" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <textarea
                   disabled={isLocked}
-                  onClick={() => !isLocked && setSelectedAnswer(optValue)}
-                  className={`option-btn ${isSelected ? 'selected' : ''} ${isLocked ? 'cursor-not-allowed opacity-90' : ''}`}
-                >
-                  <div className="flex items-center">
-                    <span className="option-key shrink-0">
-                      {isPoll ? opt.key : String.fromCharCode(65 + idx)}.
-                    </span>
-                    <span className="option-answer">{optDisplay}</span>
-                  </div>
-                  {isSelected && isLocked && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      <Lock size={16} className="text-teal-400 opacity-80" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <textarea
-            disabled={isLocked}
-            className="w-full padding-4 rounded-xl border-1.5 border-glass-border bg-white/5 text-white p-4 outline-none focus:border-primary-500 min-h-[120px] resize-none disabled:opacity-80 disabled:cursor-not-allowed"
-            placeholder="Type your answer here..."
-            value={textAnswer}
-            onChange={(e) => !isLocked && setTextAnswer(e.target.value)}
-            maxLength={500}
-          />
-        )}
+                  className="challenge-textarea"
+                  placeholder="Type your answer here..."
+                  value={textAnswer}
+                  onChange={(e) => !isLocked && setTextAnswer(e.target.value)}
+                  maxLength={500}
+                />
+              )}
+            </div>
+          </>
+        );
+      })()}
 
-        {error && (
-          <div className="poll-error mt-4">
-            {error}
-          </div>
-        )}
+      <div className="poll-actions mt-2">
+        {error && <p role="alert" className="poll-error text-center">{error}</p>}
 
         {!isLocked ? (
           <button
             onClick={handleSubmit}
             disabled={submitting || (!selectedAnswer && !textAnswer.trim())}
-            className="btn-glossy w-full mt-6 flex items-center justify-center space-x-2"
+            className="btn-glossy flex items-center justify-center space-x-2 w-full mt-4"
           >
             {submitting ? (
               <>
@@ -347,7 +379,7 @@ export default function RoundPage() {
             )}
           </button>
         ) : (
-          <div className="mt-5 p-3 bg-dark-900/60 border border-dark-700 rounded-lg text-center text-xs text-slate-400 font-medium flex items-center justify-center space-x-2">
+          <div className="mt-4 p-3 bg-dark-900/60 border border-dark-700 rounded-lg text-center text-xs text-slate-400 font-medium flex items-center justify-center space-x-2">
             <Lock size={14} className="text-primary-400" />
             <span>Submission locked for this round. Stay tuned for results.</span>
           </div>

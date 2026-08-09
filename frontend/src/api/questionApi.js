@@ -9,3 +9,4 @@ export const deleteQuestion = (roundId, questionId) => axiosClient.delete(`/ques
 export const nextQuestion = (roundId) => axiosClient.post(`/questions/${roundId}/next`);
 export const previousQuestion = (roundId) => axiosClient.post(`/questions/${roundId}/previous`);
 export const setActiveQuestion = (roundId, questionId) => axiosClient.post(`/questions/${roundId}/activate/${questionId}`);
+export const revealPoll = (roundId) => axiosClient.post(`/questions/${roundId}/reveal-poll`);

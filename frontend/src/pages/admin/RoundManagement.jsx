@@ -210,6 +210,15 @@ export default function RoundManagement() {
     });
   };
 
+  const handleRevealPoll = async () => {
+    const activeRound = rounds.find(r => r.status === 'active');
+    if (!activeRound) return;
+    doAction('Evaluate Poll', async () => {
+      const { revealPoll } = require('../../api/questionApi');
+      await revealPoll(activeRound.id);
+    });
+  };
+
   const handlePrevQuestion = async () => {
     const activeRound = rounds.find(r => r.status === 'active');
     if (!activeRound) {
@@ -355,6 +364,19 @@ export default function RoundManagement() {
                 <span>Next Question</span><SkipForward size={14} />
               </button>
             </div>
+            
+            {activeQuestion?.type === 'poll' && (
+              <div className="flex pt-2">
+                <button
+                  onClick={handleRevealPoll}
+                  disabled={!!actionLoading || !activeRound}
+                  className="w-full py-2 px-3 rounded-lg border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-xs font-bold flex items-center justify-center space-x-2 transition-colors disabled:opacity-40"
+                >
+                  <Sparkles size={14} />
+                  <span>Evaluate & Reveal Poll Result</span>
+                </button>
+              </div>
+            )}
 
             {/* Direct Question Selector */}
             {roundQuestions.length > 0 && (

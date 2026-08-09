@@ -72,6 +72,15 @@ class QuestionController {
       next(err);
     }
   }
+
+  async revealPoll(req, res, next) {
+    try {
+      const result = await questionService.revealPoll(req.params.roundId);
+      res.status(200).json({ message: 'Poll revealed', result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new QuestionController();

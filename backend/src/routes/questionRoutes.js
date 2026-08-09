@@ -19,5 +19,6 @@ router.delete('/:roundId/:questionId', questionController.deleteQuestion);
 router.post('/:roundId/next', questionController.nextQuestion);
 router.post('/:roundId/previous', questionController.previousQuestion);
 router.post('/:roundId/activate/:questionId', questionController.setActiveQuestion);
+router.post('/:roundId/reveal-poll', questionController.revealPoll);
 
 module.exports = router;

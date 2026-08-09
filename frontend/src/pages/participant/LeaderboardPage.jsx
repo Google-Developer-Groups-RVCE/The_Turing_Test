@@ -79,54 +79,54 @@ export default function LeaderboardPage() {
   return (
     <div className="flex-1 flex flex-col py-4 space-y-6 max-w-3xl mx-auto w-full">
       <div className="text-center">
-        <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/20 mb-4">
+        <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/20 mb-4 shadow-[0_0_30px_rgba(234,179,8,0.3)]">
           <Trophy size={36} className="text-yellow-400" />
         </div>
-        <h1 className="text-3xl font-bold text-white">Live Leaderboard</h1>
-        <p className="text-slate-400 mt-1">Live rankings — updated in real time</p>
+        <h1 className="poll-title text-3xl mb-2">Live Leaderboard</h1>
+        <p className="poll-focus">Live rankings — updated in real time</p>
       </div>
 
       {entries.length === 0 ? (
-        <div className="card text-center py-12">
-          <Trophy size={40} className="text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">No scores yet. Answers are being tallied...</p>
+        <div className="poll-card text-center py-12 flex flex-col items-center">
+          <Trophy size={40} className="text-slate-500 mx-auto mb-4" />
+          <p className="text-slate-400 font-medium">No scores yet. Answers are being tallied...</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {entries.map((entry, index) => {
             const rank = index + 1;
             const isMe = entry.username === user?.username;
             return (
               <div
                 key={entry.username}
-                className={`flex items-center space-x-4 px-5 py-4 rounded-xl border transition-all
+                className={`flex items-center space-x-4 px-6 py-4 rounded-2xl border transition-all shadow-lg backdrop-blur-md
                   ${getRankStyle(rank, entry.username)}
-                  ${isMe ? 'ring-1 ring-primary-500/30' : ''}
+                  ${isMe ? 'ring-2 ring-primary-500/50 scale-[1.02]' : 'hover:bg-white/5'}
                 `}
               >
-                <div className="w-8 flex items-center justify-center">
+                <div className="w-8 flex items-center justify-center shrink-0">
                   {getMedalIcon(rank) || (
-                    <span className="text-slate-500 font-bold text-sm">{rank}</span>
+                    <span className="text-slate-400 font-bold text-lg font-mono">{rank}</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <span className={`font-semibold truncate ${isMe ? 'text-primary-300' : 'text-white'}`}>
+                  <div className="flex items-center space-x-3 mb-0.5">
+                    <span className={`font-bold text-lg truncate tracking-wide ${isMe ? 'text-primary-300' : 'text-white'}`}>
                       {entry.name || entry.username}
                     </span>
                     {isMe && (
-                      <span className="px-1.5 py-0.5 text-xs bg-primary-900/60 text-primary-400 rounded border border-primary-500/20 flex-shrink-0">
+                      <span className="px-2 py-0.5 text-[10px] uppercase font-bold bg-primary-900/80 text-primary-400 rounded-full border border-primary-500/40 flex-shrink-0">
                         You
                       </span>
                     )}
                   </div>
                   <div className="text-xs text-slate-500 truncate">{entry.username}</div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <div className={`text-xl font-bold font-mono ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-slate-200' : rank === 3 ? 'text-amber-500' : 'text-white'}`}>
+                <div className="text-right flex-shrink-0 bg-dark-900/50 px-4 py-2 rounded-xl border border-glass-border">
+                  <div className={`text-xl font-bold font-mono tracking-wider ${rank === 1 ? 'text-yellow-400 text-shadow-sm' : rank === 2 ? 'text-slate-200' : rank === 3 ? 'text-amber-500' : 'text-white'}`}>
                     {entry.score}
                   </div>
-                  <div className="text-xs text-slate-500">pts</div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">pts</div>
                 </div>
               </div>
             );

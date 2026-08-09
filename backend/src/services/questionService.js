@@ -143,6 +143,47 @@ class QuestionService {
     const prevQuestionId = order[prevIndex];
     return await this.setActiveQuestion(roundId, prevQuestionId);
   }
+
+  async revealPoll(roundId) {
+    const question = await this.getActiveQuestion(roundId);
+    if (!question || question.type !== 'poll') {
+      throw new Error('Active question is not a poll');
+    }
+
+    const { getResponses } = require('../redis/responseStore');
+    const responses = await getResponses(roundId);
+    const pollResponses = responses.filter(r => r.questionId === question.id);
+
+    const counts = {};
+    for (const r of pollResponses) {
+      counts[r.answer] = (counts[r.answer] || 0) + 1;
+    }
+
+    let winningKey = null;
+    let maxCount = -1;
+    for (const key of Object.keys(counts)) {
+      if (counts[key] > maxCount) {
+        maxCount = counts[key];
+        winningKey = key;
+      }
+    }
+
+    if (!winningKey && question.options.length > 0) {
+      winningKey = question.options[0].key; // default if no votes
+    }
+
+    const winningOption = question.options.find(o => o.key === winningKey);
+    const result = {
+      winningKey,
+      answerText: winningOption ? winningOption.answer : 'No Answer',
+      counts
+    };
+
+    const io = getIO();
+    if (io) io.emit('poll:revealed', { roundId, questionId: question.id, result });
+    
+    return result;
+  }
 }
 
 module.exports = new QuestionService();

@@ -1,10 +1,21 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { EventStateContext } from '../contexts/EventStateContext';
 
 export default function SimulationLayout() {
   const { eventStatus } = useContext(EventStateContext) || { eventStatus: 'idle' };
+
+  // Ensure iframe inherits JWT token from parent admin window if available
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem('token') && window.parent?.sessionStorage?.getItem('token')) {
+        sessionStorage.setItem('token', window.parent.sessionStorage.getItem('token'));
+      }
+    } catch {
+      /* cross-origin fallback */
+    }
+  }, []);
 
   // Hardcode a mock user for the simulation to guarantee it never hits real auth logic
   const mockUser = {

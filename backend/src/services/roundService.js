@@ -116,15 +116,20 @@ class RoundService {
       activeQuestion = await questionService.setActiveQuestion(roundId, questionsOrder[0]);
     }
 
-    // 5. Set status to active with fresh timestamp
-    await this.startRound(roundId, adminUsername);
+    // 5. If this round is the active round or no round is active, start it; otherwise mark as pending
+    const currentActiveId = await roundStore.getCurrentRound();
+    if (!currentActiveId || currentActiveId === roundId) {
+      await this.startRound(roundId, adminUsername);
+    } else {
+      await roundStore.updateRound(roundId, { status: 'pending', startedAt: '', endedAt: '' });
+    }
 
-    // 6. Broadcast all socket events so client devices immediately reset to Q1
+    // 6. Broadcast socket events so client devices reset state for this round
     const io = getIO();
     if (io) {
       io.emit('round:stage_changed', { roundId, activeStage: 'question' });
       io.emit('settings:updated', { showLeaderboard: false });
-      if (activeQuestion) {
+      if (activeQuestion && (!currentActiveId || currentActiveId === roundId)) {
         io.emit('question:changed', { roundId, activeQuestionId: questionsOrder[0], question: activeQuestion });
       }
       io.emit('responses:cleared', { roundId });

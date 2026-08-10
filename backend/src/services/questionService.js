@@ -308,17 +308,19 @@ class QuestionService {
         if (!order || order.length === 0) return { stage: 'question', question: null };
 
         const currentIndex = order.indexOf(activeId);
-        // If there IS a next question in order, go to it (could be poll or profile-guess)
+        // If there IS a next question in order, go to it
         if (currentIndex >= 0 && currentIndex < order.length - 1) {
           const nextQuestionId = order[currentIndex + 1];
           const newQuestion = await this.setActiveQuestion(roundId, nextQuestionId);
           return { stage: 'question', question: newQuestion };
         } else {
-          // We're at the last question — stay on it (should not happen if Q6 is seeded)
-          return { stage: 'question', question: await this.getActiveQuestion(roundId) };
+          // Last question in poll round — end round and advance to next round in sequence
+          const roundService = require('./roundService');
+          await roundService.endRound(roundId, 'system');
+          return { stage: 'ended', question: null };
         }
       } else {
-        // Non-poll (includes profile-guess, mcq, guess-author): show leaderboard
+        // Non-poll (mcq, guess-author, profile-guess): show leaderboard
         await roundStore.setActiveStage(roundId, 'leaderboard');
         const settingsStore = require('../redis/settingsStore');
         await settingsStore.updateSettings({ showLeaderboard: 'true' });
@@ -329,7 +331,7 @@ class QuestionService {
       }
     }
 
-    // ── STAGE 3: leaderboard → next question ──────────────────────────────────
+    // ── STAGE 3: leaderboard → next question (or next round) ──────────────────
     if (activeStage === 'leaderboard') {
       await roundStore.setActiveStage(roundId, 'question');
       const settingsStore = require('../redis/settingsStore');
@@ -345,17 +347,20 @@ class QuestionService {
     }
 
     const currentIndex = order.indexOf(activeId);
-    let nextIndex = 0;
     if (currentIndex >= 0 && currentIndex < order.length - 1) {
-      nextIndex = currentIndex + 1;
+      const nextQuestionId = order[currentIndex + 1];
+      const newQuestion = await this.setActiveQuestion(roundId, nextQuestionId);
+
+      const io = getIO();
+      if (io) io.emit('round:stage_changed', { roundId, activeStage: 'question' });
+
+      return { stage: 'question', question: newQuestion };
+    } else {
+      // Last question in non-poll round — end round and auto-advance to next round in sequence!
+      const roundService = require('./roundService');
+      await roundService.endRound(roundId, 'system');
+      return { stage: 'ended', question: null };
     }
-    const nextQuestionId = order[nextIndex];
-    const newQuestion = await this.setActiveQuestion(roundId, nextQuestionId);
-
-    const io = getIO();
-    if (io) io.emit('round:stage_changed', { roundId, activeStage: 'question' });
-
-    return { stage: 'question', question: newQuestion };
   }
 
   async previousQuestion(roundId) {

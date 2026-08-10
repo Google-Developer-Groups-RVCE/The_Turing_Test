@@ -125,16 +125,13 @@ class QuestionService {
       });
     }
 
-    const round = await roundStore.getRound(roundId);
-    const roundName = (round?.name || '').toLowerCase();
-    const isRound3 = String(roundId).includes('3') || String(roundId).includes('r3') || roundName.includes('round 3') || roundName.includes('poll');
-
     const activeStage = await roundStore.getActiveStage(roundId) || 'question';
     const isPoll = questionWithoutAnswer && (
       questionWithoutAnswer.type === 'poll' ||
-      String(questionWithoutAnswer.id).includes('poll') ||
-      isRound3
-    ) && questionWithoutAnswer.type !== 'profile-guess' && questionWithoutAnswer.id !== 'poll6' && questionWithoutAnswer.id !== 'r3-q6';
+      String(roundId).includes('3') ||
+      String(roundId).includes('r3') ||
+      String(questionWithoutAnswer.id).includes('poll')
+    ) && questionWithoutAnswer.type !== 'profile-guess';
 
     if (activeStage === 'evaluated') {
       if (isPoll) {
@@ -241,14 +238,11 @@ class QuestionService {
     const activeId = await questionStore.getActiveQuestionId(roundId);
     const question = await this.getActiveQuestion(roundId);
 
-    const round = await roundStore.getRound(roundId);
-    const roundName = (round?.name || '').toLowerCase();
-    const isRound3 = String(roundId).includes('3') || String(roundId).includes('r3') || roundName.includes('round 3') || roundName.includes('poll');
-
     const isPoll = question && (
       question.type === 'poll' ||
-      String(question.id).includes('poll') ||
-      isRound3
+      String(roundId).includes('3') ||
+      String(roundId).includes('r3') ||
+      String(question.id).includes('poll')
     ) && question.type !== 'profile-guess' && question.id !== 'poll6' && question.id !== 'r3-q6';
 
     if (activeStage === 'question') {

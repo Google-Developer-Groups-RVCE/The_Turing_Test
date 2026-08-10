@@ -275,7 +275,7 @@ async function refreshData() {
     let readyPods = 0;
 
     const pods = podsRaw.map((p) => {
-      if (p.metadata.labels && p.metadata.labels.app === "websocket-node") {
+      if (p.metadata.labels && p.metadata.labels.app === "backend") {
         totalAppPods++;
         const readyCond =
           p.status.conditions &&
@@ -327,7 +327,7 @@ async function refreshData() {
         `${readyPods} / ${totalAppPods}`;
 
     const appDep = deploymentsRaw.find(
-      (d) => d.metadata.name === "app-deployment",
+      (d) => d.metadata.name === "backend",
     );
     if (appDep) {
       if (document.getElementById("val-hpa"))
@@ -348,7 +348,7 @@ async function refreshData() {
     // Fetch CPU/Memory if metrics-server is available
     try {
       const metricsRes = await fetch(
-        `${window.K8S_BASE}/apis/metrics.k8s.io/v1beta1/namespaces/websocket-app/pods`,
+        `${window.K8S_BASE}/apis/metrics.k8s.io/v1beta1/namespaces/turing-test/pods`,
       );
       if (metricsRes.ok) {
         const metrics = await metricsRes.json();
@@ -400,7 +400,7 @@ async function refreshData() {
     const podsFetch = await fetchK8sResource("pods");
     if (podsFetch) {
       const appPods = podsFetch.filter(
-        (p) => p.metadata.labels && p.metadata.labels.app === "websocket-node",
+        (p) => p.metadata.labels && p.metadata.labels.app === "backend",
       );
       const gridApp = document.getElementById("app-pod-cards");
       const gridRedis = document.getElementById("redis-pod-cards");

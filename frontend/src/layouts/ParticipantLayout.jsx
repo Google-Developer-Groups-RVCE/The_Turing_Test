@@ -10,7 +10,11 @@ export default function ParticipantLayout() {
   const { eventStatus } = useContext(EventStateContext) || { eventStatus: 'idle' };
   const location = useLocation();
 
-  const isSimulation = new URLSearchParams(location.search).get('isSimulation') === 'true';
+  const querySimulation = new URLSearchParams(location.search).get('isSimulation') === 'true';
+  if (querySimulation) {
+    sessionStorage.setItem('isSimulation', 'true');
+  }
+  const isSimulation = querySimulation || sessionStorage.getItem('isSimulation') === 'true';
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
@@ -24,16 +28,16 @@ export default function ParticipantLayout() {
           <div className="nav-left">
             <img src="/reference/gdg_symbol.png" alt="GDG Logo" className="gdg-symbol" />
             <h1 className="nav-title">The Turing Test</h1>
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-              eventStatus === 'running' ? 'bg-primary-900 text-primary-400' :
-              eventStatus === 'paused' ? 'bg-yellow-900 text-yellow-400' :
-              'bg-slate-800 text-slate-400'
+            <span className={`px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+              eventStatus === 'running' ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30' :
+              eventStatus === 'paused' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+              'bg-slate-800 text-slate-400 border border-slate-700'
             }`}>
-              {eventStatus.toUpperCase()}
+              {eventStatus}
             </span>
           </div>
           <div className="nav-right">
-            <div className="text-sm hidden sm:block">
+            <div className="text-sm hidden sm:flex items-center space-x-2">
               <span className="text-slate-400">Welcome, </span>
               <span className="font-semibold text-white">{user.name || user.username}</span>
             </div>

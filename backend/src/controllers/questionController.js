@@ -81,6 +81,15 @@ class QuestionController {
       next(err);
     }
   }
+  async overrideDisplayedOption(req, res, next) {
+    try {
+      const { optionId } = req.body;
+      const result = await questionService.overrideDisplayedOption(req.params.roundId, optionId);
+      res.status(200).json({ message: 'Option overridden', question: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new QuestionController();

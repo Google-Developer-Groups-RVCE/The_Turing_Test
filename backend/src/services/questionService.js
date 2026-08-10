@@ -28,6 +28,8 @@ class QuestionService {
       durationSeconds: questionData.durationSeconds || 300,
       order: questionData.order || Date.now().toString()
     };
+    if (questionData.imageUrl) question.imageUrl = questionData.imageUrl;
+    if (questionData.imageProps) question.imageProps = questionData.imageProps;
     await questionStore.addQuestion(roundId, question);
 
     // If no active question is set for this round, set this new question as active
@@ -60,12 +62,29 @@ class QuestionService {
     if (!question) return null;
 
     const { correctAnswer, ...questionWithoutAnswer } = question;
+    
+    if (questionWithoutAnswer.type === 'guess-author') {
+      questionWithoutAnswer.options = (questionWithoutAnswer.options || []).map(opt => {
+        const { author, ...rest } = opt;
+        return rest;
+      });
+    }
+
     return questionWithoutAnswer;
   }
 
   async setActiveQuestion(roundId, questionId) {
     await questionStore.setActiveQuestionId(roundId, questionId);
-    const question = await this.getActiveQuestion(roundId);
+    let question = await questionStore.getQuestion(roundId, questionId);
+    if (question && question.type === 'guess-author') {
+      const options = question.options || [];
+      if (options.length > 0) {
+        const randomOption = options[Math.floor(Math.random() * options.length)];
+        await questionStore.updateQuestion(roundId, questionId, { displayedOptionId: randomOption.id });
+      }
+    }
+    
+    question = await this.getActiveQuestion(roundId);
 
     // Reset round timer to question duration if round is active
     const round = await roundStore.getRound(roundId);
@@ -142,6 +161,22 @@ class QuestionService {
     }
     const prevQuestionId = order[prevIndex];
     return await this.setActiveQuestion(roundId, prevQuestionId);
+  }
+
+  async overrideDisplayedOption(roundId, optionId) {
+    const activeId = await questionStore.getActiveQuestionId(roundId);
+    if (!activeId) throw new Error("No active question to override");
+    const question = await questionStore.getQuestion(roundId, activeId);
+    if (!question || question.type !== 'guess-author') throw new Error("Question is not guess-author type");
+    
+    await questionStore.updateQuestion(roundId, activeId, { displayedOptionId: optionId });
+    const updatedQuestion = await this.getActiveQuestion(roundId);
+    
+    const io = getIO();
+    if (io) {
+      io.emit('question:changed', { roundId, activeQuestionId: activeId, question: updatedQuestion });
+    }
+    return updatedQuestion;
   }
 
   async revealPoll(roundId) {

@@ -3,15 +3,34 @@ import { getRounds } from '../../api/roundApi';
 import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from '../../api/questionApi';
 import { HelpCircle, Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Image } from 'lucide-react';
 
+function normalizeOptions(options) {
+  if (!options) return ['', '', '', ''];
+  let arr = options;
+  if (typeof options === 'string') {
+    try { arr = JSON.parse(options); } catch { arr = []; }
+  }
+  if (!Array.isArray(arr)) return ['', '', '', ''];
+  return arr.map(o => (typeof o === 'object' && o !== null) ? (o.text || o.answer || o.id || '') : String(o || ''));
+}
+
+function getOptText(opt) {
+  if (typeof opt === 'string') return opt;
+  if (opt && typeof opt === 'object') return opt.text || opt.answer || opt.id || JSON.stringify(opt);
+  return String(opt || '');
+}
+
 function QuestionModal({ question, roundId, onClose, onSave }) {
   const [form, setForm] = useState({
     text: question?.text || '',
     type: question?.type || 'mcq',
-    options: question?.options || ['', '', '', ''],
+    options: normalizeOptions(question?.options),
     correctAnswer: question?.correctAnswer || '',
     points: question?.points || 10,
     durationSeconds: question?.durationSeconds || 300,
     order: question?.order || 1,
+    imageUrl: question?.imageUrl || '',
+    imageWidth: question?.imageProps?.width || '',
+    imageHeight: question?.imageProps?.height || '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -25,10 +44,10 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.text.trim()) { setError('Question text is required'); return; }
-    const validOptions = form.type === 'mcq' ? form.options.filter(o => o.trim()) : [];
-    if (form.type === 'mcq' && validOptions.length === 0) { setError('At least one option is required for MCQ'); return; }
+    const validOptions = (form.type === 'mcq' || form.type === 'poll') ? form.options.map(getOptText).filter(o => o.trim()) : [];
+    if ((form.type === 'mcq' || form.type === 'poll') && validOptions.length === 0) { setError('At least one option is required for this question type'); return; }
     let answer = form.correctAnswer.trim();
-    if (form.type === 'mcq' && (!answer || !validOptions.includes(answer))) {
+    if ((form.type === 'mcq' || form.type === 'poll') && (!answer || !validOptions.includes(answer))) {
       answer = validOptions[0] || '';
     }
     if (!answer) { setError('Correct answer is required'); return; }
@@ -43,6 +62,10 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
         order: form.order,
         options: validOptions,
       };
+      if (form.imageUrl) {
+        payload.imageUrl = form.imageUrl;
+        payload.imageProps = { width: form.imageWidth, height: form.imageHeight };
+      }
       await onSave(payload);
       onClose();
     } catch (err) {
@@ -69,6 +92,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
               <select className="input-field" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                 <option value="mcq">Multiple Choice (MCQ)</option>
                 <option value="short">Short Answer</option>
+                <option value="poll">Live Poll</option>
               </select>
             </div>
             <div>
@@ -80,7 +104,21 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
               <input type="number" min="5" max="3600" className="input-field" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: parseInt(e.target.value) || 300 }))} />
             </div>
           </div>
-          {form.type === 'mcq' && (
+          <div className="grid grid-cols-12 gap-3">
+            <div className="col-span-12 sm:col-span-8">
+              <label className="block text-sm text-slate-400 mb-1">Image URL (Optional)</label>
+              <input type="text" className="input-field" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="/images/my-image.png" />
+            </div>
+            <div className="col-span-6 sm:col-span-2">
+              <label className="block text-sm text-slate-400 mb-1">Width</label>
+              <input type="text" className="input-field" value={form.imageWidth} onChange={e => setForm(f => ({ ...f, imageWidth: e.target.value }))} placeholder="e.g. 400px" />
+            </div>
+            <div className="col-span-6 sm:col-span-2">
+              <label className="block text-sm text-slate-400 mb-1">Height</label>
+              <input type="text" className="input-field" value={form.imageHeight} onChange={e => setForm(f => ({ ...f, imageHeight: e.target.value }))} placeholder="e.g. auto" />
+            </div>
+          </div>
+          {(form.type === 'mcq' || form.type === 'poll') && (
             <div>
               <label className="block text-sm text-slate-400 mb-2">Options</label>
               <div className="space-y-2">
@@ -95,7 +133,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
           )}
           <div>
             <label className="block text-sm text-slate-400 mb-1">Correct Answer</label>
-            {form.type === 'mcq' ? (
+            {(form.type === 'mcq' || form.type === 'poll') ? (
               <select className="input-field" value={form.correctAnswer} onChange={e => setForm(f => ({ ...f, correctAnswer: e.target.value }))}>
                 <option value="">Select correct option</option>
                 {form.options.filter(o => o.trim()).map((opt, i) => (
@@ -232,9 +270,9 @@ export default function QuestionManagement() {
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-400">{q.durationSeconds || 300}s</span>
                 </div>
                 <p className="text-white font-medium">{q.text}</p>
-                {q.type === 'mcq' && q.options?.length > 0 && (
+                {q.type === 'mcq' && normalizeOptions(q.options).length > 0 && (
                   <div className="mt-2 grid grid-cols-2 gap-1.5">
-                    {q.options.map((opt, i) => (
+                    {normalizeOptions(q.options).map((opt, i) => (
                       <div key={i} className={`text-xs px-2 py-1 rounded border ${opt === q.correctAnswer ? 'border-primary-500/40 bg-primary-500/10 text-primary-400' : 'border-dark-700 text-slate-500'}`}>
                         <span className="font-bold mr-1">{String.fromCharCode(65 + i)}.</span>{opt}
                         {opt === q.correctAnswer && <span className="ml-1 text-primary-500">✓</span>}

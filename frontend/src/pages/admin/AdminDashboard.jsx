@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useSocket } from '../../hooks/useSocket';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { getHealth } from '../../api/settingsApi';
-import { getRounds } from '../../api/roundApi';
+import { getRounds, startRound } from '../../api/roundApi';
 import { getLeaderboard } from '../../api/leaderboardApi';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import {
@@ -56,6 +56,24 @@ export default function AdminDashboard() {
   const [ngrokUrl, setNgrokUrl] = useState(null);
   const [isNgrokLoading, setIsNgrokLoading] = useState(false);
   const [ngrokError, setNgrokError] = useState(null);
+  const [customDomain, setCustomDomain] = useState('');
+  const [customPort, setCustomPort] = useState('80');
+
+  const [isStartingRound, setIsStartingRound] = useState(false);
+  const [roundStartError, setRoundStartError] = useState(null);
+
+  const handleQuickStartRound = async (roundId) => {
+    setIsStartingRound(true);
+    setRoundStartError(null);
+    try {
+      await startRound(roundId);
+      await fetchData(); // Refresh state
+    } catch (err) {
+      setRoundStartError(err.response?.data?.message || err.message);
+    } finally {
+      setIsStartingRound(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -87,8 +105,9 @@ export default function AdminDashboard() {
     setIsNgrokLoading(true);
     setNgrokError(null);
     try {
-      // No authtoken needed — system ngrok binary reads ~/.config/ngrok/ngrok.yml automatically
-      const res = await startNgrok({ target: 'http://localhost:80' });
+      const payload = { target: `http://localhost:${customPort || '80'}`, port: customPort };
+      if (customDomain) payload.domain = customDomain;
+      const res = await startNgrok(payload);
       setNgrokStatus(res.data.status);
       setNgrokUrl(res.data.url);
     } catch (err) {
@@ -253,6 +272,31 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {ngrokStatus !== 'online' && (
+            <div className="flex space-x-2">
+              <div className="flex-1">
+                <label className="block text-xs text-slate-500 mb-1">Custom Domain (Optional)</label>
+                <input 
+                  type="text" 
+                  value={customDomain} 
+                  onChange={(e) => setCustomDomain(e.target.value)} 
+                  className="input-field text-sm py-1.5" 
+                  placeholder="e.g. my-event.ngrok-free.dev" 
+                />
+              </div>
+              <div className="w-24">
+                <label className="block text-xs text-slate-500 mb-1">Local Port</label>
+                <input 
+                  type="text" 
+                  value={customPort} 
+                  onChange={(e) => setCustomPort(e.target.value)} 
+                  className="input-field text-sm py-1.5" 
+                  placeholder="80" 
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex space-x-2 pt-2">
             {ngrokStatus !== 'online' ? (
               <button
@@ -301,6 +345,33 @@ export default function AdminDashboard() {
             {currentRound?.status && (
               <p className="text-xs text-slate-500 mt-1 capitalize">{currentRound.status}</p>
             )}
+          </div>
+        </div>
+
+        {/* Quick Start Round */}
+        <div className="card mt-4 border-dark-700">
+          <p className="text-sm font-semibold text-white mb-2">Quick Start Round</p>
+          {roundStartError && (
+            <div className="mb-3 p-2 bg-rose-500/10 border border-rose-500/30 rounded text-rose-400 text-xs">
+              {roundStartError}
+            </div>
+          )}
+          <div className="flex space-x-2">
+            <select
+              className="input-field flex-1"
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleQuickStartRound(e.target.value);
+                  e.target.value = ""; // Reset dropdown
+                }
+              }}
+              disabled={isStartingRound}
+            >
+              <option value="">-- Select a round to start immediately --</option>
+              {rounds.map((r) => (
+                <option key={r.id} value={r.id}>{r.name} ({r.status})</option>
+              ))}
+            </select>
           </div>
         </div>
       </section>

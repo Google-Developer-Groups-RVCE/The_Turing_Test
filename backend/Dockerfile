@@ -26,7 +26,7 @@ FROM node:18-alpine AS runtime
 # dumb-init ensures SIGTERM from Kubernetes is forwarded correctly to
 # the Node process (PID 1 signal-handling issue), which our graceful
 # shutdown logic in server.js relies on.
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init && npm install -g ngrok
 
 ENV NODE_ENV=production
 WORKDIR /app

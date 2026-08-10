@@ -82,12 +82,12 @@ export default function LeaderboardPage() {
         <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/20 mb-4 shadow-[0_0_30px_rgba(234,179,8,0.3)]">
           <Trophy size={36} className="text-yellow-400" />
         </div>
-        <h1 className="poll-title text-3xl mb-2">Live Leaderboard</h1>
-        <p className="poll-focus">Live rankings — updated in real time</p>
+        <h1 className="font-['Borghan'] text-3xl md:text-5xl font-bold text-white mb-2 tracking-wide">Live Leaderboard</h1>
+        <p className="text-sm text-slate-400 mb-7 italic">Live rankings — updated in real time</p>
       </div>
 
       {entries.length === 0 ? (
-        <div className="poll-card text-center py-12 flex flex-col items-center">
+        <div className="w-full bg-white/5 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md text-center py-12 flex flex-col items-center">
           <Trophy size={40} className="text-slate-500 mx-auto mb-4" />
           <p className="text-slate-400 font-medium">No scores yet. Answers are being tallied...</p>
         </div>

@@ -377,6 +377,27 @@ export default function RoundManagement() {
                 </button>
               </div>
             )}
+            
+            {activeQuestion?.type === 'guess-author' && (
+              <div className="pt-3 space-y-2 border-t border-dark-700 mt-2">
+                <h4 className="text-xs font-bold text-slate-400">Force Display Option:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {roundQuestions.find(q => q.id === activeQuestion.id)?.options?.map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => doAction(`Force ${opt.author}`, () => {
+                         const { overrideOption } = require('../../api/questionApi');
+                         return overrideOption(activeRound.id, opt.id);
+                      })}
+                      disabled={!!actionLoading}
+                      className={`flex-1 py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${activeQuestion.displayedOptionId === opt.id ? 'bg-primary-500/20 border-primary-500/50 text-primary-300' : 'bg-dark-800 border-dark-600 text-slate-400 hover:bg-dark-700'}`}
+                    >
+                      {opt.author || `Option ${opt.id}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Direct Question Selector */}
             {roundQuestions.length > 0 && (
@@ -516,7 +537,7 @@ export default function RoundManagement() {
 
               {/* Round Actions */}
               <div className="flex flex-wrap gap-2">
-                {round.status === 'pending' && (
+                {(round.status === 'pending' || round.status === 'idle') && (
                   <button onClick={() => doAction('Start round', () => startRound(round.id))} disabled={!!actionLoading} className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-primary-500/10 border border-primary-500/30 text-primary-400 hover:bg-primary-500/20 transition-colors text-sm font-medium">
                     <Play size={14} /><span>Start</span>
                   </button>

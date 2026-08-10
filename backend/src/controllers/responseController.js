@@ -16,7 +16,8 @@ class ResponseController {
 
   async getResponses(req, res, next) {
     try {
-      const responses = await responseService.getResponses(req.params.roundId);
+      const { questionId } = req.query;
+      const responses = await responseService.getResponses(req.params.roundId, questionId);
       res.status(200).json({ responses, total: responses.length });
     } catch (err) {
       next(err);
@@ -25,7 +26,8 @@ class ResponseController {
 
   async getMyResponse(req, res, next) {
     try {
-      const response = await responseService.getMyResponse(req.params.roundId, req.user.username);
+      const { questionId } = req.query;
+      const response = await responseService.getMyResponse(req.params.roundId, questionId, req.user.username);
       res.status(200).json(response || {});
     } catch (err) {
       next(err);
@@ -34,8 +36,8 @@ class ResponseController {
 
   async deleteResponses(req, res, next) {
     try {
-      const { usernames } = req.body; // array of usernames to delete
-      const deletedCount = await responseService.deleteResponses(req.params.roundId, usernames);
+      const { usernames, questionId } = req.body; // array of usernames to delete
+      const deletedCount = await responseService.deleteResponses(req.params.roundId, questionId, usernames);
       res.status(200).json({ message: `Deleted ${deletedCount} responses`, deletedCount });
     } catch (err) {
       next(err);

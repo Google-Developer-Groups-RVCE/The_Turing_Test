@@ -53,29 +53,34 @@ export default function RoundPage() {
         return;
       }
 
-      const [qRes, respRes] = await Promise.allSettled([
-        getActiveQuestion(roundId),
-        getMyResponse(roundId),
-      ]);
-
-      if (qRes.status === 'fulfilled') {
-        const qData = qRes.value.data;
-        const q = qData?.question || (Array.isArray(qData) ? qData[0] : (qData?.id ? qData : null));
+      const qRes = await getActiveQuestion(roundId).catch(() => null);
+      let q = null;
+      if (qRes?.data) {
+        const qData = qRes.data;
+        q = qData?.question || (Array.isArray(qData) ? qData[0] : (qData?.id ? qData : null));
         setQuestion(q || null);
       } else {
         setQuestion(null);
       }
 
-      if (respRes.status === 'fulfilled') {
-        const resp = respRes.value.data?.response || (respRes.value.data?.answer ? respRes.value.data : null);
-        setMyResponse(resp || null);
-        if (resp?.answer) {
-          setSelectedAnswer(resp.answer);
-          setTextAnswer(resp.answer);
+      if (q?.id) {
+        const respRes = await getMyResponse(roundId, q.id).catch(() => null);
+        if (respRes?.data) {
+          const resp = respRes.data?.response || (respRes.data?.answer ? respRes.data : null);
+          setMyResponse(resp || null);
+          if (resp?.answer) {
+            setSelectedAnswer(resp.answer);
+            setTextAnswer(resp.answer);
+          }
+        } else {
+          setMyResponse(null);
         }
+      } else {
+        setMyResponse(null);
       }
     } catch {
       setQuestion(null);
+      setMyResponse(null);
     } finally {
       setLoading(false);
     }
@@ -148,8 +153,9 @@ export default function RoundPage() {
 
   const handleSubmit = async () => {
     if (myResponse) return; // Prevent duplicate submissions
-    const answer = question?.type === 'mcq' ? selectedAnswer : textAnswer;
-    if (!answer.trim()) {
+    const isOptionsBased = question?.type === 'mcq' || question?.type === 'guess-author' || question?.type === 'poll';
+    const answer = isOptionsBased ? selectedAnswer : textAnswer;
+    if (!answer || (typeof answer === 'string' && !answer.trim())) {
       setError('Please select an option or type your answer before submitting.');
       return;
     }
@@ -225,13 +231,13 @@ export default function RoundPage() {
   return (
     <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full">
       {/* Round Header */}
-      <div className="poll-card p-4 flex items-center justify-between flex-wrap gap-3">
+      <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md flex items-center justify-between flex-wrap gap-3">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-primary-400">
             {currentRound?.name || 'Current Round'}
           </span>
           <h2 className="text-lg font-bold text-white mt-0.5">
-            {question.type === 'mcq' ? 'Multiple Choice Question' : question.type === 'poll' ? 'Live Poll' : 'Short Answer Question'}
+            {question.type === 'mcq' ? 'Multiple Choice Question' : question.type === 'poll' ? 'Live Poll' : question.type === 'guess-author' ? 'Guess the Author' : 'Short Answer Question'}
           </h2>
         </div>
         {timeLeft !== null && (
@@ -263,6 +269,48 @@ export default function RoundPage() {
 
       {/* Question Card & Answer Section */}
       {(() => {
+        if (question.type === 'guess-author') {
+          const displayedOpt = question.options?.find(o => o.id === question.displayedOptionId) || question.options?.[0];
+          return (
+            <>
+              <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md">
+                <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white tracking-wide mb-4">{question.text}</h2>
+                <div className="mt-4 p-4 rounded-xl border border-primary-500/30 bg-dark-900/60 shadow-inner">
+                  <h3 className="text-xs font-bold text-primary-400 uppercase tracking-wider mb-2">Response to Evaluate</h3>
+                  <p className="text-slate-200 text-lg italic leading-relaxed">"{displayedOpt?.text}"</p>
+                </div>
+              </div>
+              
+              <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md mt-6">
+                <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
+                  {isLocked ? 'Your Submitted Choice' : 'Who wrote this response?'}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {['Human', 'Gemini'].map((author) => {
+                    const isSelected = selectedAnswer === author;
+                    return (
+                      <button
+                        key={author}
+                        disabled={isLocked}
+                        onClick={() => !isLocked && setSelectedAnswer(author)}
+                        className={`py-4 px-4 rounded-xl border-2 text-lg font-bold transition-all duration-200 
+                          ${isSelected ? 'border-primary-500 bg-primary-500/20 text-white shadow-[0_0_15px_rgba(14,165,233,0.3)]' 
+                            : 'border-dark-600 bg-dark-800 text-slate-400 hover:border-dark-500 hover:bg-dark-700'}
+                          ${isLocked ? 'cursor-not-allowed opacity-90' : ''}`}
+                      >
+                        <div className="flex items-center justify-center space-x-2">
+                          <span>{author}</span>
+                          {isSelected && isLocked && <Lock size={16} className="text-primary-400" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          );
+        }
+
         const richData = allRichData.find((d) => d.id === question.id);
         
         if (richData) {
@@ -273,6 +321,7 @@ export default function RoundPage() {
                   poll={richData}
                   selectedOption={selectedAnswer}
                   onSelect={(key) => !isLocked && setSelectedAnswer(key)}
+                  pollResult={pollResult}
                 />
               </div>
             );
@@ -294,8 +343,8 @@ export default function RoundPage() {
         // Fallback for non-rich questions (if any)
         return (
           <>
-            <div className="poll-card">
-              <h2 className="poll-title text-3xl mb-4">{question.text}</h2>
+            <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md">
+              <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white tracking-wide mb-4">{question.text}</h2>
               {question.imageUrl && (
                 <img
                   src={question.imageUrl}
@@ -305,7 +354,7 @@ export default function RoundPage() {
               )}
             </div>
 
-            <div className="poll-card mt-6">
+            <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md mt-6">
               <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
                 {isLocked ? 'Your Submitted Choice' : 'Select Your Answer'}
               </h3>
@@ -322,13 +371,13 @@ export default function RoundPage() {
                         key={idx}
                         disabled={isLocked}
                         onClick={() => !isLocked && setSelectedAnswer(optValue)}
-                        className={`option-btn ${isSelected ? 'selected' : ''} ${isLocked ? 'cursor-not-allowed opacity-90' : ''}`}
+                        className={`relative overflow-hidden w-full text-left py-4 px-6 rounded-2xl border-2 transition-all duration-300 shadow-lg ${isSelected ? "bg-gradient-to-br from-teal-400/35 to-teal-600/45 border-teal-400 shadow-[0_4px_24px_rgba(0,201,177,0.5),inset_0_1px_0_rgba(255,255,255,0.25)]" : "border-sky-400/40 bg-gradient-to-br from-sky-400/15 to-blue-600/20 text-white hover:translate-x-1 hover:border-sky-400/80 hover:shadow-[0_4px_20px_rgba(91,200,245,0.35)]"} ${isLocked ? 'cursor-not-allowed opacity-90' : ''}`}
                       >
                         <div className="flex items-center">
-                          <span className="option-key shrink-0">
+                          <span className={`font-['Cutepunch'] text-lg mr-2 shrink-0 transition-colors ${isSelected ? "text-teal-200" : "text-sky-300"}`}>
                             {isPoll ? opt.key : String.fromCharCode(65 + idx)}.
                           </span>
-                          <span className="option-answer">{optDisplay}</span>
+                          <span className="text-base text-slate-200 leading-relaxed">{optDisplay}</span>
                         </div>
                         {isSelected && isLocked && (
                           <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -342,7 +391,7 @@ export default function RoundPage() {
               ) : (
                 <textarea
                   disabled={isLocked}
-                  className="challenge-textarea"
+                  className="w-full bg-black/20 border border-white/10 rounded-lg p-4 text-white placeholder-slate-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
                   placeholder="Type your answer here..."
                   value={textAnswer}
                   onChange={(e) => !isLocked && setTextAnswer(e.target.value)}
@@ -360,8 +409,8 @@ export default function RoundPage() {
         {!isLocked ? (
           <button
             onClick={handleSubmit}
-            disabled={submitting || (!selectedAnswer && !textAnswer.trim())}
-            className="btn-glossy flex items-center justify-center space-x-2 w-full mt-4"
+            disabled={submitting || (!selectedAnswer && !textAnswer.trim() && question.type !== 'guess-author') || (question.type === 'guess-author' && !selectedAnswer)}
+            className="relative overflow-hidden font-['Cutepunch'] text-xl tracking-widest py-3 px-10 rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-sky-400 text-white shadow-[0_4px_20px_rgba(14,165,233,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all hover:-translate-y-0.5 hover:scale-105 hover:shadow-[0_8px_28px_rgba(14,165,233,0.65),inset_0_1px_0_rgba(255,255,255,0.35)] active:translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 w-full mt-4"
           >
             {submitting ? (
               <>

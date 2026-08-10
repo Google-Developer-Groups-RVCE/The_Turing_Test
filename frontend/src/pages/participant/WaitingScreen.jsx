@@ -130,12 +130,12 @@ export default function WaitingScreen() {
 
       {/* Event Idle / Waiting State */}
       {eventStatus !== 'paused' && (
-        <div className="poll-card w-full mb-8 text-center flex flex-col items-center">
+        <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md mb-8 text-center flex flex-col items-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <Clock className="text-cyan-400 animate-spin-slow" size={26} />
-            <h2 className="poll-title text-2xl">Waiting for Round{dots}</h2>
+            <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white mb-2 tracking-wide">Waiting for Round{dots}</h2>
           </div>
-          <p className="poll-focus">
+          <p className="text-sm text-slate-400 mb-7 italic">
             The GDG admin team will launch the next round shortly. Your screen will transition automatically when the round begins.
           </p>
         </div>
@@ -143,15 +143,15 @@ export default function WaitingScreen() {
 
       {/* Paused State */}
       {eventStatus === 'paused' && (
-        <div className="poll-card w-full mb-8 text-center border-yellow-500/30">
+        <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md mb-8 text-center border-yellow-500/30">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="w-6 h-6 rounded bg-yellow-500/20 flex items-center justify-center">
               <div className="w-1.5 h-3.5 bg-yellow-400 rounded mr-0.5" />
               <div className="w-1.5 h-3.5 bg-yellow-400 rounded" />
             </div>
-            <h2 className="poll-title text-2xl text-yellow-300">Round Paused</h2>
+            <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white mb-2 tracking-wide text-yellow-300">Round Paused</h2>
           </div>
-          <p className="poll-focus">Please stand by while the organizers pause the event timer.</p>
+          <p className="text-sm text-slate-400 mb-7 italic">Please stand by while the organizers pause the event timer.</p>
         </div>
       )}
 
@@ -176,7 +176,7 @@ export default function WaitingScreen() {
 
       <button
         onClick={syncState}
-        className="btn-glossy"
+        className="relative overflow-hidden font-['Cutepunch'] text-xl tracking-widest py-3 px-10 rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-sky-400 text-white shadow-[0_4px_20px_rgba(14,165,233,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all hover:-translate-y-0.5 hover:scale-105 hover:shadow-[0_8px_28px_rgba(14,165,233,0.65),inset_0_1px_0_rgba(255,255,255,0.35)] active:translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         style={{ padding: '10px 30px', fontSize: '1rem', marginTop: '10px' }}
       >
         <span className="flex items-center space-x-2">

@@ -93,12 +93,15 @@ class LeaderboardService {
 
     const rounds = await roundStore.getRoundsOrder();
     for (const roundId of rounds) {
-      const respondedUsers = await responseStore.getRespondedUsers(roundId);
-      for (const username of respondedUsers) {
-        const response = await responseStore.getResponse(roundId, username);
-        if (response && response.pointsAwarded && Number(response.pointsAwarded) > 0) {
-          await redisClient.zincrby(keys.LEADERBOARD, Number(response.pointsAwarded), username);
-          await redisClient.zincrby(keys.LEADERBOARD_ROUND(roundId), Number(response.pointsAwarded), username);
+      const questionsOrder = await questionStore.getQuestionsOrder(roundId);
+      for (const questionId of questionsOrder) {
+        const respondedUsers = await responseStore.getRespondedUsers(roundId, questionId);
+        for (const username of respondedUsers) {
+          const response = await responseStore.getResponse(roundId, questionId, username);
+          if (response && response.pointsAwarded && Number(response.pointsAwarded) > 0) {
+            await redisClient.zincrby(keys.LEADERBOARD, Number(response.pointsAwarded), username);
+            await redisClient.zincrby(keys.LEADERBOARD_ROUND(roundId), Number(response.pointsAwarded), username);
+          }
         }
       }
     }

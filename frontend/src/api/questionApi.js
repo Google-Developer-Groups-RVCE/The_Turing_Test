@@ -10,3 +10,4 @@ export const nextQuestion = (roundId) => axiosClient.post(`/questions/${roundId}
 export const previousQuestion = (roundId) => axiosClient.post(`/questions/${roundId}/previous`);
 export const setActiveQuestion = (roundId, questionId) => axiosClient.post(`/questions/${roundId}/activate/${questionId}`);
 export const revealPoll = (roundId) => axiosClient.post(`/questions/${roundId}/reveal-poll`);
+export const overrideOption = (roundId, optionId) => axiosClient.post(`/questions/${roundId}/override-option`, { optionId });

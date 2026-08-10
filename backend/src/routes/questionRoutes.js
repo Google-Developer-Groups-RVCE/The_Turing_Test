@@ -20,5 +20,6 @@ router.post('/:roundId/next', questionController.nextQuestion);
 router.post('/:roundId/previous', questionController.previousQuestion);
 router.post('/:roundId/activate/:questionId', questionController.setActiveQuestion);
 router.post('/:roundId/reveal-poll', questionController.revealPoll);
+router.post('/:roundId/override-option', questionController.overrideDisplayedOption);
 
 module.exports = router;

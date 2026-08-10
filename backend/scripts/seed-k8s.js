@@ -36,50 +36,50 @@ function hmset(key, obj) {
 const round1Questions = [
   {
     id: 'r1-q1', order: 1, text: 'What\'s your take on vibe coding, just letting AI write most of your code?',
-    type: 'multiple-choice', timeLimit: 300,
+    type: 'guess-author', timeLimit: 300,
     options: JSON.stringify([
-      { key: 'A', label: 'Response 1', answer: 'It\'s useful for prototyping and boilerplate, but relying on it fully without understanding the logic underneath tends to bite you during debugging or in interviews. Best used as an accelerator, not a replacement for fundamentals.' },
-      { key: 'B', label: 'Response 2', answer: 'Honestly I do it way more than I should. Copy paste, run, if it breaks I panic and start googling instead of actually reading the error.' }
+      { id: 'A', text: 'It\'s useful for prototyping and boilerplate, but relying on it fully without understanding the logic underneath tends to bite you during debugging or in interviews. Best used as an accelerator, not a replacement for fundamentals.', author: 'Human' },
+      { id: 'B', text: 'Honestly I do it way more than I should. Copy paste, run, if it breaks I panic and start googling instead of actually reading the error.', author: 'Gemini' }
     ])
   },
   {
     id: 'r1-q2', order: 2, text: 'How much do you trust AI chatbots to give you correct information?',
-    type: 'multiple-choice', timeLimit: 300,
+    type: 'guess-author', timeLimit: 300,
     options: JSON.stringify([
-      { key: 'A', label: 'Response 1', answer: 'Depends what for. If it\'s something like a recipe or general knowledge I trust it, but the moment it\'s something specific to me, like my college syllabus, it just makes stuff up confidently.' },
-      { key: 'B', label: 'Response 2', answer: 'It\'s generally reliable for broad, well established information, but accuracy can drop for niche, recent, or highly specific topics, so it\'s good practice to verify anything important.' }
+      { id: 'A', text: 'Depends what for. If it\'s something like a recipe or general knowledge I trust it, but the moment it\'s something specific to me, like my college syllabus, it just makes stuff up confidently.', author: 'Human' },
+      { id: 'B', text: 'It\'s generally reliable for broad, well established information, but accuracy can drop for niche, recent, or highly specific topics, so it\'s good practice to verify anything important.', author: 'Gemini' }
     ])
   },
   {
     id: 'r1-q3', order: 3, text: 'Do you think phones have made us less social?',
-    type: 'multiple-choice', timeLimit: 300,
+    type: 'guess-author', timeLimit: 300,
     options: JSON.stringify([
-      { key: 'A', label: 'Response 1', answer: 'In some ways yes, since face-to-face interaction time has decreased, but phones also enable new forms of connection like group chats and video calls that weren\'t possible before. It\'s more of a shift than a pure decline.' },
-      { key: 'B', label: 'Response 2', answer: 'Kind of, but honestly I blame myself more than the phone. I could put it away and I just don\'t.' }
+      { id: 'A', text: 'In some ways yes, since face-to-face interaction time has decreased, but phones also enable new forms of connection like group chats and video calls that weren\'t possible before. It\'s more of a shift than a pure decline.', author: 'Human' },
+      { id: 'B', text: 'Kind of, but honestly I blame myself more than the phone. I could put it away and I just don\'t.', author: 'Gemini' }
     ])
   },
   {
     id: 'r1-q4', order: 4, text: 'What app do you think you spend way too much time on?',
-    type: 'multiple-choice', timeLimit: 300,
+    type: 'guess-author', timeLimit: 300,
     options: JSON.stringify([
-      { key: 'A', label: 'Response 1', answer: 'Instagram reels, no competition. I tell myself five minutes and then it\'s an hour and I don\'t even remember what I watched.' },
-      { key: 'B', label: 'Response 2', answer: 'Short-form video apps in general tend to be the biggest time sinks due to their endless scroll design, which is built to maximize engagement rather than user benefit.' }
+      { id: 'A', text: 'Instagram reels, no competition. I tell myself five minutes and then it\'s an hour and I don\'t even remember what I watched.', author: 'Human' },
+      { id: 'B', text: 'Short-form video apps in general tend to be the biggest time sinks due to their endless scroll design, which is built to maximize engagement rather than user benefit.', author: 'Gemini' }
     ])
   },
   {
     id: 'r1-q5', order: 5, text: 'Would you rather lose your phone for a week or your laptop for a week?',
-    type: 'multiple-choice', timeLimit: 300,
+    type: 'guess-author', timeLimit: 300,
     options: JSON.stringify([
-      { key: 'A', label: 'Response 1', answer: 'Losing the laptop would likely be more manageable short term, since most daily communication and quick tasks can be handled on a phone, whereas a laptop is harder to replace for focused work.' },
-      { key: 'B', label: 'Response 2', answer: 'Laptop honestly, I\'d survive. Losing my phone for a week sounds like actual torture, all my passwords and OTPs are on it.' }
+      { id: 'A', text: 'Losing the laptop would likely be more manageable short term, since most daily communication and quick tasks can be handled on a phone, whereas a laptop is harder to replace for focused work.', author: 'Human' },
+      { id: 'B', text: 'Laptop honestly, I\'d survive. Losing my phone for a week sounds like actual torture, all my passwords and OTPs are on it.', author: 'Gemini' }
     ])
   },
   {
     id: 'r1-q6', order: 6, text: 'Do you think social media does more harm than good?',
-    type: 'multiple-choice', timeLimit: 300,
+    type: 'guess-author', timeLimit: 300,
     options: JSON.stringify([
-      { key: 'A', label: 'Response 1', answer: 'More harm probably, but I say that while still using it every day, so take that with a grain of salt.' },
-      { key: 'B', label: 'Response 2', answer: 'It\'s mixed. Social media has clear benefits like connectivity and access to information, but also documented downsides related to mental health and misinformation, so the impact really depends on usage patterns.' }
+      { id: 'A', text: 'More harm probably, but I say that while still using it every day, so take that with a grain of salt.', author: 'Human' },
+      { id: 'B', text: 'It\'s mixed. Social media has clear benefits like connectivity and access to information, but also documented downsides related to mental health and misinformation, so the impact really depends on usage patterns.', author: 'Gemini' }
     ])
   }
 ];
@@ -170,7 +170,7 @@ async function seed() {
 
   // Clear existing question data
   console.log('Clearing old question keys...');
-  redisCmd('DEL "round:questions:r1" "round:questions:r2" "round:questions:r3"');
+  redisCmd('DEL "questions:r1" "questions:r2" "questions:r3" "round:questions:r1" "round:questions:r2" "round:questions:r3"');
 
   // Delete old question hashes
   const existingQKeys = execSync(
@@ -209,7 +209,7 @@ async function seed() {
       order: String(q.order),
       roundId: 'r1'
     });
-    redisCmd(`RPUSH "round:questions:r1" "${q.id}"`);
+    redisCmd(`RPUSH "questions:r1" "${q.id}"`);
     console.log(`  ✓ ${q.id}: ${q.text.substring(0, 50)}...`);
   }
 
@@ -239,7 +239,7 @@ async function seed() {
       order: String(q.order),
       roundId: 'r2'
     });
-    redisCmd(`RPUSH "round:questions:r2" "${q.id}"`);
+    redisCmd(`RPUSH "questions:r2" "${q.id}"`);
     console.log(`  ✓ ${q.id}: ${q.text.substring(0, 50)}...`);
   }
 
@@ -269,14 +269,14 @@ async function seed() {
       order: String(q.order),
       roundId: 'r3'
     });
-    redisCmd(`RPUSH "round:questions:r3" "${q.id}"`);
+    redisCmd(`RPUSH "questions:r3" "${q.id}"`);
     console.log(`  ✓ ${q.id}: ${q.text.substring(0, 50)}...`);
   }
 
   // Verify
-  const r1Count = redisCmd('LLEN "round:questions:r1"');
-  const r2Count = redisCmd('LLEN "round:questions:r2"');
-  const r3Count = redisCmd('LLEN "round:questions:r3"');
+  const r1Count = redisCmd('LLEN "questions:r1"');
+  const r2Count = redisCmd('LLEN "questions:r2"');
+  const r3Count = redisCmd('LLEN "questions:r3"');
   
   console.log('\n✅ Seeding complete!');
   console.log(`   Round 1: ${r1Count} questions`);

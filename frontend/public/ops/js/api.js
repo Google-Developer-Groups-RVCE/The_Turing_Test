@@ -6,12 +6,12 @@ window.K8S_BASE = window.APP_BASE + '/k8s';
 async function fetchK8sResource(resource) {
   // Translate resource names to Kubernetes API paths
   let path = '';
-  if (resource === 'pods') path = '/api/v1/namespaces/websocket-app/pods';
-  else if (resource === 'deployments') path = '/apis/apps/v1/namespaces/websocket-app/deployments';
-  else if (resource === 'services') path = '/api/v1/namespaces/websocket-app/services';
+  if (resource === 'pods') path = '/api/v1/namespaces/turing-test/pods';
+  else if (resource === 'deployments') path = '/apis/apps/v1/namespaces/turing-test/deployments';
+  else if (resource === 'services') path = '/api/v1/namespaces/turing-test/services';
   else if (resource === 'nodes') path = '/api/v1/nodes';
-  else if (resource === 'events') path = '/api/v1/namespaces/websocket-app/events';
-  else if (resource === 'configmaps') path = '/api/v1/namespaces/websocket-app/configmaps';
+  else if (resource === 'events') path = '/api/v1/namespaces/turing-test/events';
+  else if (resource === 'configmaps') path = '/api/v1/namespaces/turing-test/configmaps';
   else throw new Error('Unsupported resource ' + resource);
   
   const res = await fetch(`${window.K8S_BASE}${path}`);
@@ -27,15 +27,15 @@ async function triggerOperation(action, type, name, scale) {
   let headers = {};
 
   if (action === 'delete_pod') {
-    url = `${window.K8S_BASE}/api/v1/namespaces/websocket-app/pods/${name}`;
+    url = `${window.K8S_BASE}/api/v1/namespaces/turing-test/pods/${name}`;
     method = 'DELETE';
   } else if (action === 'scale') {
-    url = `${window.K8S_BASE}/apis/apps/v1/namespaces/websocket-app/deployments/${name}`;
+    url = `${window.K8S_BASE}/apis/apps/v1/namespaces/turing-test/deployments/${name}`;
     method = 'PATCH';
     headers = { 'Content-Type': 'application/strategic-merge-patch+json' };
     body = JSON.stringify({ spec: { replicas: parseInt(scale, 10) } });
   } else if (action === 'restart') {
-    url = `${window.K8S_BASE}/apis/apps/v1/namespaces/websocket-app/deployments/${name}`;
+    url = `${window.K8S_BASE}/apis/apps/v1/namespaces/turing-test/deployments/${name}`;
     method = 'PATCH';
     headers = { 'Content-Type': 'application/strategic-merge-patch+json' };
     body = JSON.stringify({
@@ -77,20 +77,20 @@ async function applyNetworkChaos(delay, loss) {
     kind: 'NetworkChaos',
     metadata: {
       name: 'network-delay',
-      namespace: 'websocket-app'
+      namespace: 'turing-test'
     },
     spec: {
       action: 'delay',
       mode: 'all',
       selector: {
-        labelSelectors: { app: 'websocket-node' }
+        labelSelectors: { app: 'backend' }
       },
       delay: { latency: `${delay}ms`, correlation: '0', jitter: '0ms' },
       duration: '30s'
     }
   };
   
-  const res = await fetch(`${window.K8S_BASE}/apis/chaos-mesh.org/v1alpha1/namespaces/websocket-app/networkchaos`, {
+  const res = await fetch(`${window.K8S_BASE}/apis/chaos-mesh.org/v1alpha1/namespaces/turing-test/networkchaos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(crd)
@@ -101,7 +101,7 @@ async function applyNetworkChaos(delay, loss) {
 
 async function fetchChaosStatus() {
   // Try to GET the network chaos object
-  const res = await fetch(`${window.K8S_BASE}/apis/chaos-mesh.org/v1alpha1/namespaces/websocket-app/networkchaos/network-delay`);
+  const res = await fetch(`${window.K8S_BASE}/apis/chaos-mesh.org/v1alpha1/namespaces/turing-test/networkchaos/network-delay`);
   if (res.status === 404) return { mode: 'OFF', delay: '0', loss: '0', cpu: '0', mem: '0' };
   return { mode: 'ON (Network)', delay: 'active', loss: '0', cpu: '0', mem: '0' };
 }

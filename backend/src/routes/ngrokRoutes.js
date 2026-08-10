@@ -70,10 +70,16 @@ router.post('/start', async (req, res) => {
     // The target to expose — the frontend service inside k8s is at turing-test.local
     // but from inside docker/k8s the frontend listens on port 80
     // From the host machine, turing-test.local maps to localhost via ingress
-    const target = req.body?.target || 'http://localhost:80';
+    const target = req.body?.port ? `http://localhost:${req.body.port}` : (req.body?.target || 'http://localhost:80');
+    const domain = req.body?.domain;
+    const authtoken = process.env.NGROK_AUTHTOKEN;
+
+    const args = ['http', target, '--log=stdout'];
+    if (authtoken) args.push(`--authtoken=${authtoken}`);
+    if (domain) args.push(`--url=${domain}`);
 
     // Spawn ngrok — it will automatically read ngrok.yml for the auth token
-    ngrokProcess = spawn('ngrok', ['http', target, '--log=stdout'], {
+    ngrokProcess = spawn('ngrok', args, {
       detached: false,
       stdio: ['ignore', 'pipe', 'pipe']
     });

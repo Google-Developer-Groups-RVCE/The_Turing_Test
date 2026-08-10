@@ -375,7 +375,16 @@ export default function RoundManagement() {
                 disabled={!!actionLoading || !activeRound}
                 className="flex-1 py-2 px-3 rounded-lg border border-primary-500/40 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
               >
-                <span>{activeStage === 'question' ? 'Evaluate Answer' : activeStage === 'evaluated' ? 'Show Leaderboard' : 'Next Question'}</span>
+                {(() => {
+                  const isPoll = activeQuestion && (activeQuestion.type === 'poll' || String(activeQuestion.id).includes('poll')) && activeQuestion.type !== 'profile-guess';
+                  let btnLabel = 'Next Question';
+                  if (activeStage === 'question') {
+                    btnLabel = isPoll ? 'Reveal Poll Result' : 'Evaluate Answer';
+                  } else if (activeStage === 'evaluated') {
+                    btnLabel = isPoll ? 'Next Poll Question' : 'Show Leaderboard';
+                  }
+                  return <span>{btnLabel}</span>;
+                })()}
                 <ArrowRightCircle size={14} />
               </button>
             </div>

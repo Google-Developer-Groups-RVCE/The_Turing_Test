@@ -51,9 +51,15 @@ function createApp() {
   app.use(
     cors({
       origin(origin, callback) {
-        // Allow requests with no origin (curl, server-to-server, health checks).
-        // Also allow if CORS_ORIGIN is '*'
-        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        if (
+          !origin ||
+          allowedOrigins.includes('*') ||
+          allowedOrigins.includes(origin) ||
+          origin.includes('ngrok') ||
+          origin.endsWith('.ngrok-free.dev') ||
+          origin.endsWith('.ngrok.io') ||
+          origin.includes('turing-test.local')
+        ) {
           return callback(null, true);
         }
         logger.warn(`[cors] blocked request from disallowed origin: ${origin}`);

@@ -50,7 +50,7 @@ const env = {
 
   // ---- CORS ----
   // Comma-separated list of allowed origins, e.g. "https://turing-test.gdgrvce.dev"
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173,http://turing-test.local,https://turing-test.local,https://nondefensible-helminthological-tennie.ngrok-free.dev',
 
   // ---- Redis ----
   REDIS_HOST: process.env.REDIS_HOST || '127.0.0.1',

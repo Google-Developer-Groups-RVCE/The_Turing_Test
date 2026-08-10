@@ -42,9 +42,23 @@ function initSocket(httpServer) {
   const isWildcard = allowedOrigins.includes('*');
   const io = new Server(httpServer, {
     cors: {
-      origin: isWildcard ? true : allowedOrigins,
+      origin: (origin, callback) => {
+        const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
+        if (
+          !origin ||
+          allowedOrigins.includes('*') ||
+          allowedOrigins.includes(origin) ||
+          origin.includes('ngrok') ||
+          origin.endsWith('.ngrok-free.dev') ||
+          origin.endsWith('.ngrok.io') ||
+          origin.includes('turing-test.local')
+        ) {
+          return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'), false);
+      },
       methods: ['GET', 'POST'],
-      credentials: !isWildcard,
+      credentials: true,
     },
     // Very generous timeouts — we NEVER want to disconnect due to inactivity
     pingInterval: 10000,   // send heartbeat every 10s

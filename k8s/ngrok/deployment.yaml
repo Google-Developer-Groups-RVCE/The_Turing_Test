@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngrok-tunnel
+  namespace: turing-test
+  labels:
+    app: ngrok-tunnel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ngrok-tunnel
+  template:
+    metadata:
+      labels:
+        app: ngrok-tunnel
+    spec:
+      containers:
+      - name: ngrok
+        image: ghcr.io/snk189/turing-test-backend:0dc93bb283a3718748d3ace7b12023cbc7023a64
+        imagePullPolicy: IfNotPresent
+        command: ["ngrok", "http", "http://frontend-service:80", "--authtoken=36tFxCc1jtMj815lmQkNtd3Q0Ak_32HSVw9KNxX3bLt5xmG7Z", "--url=nondefensible-helminthological-tennie.ngrok-free.dev", "--log=stdout"]

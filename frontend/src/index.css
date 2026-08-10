@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Cutepunch";
+  src: url("/cutepunch-personal-use-only/Cutepunch Personal Use Only.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Racing58";
+  src: url("/racing-58/Racing-58-Regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Tastoine";
+  src: url("/tastoine/Tastoine.otf") format("opentype"),
+       url("/tastoine/Tastoine.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Borghan";
+  src: url("/borghan/Borghan.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  body {
+    @apply bg-[#0d1b2a] text-white font-sans overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .page-bg {
+    @apply fixed inset-0 z-0 bg-cover bg-center opacity-10 pointer-events-none;
+    background-image: url("/reference/Background.avif");
+    filter: saturate(0.3) brightness(0.8);
+  }
+  
+  .page-wrap {
+    @apply relative z-10 min-h-screen flex flex-col;
+  }
+  
+  .card {
+    @apply bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md;
+  }
+  
+  .input-field {
+    @apply w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+}

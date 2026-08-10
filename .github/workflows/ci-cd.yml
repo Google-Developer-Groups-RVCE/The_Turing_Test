@@ -1,0 +1,94 @@
+name: CI/CD & GitOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+  docker-build-push-gitops:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Downcase Repository Owner
+        id: repo_owner
+        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:latest
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:latest
+
+      - name: Update Kubernetes Manifests (GitOps trigger for ArgoCD)
+        run: |
+          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
+          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
+
+      - name: Commit and Push Updated Manifests
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(gitops): update image tags to ${{ github.sha }} [skip ci]"
+            git push origin main
+          fi

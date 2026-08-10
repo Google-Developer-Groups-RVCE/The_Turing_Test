@@ -1,0 +1,20 @@
+module.exports = {
+  USER: (username) => `user:${username}`,
+  USERNAMES: 'usernames',
+  ADMINS: 'admins',
+  SESSION: (token) => `session:${token}`,
+  ROUND: (roundId) => `round:${roundId}`,
+  ROUNDS_ORDER: 'rounds:order',
+  CURRENT_ROUND: 'currentRound',
+  EVENT_STATE: 'eventState',
+  QUESTION: (roundId, questionId) => `question:${roundId}:${questionId}`,
+  QUESTIONS: (roundId) => `questions:${roundId}`,
+  RESPONSE: (roundId, questionId, username) => `response:${roundId}:${questionId}:${username}`,
+  RESPONSES: (roundId, questionId) => `responses:${roundId}:${questionId}`,
+  LEADERBOARD: 'leaderboard',
+  LEADERBOARD_ROUND: (roundId) => `leaderboard:${roundId}`,
+  SETTINGS: 'settings',
+  LOGS: 'logs',
+  PRESENCE_ONLINE: 'presence:online',
+  CSV_IMPORT: (importId) => `csvImport:${importId}`
+};

@@ -88,6 +88,17 @@ export default function RoundManagement() {
   const [roundQuestions, setRoundQuestions] = useState([]);
   const [responseCount, setResponseCount] = useState(0);
 
+  const { currentRound } = useContext(EventStateContext);
+
+  const getActiveRound = useCallback((roundList = rounds) => {
+    const cId = currentRound?.id || (typeof currentRound === 'string' ? currentRound : null);
+    if (cId) {
+      const match = roundList.find(r => r.id === cId);
+      if (match) return match;
+    }
+    return roundList.find(r => r.status === 'active') || roundList[0];
+  }, [currentRound, rounds]);
+
   const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 3000); };
   const showError = (m) => { setError(m); setTimeout(() => setError(''), 5000); };
 
@@ -98,7 +109,7 @@ export default function RoundManagement() {
       const list = res.data.rounds || [];
       setRounds(list);
 
-      const active = list.find(r => r.status === 'active');
+      const active = getActiveRound(list);
       if (active) {
         getQuestions(active.id).then(qListRes => {
           setRoundQuestions(qListRes.data?.questions || []);
@@ -127,7 +138,7 @@ export default function RoundManagement() {
       }
     } catch { showError('Failed to load rounds'); }
     finally { setLoading(false); }
-  }, []);
+  }, [getActiveRound]);
 
   const fetchSettingsState = useCallback(async () => {
     try {
@@ -203,7 +214,7 @@ export default function RoundManagement() {
   };
 
   const handleExtendTime = async (extraSecs) => {
-    const activeRound = rounds.find(r => r.status === 'active');
+    const activeRound = getActiveRound();
     if (!activeRound) {
       showError('No active round to extend time for.');
       return;
@@ -212,7 +223,7 @@ export default function RoundManagement() {
   };
 
   const handleNextQuestion = async () => {
-    const activeRound = rounds.find(r => r.status === 'active');
+    const activeRound = getActiveRound();
     if (!activeRound) {
       showError('No active round. Please start a round first.');
       return;
@@ -234,7 +245,7 @@ export default function RoundManagement() {
   };
 
   const handleRevealPoll = async () => {
-    const activeRound = rounds.find(r => r.status === 'active');
+    const activeRound = getActiveRound();
     if (!activeRound) return;
     doAction('Evaluate Poll', async () => {
       await revealPoll(activeRound.id);
@@ -242,7 +253,7 @@ export default function RoundManagement() {
   };
 
   const handlePrevQuestion = async () => {
-    const activeRound = rounds.find(r => r.status === 'active');
+    const activeRound = getActiveRound();
     if (!activeRound) {
       showError('No active round.');
       return;
@@ -256,7 +267,7 @@ export default function RoundManagement() {
   };
 
   const handleSelectQuestion = async (qId) => {
-    const activeRound = rounds.find(r => r.status === 'active');
+    const activeRound = getActiveRound();
     if (!activeRound) return;
     doAction('Set Active Question', async () => {
       const res = await setActiveQuestion(activeRound.id, qId);
@@ -275,7 +286,7 @@ export default function RoundManagement() {
   };
 
   const handleNextRound = async () => {
-    const activeRound = rounds.find(r => r.status === 'active');
+    const activeRound = getActiveRound();
     const pendingRound = rounds.find(r => r.status === 'pending');
     if (!pendingRound && !activeRound) {
       showError('No pending or active rounds to advance to.');
@@ -313,7 +324,7 @@ export default function RoundManagement() {
     doAction('End event', () => endEvent());
   };
 
-  const activeRound = rounds.find(r => r.status === 'active');
+  const activeRound = getActiveRound();
 
   return (
     <div className="space-y-6">
@@ -549,9 +560,9 @@ export default function RoundManagement() {
 
               {/* Round Actions */}
               <div className="flex flex-wrap gap-2">
-                {(round.status === 'pending' || round.status === 'idle') && (
+                {round.status !== 'active' && (
                   <button onClick={() => doAction('Start round', () => startRound(round.id))} disabled={!!actionLoading} className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-primary-500/10 border border-primary-500/30 text-primary-400 hover:bg-primary-500/20 transition-colors text-sm font-medium">
-                    <Play size={14} /><span>Start</span>
+                    <Play size={14} /><span>Start / Activate</span>
                   </button>
                 )}
                 {round.status === 'active' && (
@@ -569,11 +580,9 @@ export default function RoundManagement() {
                     <Play size={14} /><span>Resume</span>
                   </button>
                 )}
-                {(round.status === 'active' || round.status === 'paused' || round.status === 'ended') && (
-                  <button onClick={() => doAction('Restart round', () => restartRound(round.id))} disabled={!!actionLoading} className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium">
-                    <RotateCcw size={14} /><span>Restart</span>
-                  </button>
-                )}
+                <button onClick={() => doAction('Restart round', () => restartRound(round.id))} disabled={!!actionLoading} className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium">
+                  <RotateCcw size={14} /><span>Restart</span>
+                </button>
                 <button
                   onClick={() => doAction('Reset round responses', () => clearRoundResponses(round.id))}
                   disabled={!!actionLoading}

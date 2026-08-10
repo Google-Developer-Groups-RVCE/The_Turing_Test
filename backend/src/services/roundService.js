@@ -49,9 +49,33 @@ class RoundService {
     if (!round) throw new Error('Round not found');
 
     const startedAt = Date.now().toString();
-    await roundStore.updateRound(roundId, { status: 'active', startedAt });
+
+    // Ensure ONLY this round is active in Redis
+    const order = await roundStore.getRoundsOrder();
+    for (const rId of order) {
+      if (rId === roundId) {
+        await roundStore.updateRound(rId, { status: 'active', startedAt });
+      } else {
+        const other = await roundStore.getRound(rId);
+        if (other && other.status === 'active') {
+          await roundStore.updateRound(rId, { status: 'pending' });
+        }
+      }
+    }
+
     await roundStore.setCurrentRound(roundId);
     await roundStore.setEventState('running', adminUsername);
+
+    // Make sure active question is set to Q1 if not set
+    const questionStore = require('../redis/questionStore');
+    const questionService = require('./questionService');
+    const questionsOrder = await questionStore.getQuestionsOrder(roundId);
+    let activeQuestion = null;
+    if (questionsOrder && questionsOrder.length > 0) {
+      const currentQId = await questionStore.getActiveQuestionId(roundId);
+      const qToSet = (currentQId && questionsOrder.includes(currentQId)) ? currentQId : questionsOrder[0];
+      activeQuestion = await questionService.setActiveQuestion(roundId, qToSet);
+    }
 
     await logStore.addLog({
       action: 'START_ROUND',
@@ -62,7 +86,12 @@ class RoundService {
 
     const io = getIO();
     if (io) {
-      io.emit('round:changed', { roundId, roundData: { ...round, status: 'active', startedAt } });
+      const updatedRound = await roundStore.getRound(roundId);
+      io.emit('round:changed', { roundId, roundData: updatedRound });
+      io.emit('round:stage_changed', { roundId, activeStage: 'question' });
+      if (activeQuestion) {
+        io.emit('question:changed', { roundId, activeQuestionId: activeQuestion.id, question: activeQuestion });
+      }
     }
   }
 

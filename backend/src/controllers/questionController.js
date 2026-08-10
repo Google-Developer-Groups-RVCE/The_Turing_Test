@@ -90,6 +90,14 @@ class QuestionController {
       next(err);
     }
   }
+  async evaluateQuestion(req, res, next) {
+    try {
+      const result = await questionService.evaluateQuestion(req.params.roundId);
+      res.status(200).json({ message: 'Evaluation broadcasted', result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new QuestionController();

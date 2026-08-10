@@ -32,6 +32,7 @@ export default function RoundPage() {
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
   const [pollResult, setPollResult] = useState(null);
+  const [evaluationData, setEvaluationData] = useState(null);
 
   const fetchQuestion = useCallback(async () => {
     setLoading(true);
@@ -107,6 +108,7 @@ export default function RoundPage() {
         setSelectedAnswer('');
         setTextAnswer('');
         setMyResponse(null);
+        setEvaluationData(null);
         setError('');
       } else {
         fetchQuestion();
@@ -122,17 +124,24 @@ export default function RoundPage() {
         setPollResult(data.result);
       }
     };
+    const handleQuestionEvaluate = (data) => {
+      if (data?.evaluationData) {
+        setEvaluationData(data.evaluationData);
+      }
+    };
 
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on('question:changed', handleQuestionChanged);
     socket.on('round:time_extended', handleTimeExtended);
     socket.on('poll:revealed', handlePollRevealed);
+    socket.on('question:evaluate', handleQuestionEvaluate);
 
     return () => {
       socket.off(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
       socket.off('question:changed', handleQuestionChanged);
       socket.off('round:time_extended', handleTimeExtended);
       socket.off('poll:revealed', handlePollRevealed);
+      socket.off('question:evaluate', handleQuestionEvaluate);
     };
   }, [socket, fetchQuestion, setCurrentRound]);
 
@@ -251,7 +260,7 @@ export default function RoundPage() {
       </div>
 
       {/* Submitted Feedback Banner */}
-      {myResponse && (
+      {!evaluationData && myResponse && (
         <div className="p-4 rounded-xl border border-primary-500/40 bg-primary-950/40 flex items-center justify-between backdrop-blur-md">
           <div className="flex items-center space-x-3">
             <CheckCircle size={24} className="text-primary-400" />
@@ -267,8 +276,59 @@ export default function RoundPage() {
         </div>
       )}
 
+      {/* Evaluation View */}
+      {evaluationData && (
+        <div className="w-full bg-dark-900/80 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center text-center">
+          {(() => {
+            const isCorrect = myResponse && String(myResponse.answer).toLowerCase() === String(evaluationData.correctAnswer).toLowerCase();
+            const skipped = evaluationData.skipped;
+            
+            if (skipped) {
+              return (
+                <>
+                  <AlertCircle size={64} className="text-slate-400 mb-4" />
+                  <h2 className="text-3xl font-bold text-white mb-2">Round Concluded</h2>
+                  <p className="text-slate-400">Waiting for the next question...</p>
+                </>
+              );
+            }
+            
+            return (
+              <>
+                {isCorrect ? (
+                  <CheckCircle size={72} className="text-emerald-400 mb-4 animate-bounce" />
+                ) : (
+                  <XCircle size={72} className="text-rose-500 mb-4 animate-pulse" />
+                )}
+                
+                <h2 className={`font-['Cutepunch'] text-4xl tracking-widest mb-2 ${isCorrect ? 'text-emerald-400' : 'text-rose-500'}`}>
+                  {isCorrect ? 'Correct!' : 'Incorrect'}
+                </h2>
+                
+                <div className="w-full mt-6 space-y-4 text-left">
+                  <div className="p-4 rounded-xl bg-dark-800 border border-dark-600">
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Your Answer</p>
+                    <p className={`text-lg font-medium ${isCorrect ? 'text-emerald-300' : 'text-rose-400'}`}>
+                      {myResponse?.answer || 'No answer submitted'}
+                    </p>
+                  </div>
+                  {!isCorrect && (
+                    <div className="p-4 rounded-xl bg-emerald-900/20 border border-emerald-500/30">
+                      <p className="text-xs text-emerald-500/80 font-bold uppercase tracking-wider mb-1">Correct Answer</p>
+                      <p className="text-lg font-medium text-emerald-400">
+                        {evaluationData.correctAnswer}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Question Card & Answer Section */}
-      {(() => {
+      {!evaluationData && (() => {
         if (question.type === 'guess-author') {
           const displayedOpt = question.options?.find(o => o.id === question.displayedOptionId) || question.options?.[0];
           return (
@@ -403,49 +463,51 @@ export default function RoundPage() {
         );
       })()}
 
-      <div className="poll-actions mt-2">
-        {error && <p role="alert" className="poll-error text-center">{error}</p>}
+      {!evaluationData && (
+        <div className="poll-actions mt-2">
+          {error && <p role="alert" className="poll-error text-center">{error}</p>}
 
-        {!isLocked ? (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || (!selectedAnswer && !textAnswer.trim() && question.type !== 'guess-author') || (question.type === 'guess-author' && !selectedAnswer)}
-            className="relative overflow-hidden font-['Cutepunch'] text-xl tracking-widest py-3 px-10 rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-sky-400 text-white shadow-[0_4px_20px_rgba(14,165,233,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all hover:-translate-y-0.5 hover:scale-105 hover:shadow-[0_8px_28px_rgba(14,165,233,0.65),inset_0_1px_0_rgba(255,255,255,0.35)] active:translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 w-full mt-4"
-          >
-            {submitting ? (
-              <>
-                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-                <span>Submitting...</span>
-              </>
-            ) : (
-              <>
-                <Send size={18} />
-                <span>Submit Answer</span>
-              </>
-            )}
-          </button>
-        ) : (
-          <div className="mt-4 p-3 bg-dark-900/60 border border-dark-700 rounded-lg text-center text-xs text-slate-400 font-medium flex items-center justify-center space-x-2">
-            <Lock size={14} className="text-primary-400" />
-            <span>Submission locked for this round. Stay tuned for results.</span>
-          </div>
-        )}
-
-        {pollResult && (
-          <div className="mt-6 p-5 rounded-xl border border-purple-500/40 bg-purple-900/20 text-purple-100 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.2)]">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-purple-400 mb-2 flex items-center space-x-2">
-              <Sparkles size={16} />
-              <span>Poll Results are in!</span>
-            </h4>
-            <div className="text-lg font-medium leading-relaxed">
-              {pollResult.answerText}
+          {!isLocked ? (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || (!selectedAnswer && !textAnswer.trim() && question.type !== 'guess-author') || (question.type === 'guess-author' && !selectedAnswer)}
+              className="relative overflow-hidden font-['Cutepunch'] text-xl tracking-widest py-3 px-10 rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-sky-400 text-white shadow-[0_4px_20px_rgba(14,165,233,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all hover:-translate-y-0.5 hover:scale-105 hover:shadow-[0_8px_28px_rgba(14,165,233,0.65),inset_0_1px_0_rgba(255,255,255,0.35)] active:translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 w-full mt-4"
+            >
+              {submitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                <>
+                  <Send size={18} />
+                  <span>Submit Answer</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="mt-4 p-3 bg-dark-900/60 border border-dark-700 rounded-lg text-center text-xs text-slate-400 font-medium flex items-center justify-center space-x-2">
+              <Lock size={14} className="text-primary-400" />
+              <span>Submission locked for this round. Stay tuned for results.</span>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {pollResult && (
+            <div className="mt-6 p-5 rounded-xl border border-purple-500/40 bg-purple-900/20 text-purple-100 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-purple-400 mb-2 flex items-center space-x-2">
+                <Sparkles size={16} />
+                <span>Poll Results are in!</span>
+              </h4>
+              <div className="text-lg font-medium leading-relaxed">
+                {pollResult.answerText}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

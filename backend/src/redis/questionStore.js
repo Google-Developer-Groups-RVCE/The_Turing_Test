@@ -14,6 +14,7 @@ const questionStore = {
       correctAnswer: question.correctAnswer,
       points: String(question.points || 10),
       order: String(question.order || 1),
+      showEvaluation: question.showEvaluation !== undefined ? String(question.showEvaluation) : 'true',
       imageUrl: question.imageUrl,
       imageProps: question.imageProps ? JSON.stringify(question.imageProps) : null
     }).filter(([_, v]) => v !== undefined && v !== null && v !== 'null').map(([k, v]) => [k, String(v)]).flat();
@@ -29,6 +30,7 @@ const questionStore = {
     if (question && Object.keys(question).length) {
       question.options = JSON.parse(question.options || '[]');
       if (question.imageProps) question.imageProps = JSON.parse(question.imageProps);
+      if (question.showEvaluation !== undefined) question.showEvaluation = question.showEvaluation === 'true';
       return question;
     }
     return null;

@@ -179,6 +179,28 @@ class QuestionService {
     return updatedQuestion;
   }
 
+  async evaluateQuestion(roundId) {
+    const activeId = await questionStore.getActiveQuestionId(roundId);
+    if (!activeId) throw new Error("No active question to evaluate");
+    
+    const question = await questionStore.getQuestion(roundId, activeId);
+    if (!question) throw new Error("Active question not found");
+
+    if (question.showEvaluation === false) {
+      return { skipped: true, message: 'Evaluation disabled for this question' };
+    }
+
+    const evaluationData = {
+      questionId: question.id,
+      correctAnswer: question.correctAnswer
+    };
+
+    const io = getIO();
+    if (io) io.emit('question:evaluate', { roundId, evaluationData });
+    
+    return evaluationData;
+  }
+
   async revealPoll(roundId) {
     const question = await this.getActiveQuestion(roundId);
     if (!question || question.type !== 'poll') {

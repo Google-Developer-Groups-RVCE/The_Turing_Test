@@ -207,6 +207,7 @@ async function seed() {
       placeholder: q.placeholder || '',
       timeLimit: String(q.timeLimit),
       order: String(q.order),
+      showEvaluation: 'true',
       roundId: 'r1'
     });
     redisCmd(`RPUSH "questions:r1" "${q.id}"`);
@@ -237,6 +238,7 @@ async function seed() {
       placeholder: q.placeholder || '',
       timeLimit: String(q.timeLimit),
       order: String(q.order),
+      showEvaluation: 'true',
       roundId: 'r2'
     });
     redisCmd(`RPUSH "questions:r2" "${q.id}"`);
@@ -267,6 +269,7 @@ async function seed() {
       placeholder: '',
       timeLimit: String(q.timeLimit),
       order: String(q.order),
+      showEvaluation: 'true',
       roundId: 'r3'
     });
     redisCmd(`RPUSH "questions:r3" "${q.id}"`);

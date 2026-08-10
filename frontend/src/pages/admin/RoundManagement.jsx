@@ -365,7 +365,7 @@ export default function RoundManagement() {
               </button>
             </div>
             
-            {activeQuestion?.type === 'poll' && (
+            {activeQuestion?.type === 'poll' ? (
               <div className="flex pt-2">
                 <button
                   onClick={handleRevealPoll}
@@ -374,6 +374,24 @@ export default function RoundManagement() {
                 >
                   <Sparkles size={14} />
                   <span>Evaluate & Reveal Poll Result</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex pt-2">
+                <button
+                  onClick={async () => {
+                    const activeRound = rounds.find(r => r.status === 'active');
+                    if (!activeRound) return;
+                    doAction('Evaluate Question', async () => {
+                      const { evaluateQuestion } = require('../../api/questionApi');
+                      await evaluateQuestion(activeRound.id);
+                    });
+                  }}
+                  disabled={!!actionLoading || !activeRound}
+                  className="w-full py-2 px-3 rounded-lg border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 text-xs font-bold flex items-center justify-center space-x-2 transition-colors disabled:opacity-40"
+                >
+                  <CheckCircle size={14} />
+                  <span>Evaluate & Reveal Answer</span>
                 </button>
               </div>
             )}

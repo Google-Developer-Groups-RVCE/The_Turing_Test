@@ -28,6 +28,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
     points: question?.points || 10,
     durationSeconds: question?.durationSeconds || 300,
     order: question?.order || 1,
+    showEvaluation: question?.showEvaluation !== false,
     imageUrl: question?.imageUrl || '',
     imageWidth: question?.imageProps?.width || '',
     imageHeight: question?.imageProps?.height || '',
@@ -60,6 +61,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
         points: form.points,
         durationSeconds: form.durationSeconds,
         order: form.order,
+        showEvaluation: form.showEvaluation,
         options: validOptions,
       };
       if (form.imageUrl) {
@@ -144,9 +146,17 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
               <input className="input-field" value={form.correctAnswer} onChange={e => setForm(f => ({ ...f, correctAnswer: e.target.value }))} placeholder="Exact correct answer (case-insensitive)" />
             )}
           </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">Display Order</label>
-            <input type="number" min="1" className="input-field" value={form.order} onChange={e => setForm(f => ({ ...f, order: parseInt(e.target.value) || 1 }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Display Order</label>
+              <input type="number" min="1" className="input-field" value={form.order} onChange={e => setForm(f => ({ ...f, order: parseInt(e.target.value) || 1 }))} />
+            </div>
+            <div className="flex items-center mt-6">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 rounded border-dark-600 bg-dark-700 text-primary-500 focus:ring-primary-500 focus:ring-offset-dark-800" checked={form.showEvaluation} onChange={e => setForm(f => ({ ...f, showEvaluation: e.target.checked }))} />
+                <span className="text-sm text-slate-300">Show evaluation to participants</span>
+              </label>
+            </div>
           </div>
           <div className="flex space-x-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-dark-600 text-slate-400 hover:text-white">Cancel</button>

@@ -32,4 +32,12 @@ router.delete('/clear-data', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /api/event/seed-round3/:roundId — Seed Round 3 poll questions + profile-guess onto an existing round
+router.post('/seed-round3/:roundId', async (req, res, next) => {
+  try {
+    const result = await seedService.seedRound3Questions(req.params.roundId);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

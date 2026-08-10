@@ -16,7 +16,11 @@ const questionStore = {
       order: String(question.order || 1),
       showEvaluation: question.showEvaluation !== undefined ? String(question.showEvaluation) : 'true',
       imageUrl: question.imageUrl,
-      imageProps: question.imageProps ? JSON.stringify(question.imageProps) : null
+      imageProps: question.imageProps ? JSON.stringify(question.imageProps) : null,
+      targetAge: question.targetAge,
+      targetProfession: question.targetProfession,
+      targetHobby: question.targetHobby,
+      durationSeconds: question.durationSeconds ? String(question.durationSeconds) : null
     }).filter(([_, v]) => v !== undefined && v !== null && v !== 'null').map(([k, v]) => [k, String(v)]).flat();
     
     if (entries.length > 0) {

@@ -22,7 +22,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
 
       - name: Install Backend Dependencies
         working-directory: ./backend
@@ -59,19 +63,23 @@ jobs:
         run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Build and Push Backend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
           tags: |
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:latest
 
       - name: Build and Push Frontend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
           tags: |
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:latest

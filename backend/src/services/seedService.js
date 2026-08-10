@@ -14,7 +14,7 @@ class SeedService {
       { id: 'round_2_coding',    name: 'Round 2 – Algorithms & Coding',       status: 'pending', durationSeconds: '300', order: '2' },
       { id: 'round_3_decode',    name: 'Round 3 – Decode the Context',        status: 'pending', durationSeconds: '300', order: '3' },
     ];
-    for (const r of rounds) await roundStore.saveRound(r);
+    for (const r of rounds) await roundStore.createRound(r);
 
     // 2. Questions for Round 1 (Human vs AI Writing - 1 minute each)
     const r1Questions = [

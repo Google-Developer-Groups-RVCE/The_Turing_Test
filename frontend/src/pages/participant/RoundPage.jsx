@@ -105,21 +105,32 @@ export default function RoundPage() {
     fetchQuestion();
   }, [fetchQuestion]);
 
-  // Transition to Leaderboard if active stage is leaderboard or round ended
+  // Transition to Leaderboard if active stage is explicitly set to leaderboard
   useEffect(() => {
     const isSim = window.location.pathname.startsWith('/simulation');
     const basePath = isSim ? '/simulation' : '/participant';
-    if (activeStage === 'leaderboard' || eventStatus === 'ended') {
+    if (activeStage === 'leaderboard') {
       navigate(`${basePath}/leaderboard`, { replace: true });
     }
-  }, [activeStage, eventStatus, navigate]);
+  }, [activeStage, navigate]);
 
   // Socket: round changed & question changed — update question live
   useEffect(() => {
     if (!socket) return;
-    const handleRoundChanged = () => {
+    let roundEndTimer = null;
+
+    const handleRoundChanged = (data) => {
+      // A new round started — cancel any pending leaderboard navigation
+      if (roundEndTimer) {
+        clearTimeout(roundEndTimer);
+        roundEndTimer = null;
+      }
       setPollResult(null);
       setEvaluationData(null);
+      setSelectedAnswer('');
+      setTextAnswer('');
+      setMyResponse(null);
+      setError('');
       fetchQuestion();
     };
     const handleQuestionChanged = (data) => {
@@ -161,6 +172,15 @@ export default function RoundPage() {
       setProfileGuess({ age: '', profession: '', hobby: '' });
       fetchQuestion();
     };
+    const handleRoundEnded = () => {
+      // Don't navigate immediately — wait for a possible next round to auto-start
+      roundEndTimer = setTimeout(() => {
+        // If no new round started within 3s, navigate to leaderboard
+        const isSim = window.location.pathname.startsWith('/simulation');
+        const basePath = isSim ? '/simulation' : '/participant';
+        navigate(`${basePath}/leaderboard`, { replace: true });
+      }, 3000);
+    };
 
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on('question:changed', handleQuestionChanged);
@@ -168,16 +188,19 @@ export default function RoundPage() {
     socket.on('poll:revealed', handlePollRevealed);
     socket.on('question:evaluate', handleQuestionEvaluate);
     socket.on('responses:cleared', handleResponsesCleared);
+    socket.on('round:ended', handleRoundEnded);
 
     return () => {
+      if (roundEndTimer) clearTimeout(roundEndTimer);
       socket.off(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
       socket.off('question:changed', handleQuestionChanged);
       socket.off('round:time_extended', handleTimeExtended);
       socket.off('poll:revealed', handlePollRevealed);
       socket.off('question:evaluate', handleQuestionEvaluate);
       socket.off('responses:cleared', handleResponsesCleared);
+      socket.off('round:ended', handleRoundEnded);
     };
-  }, [socket, fetchQuestion, setCurrentRound]);
+  }, [socket, fetchQuestion, setCurrentRound, navigate]);
 
   // Countdown timer
   useEffect(() => {

@@ -188,6 +188,39 @@ class RoundService {
 
     const io = getIO();
     if (io) io.emit('round:ended', { roundId });
+
+    // --- Auto-advance to next pending round ---
+    const order = await roundStore.getRoundsOrder();
+    const currentIndex = order.indexOf(roundId);
+    let nextRound = null;
+
+    if (currentIndex >= 0) {
+      // Look for the next round in sequence that is still 'pending'
+      for (let i = currentIndex + 1; i < order.length; i++) {
+        const candidate = await roundStore.getRound(order[i]);
+        if (candidate && candidate.status === 'pending') {
+          nextRound = candidate;
+          break;
+        }
+      }
+    }
+
+    if (nextRound) {
+      // Small delay so clients process the 'ended' event before the next round starts
+      setTimeout(async () => {
+        try {
+          await this.startRound(nextRound.id, adminUsername);
+          await logStore.addLog({
+            action: 'AUTO_ADVANCE_ROUND',
+            adminUsername,
+            timestamp: Date.now().toString(),
+            details: `Auto-advanced from round ${roundId} to ${nextRound.id}`
+          });
+        } catch (err) {
+          console.error(`[roundService] Failed to auto-advance to round ${nextRound.id}:`, err.message);
+        }
+      }, 2000);
+    }
   }
 
   async resetEvent(adminUsername) {

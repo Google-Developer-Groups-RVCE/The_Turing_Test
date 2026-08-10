@@ -111,7 +111,15 @@ export default function RoundManagement() {
       const list = res.data.rounds || [];
       setRounds(list);
 
-      const active = getActiveRound(list);
+      const cId = currentRound?.id || (typeof currentRound === 'string' ? currentRound : null);
+      let active = null;
+      if (cId && list.length > 0) {
+        active = list.find(r => r.id === cId);
+      }
+      if (!active) {
+        active = list.find(r => r.status === 'active') || list[0];
+      }
+
       if (active) {
         getQuestions(active.id).then(qListRes => {
           setRoundQuestions(qListRes.data?.questions || []);
@@ -140,7 +148,7 @@ export default function RoundManagement() {
       }
     } catch { showError('Failed to load rounds'); }
     finally { if (isInitial) setLoading(false); }
-  }, [getActiveRound]);
+  }, [currentRound]);
 
   const fetchSettingsState = useCallback(async () => {
     try {
@@ -277,9 +285,9 @@ export default function RoundManagement() {
     });
   };
 
-  const handleSeedSamples = () => {
-    if (!window.confirm('Create 3 sample rounds with 3 sample questions each?')) return;
-    doAction('Seed sample rounds', () => seedSampleData());
+  const handleSeedData = () => {
+    if (!window.confirm('Seed the database with the real questions for Rounds 1, 2, and 3? This will create rounds if they do not exist.')) return;
+    doAction('Seed Real Questions', () => seedSampleData());
   };
 
   const handleClearAllData = () => {
@@ -344,9 +352,9 @@ export default function RoundManagement() {
           <span>Stage Master Control & Round Manager</span>
         </h1>
         <div className="flex flex-wrap gap-2">
-          <button onClick={handleSeedSamples} className="btn-secondary flex items-center space-x-1.5 text-xs font-semibold">
+          <button onClick={handleSeedData} className="btn-secondary flex items-center space-x-1.5 text-xs font-semibold">
             <Sparkles size={14} className="text-yellow-400" />
-            <span>Seed 3 Sample Rounds</span>
+            <span>Seed Questions (Rounds 1,2,3)</span>
           </button>
           <button onClick={() => setModal('create')} className="btn-primary flex items-center space-x-2 text-sm">
             <Plus size={16} /><span>New Round</span>
@@ -369,9 +377,9 @@ export default function RoundManagement() {
       )}
 
       {error && (
-        <div className="p-3 rounded-lg text-sm border bg-rose-900/40 border-rose-500/40 text-rose-300 flex items-center justify-between mb-2">
+        <div className="fixed bottom-20 right-6 z-50 p-3 rounded-lg text-sm border bg-rose-900/90 border-rose-500/40 text-rose-300 flex items-center justify-between mb-2 shadow-2xl backdrop-blur-md animate-fade-in min-w-[300px]">
           <span>{error}</span>
-          <button onClick={() => setError('')} className="text-rose-400 hover:text-white"><X size={16} /></button>
+          <button onClick={() => setError('')} className="text-rose-400 hover:text-white ml-3"><X size={16} /></button>
         </div>
       )}
 
@@ -614,8 +622,8 @@ export default function RoundManagement() {
           <div className="card text-center py-12 text-slate-500">
             <Layers size={40} className="mx-auto mb-3 opacity-30" />
             <p className="mb-3">No rounds created yet.</p>
-            <button onClick={handleSeedSamples} className="btn-primary inline-flex items-center space-x-2 text-sm">
-              <Sparkles size={16} /><span>Seed 3 Sample Rounds & Questions</span>
+            <button onClick={handleSeedData} className="btn-primary inline-flex items-center space-x-2 text-sm">
+              <Sparkles size={16} /><span>Seed Questions (Rounds 1,2,3)</span>
             </button>
           </div>
         )}

@@ -85,7 +85,6 @@ let isShuttingDown = false;
 httpServer.listen(env.PORT, () => {
   logger.info(`[server] Turing Test backend listening on port ${env.PORT} (${env.NODE_ENV})`);
   logger.info(`[server] CORS origin(s): ${env.CORS_ORIGIN}`);
-  autoSeed();
 });
 
 // --------------------------------------------------------------------

@@ -41,8 +41,8 @@ class SeedService {
     // 4. Questions for Round 3 (5 polls + 1 profile-guess)
     await this.seedRound3Questions('round_3_decode');
 
-    await logStore.addLog({ action: 'SEED_SAMPLE_DATA', adminUsername, timestamp: Date.now().toString(), details: 'Seeded 3 rounds (Round 3 with 5 polls + profile-guess)' });
-    return { message: 'Seeded 3 sample rounds (Round 3: 5 polls + profile-guess)' };
+    await logStore.addLog({ action: 'SEED_REAL_DATA', adminUsername, timestamp: Date.now().toString(), details: 'Seeded Rounds 1, 2, 3 with real data' });
+    return { message: 'Seeded real data for Rounds 1, 2, and 3' };
   }
 
   /**

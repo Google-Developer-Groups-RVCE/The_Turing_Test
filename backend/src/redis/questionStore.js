@@ -26,7 +26,10 @@ const questionStore = {
     if (entries.length > 0) {
       await redisClient.hmset(key, ...entries);
     }
-    await redisClient.rpush(keys.QUESTIONS(roundId), question.id);
+    const existing = await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
+    if (!existing.includes(question.id)) {
+      await redisClient.rpush(keys.QUESTIONS(roundId), question.id);
+    }
   },
 
   async getQuestion(roundId, questionId) {

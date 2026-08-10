@@ -118,6 +118,21 @@ class QuestionService {
       });
     }
 
+    const activeStage = await roundStore.getActiveStage(roundId) || 'question';
+    const isPoll = questionWithoutAnswer && (
+      questionWithoutAnswer.type === 'poll' ||
+      String(roundId).includes('3') ||
+      String(roundId).includes('r3') ||
+      String(questionWithoutAnswer.id).includes('poll')
+    ) && questionWithoutAnswer.type !== 'profile-guess';
+
+    if (activeStage === 'evaluated' && isPoll) {
+      try {
+        const result = await this.revealPoll(roundId);
+        questionWithoutAnswer.pollResult = result;
+      } catch (e) {}
+    }
+
     return questionWithoutAnswer;
   }
 
@@ -329,7 +344,7 @@ class QuestionService {
     }
 
     const pollMatch = POLLS_DATA.find(p => p.id === question.id || (p.order && Number(p.order) === Number(question.order)));
-    const options = (dbOpts && dbOpts.length > 0) ? dbOpts : (pollMatch?.options || []);
+    const options = (pollMatch && pollMatch.options && pollMatch.options.length > 0) ? pollMatch.options : ((dbOpts && dbOpts.length > 0) ? dbOpts : []);
 
     if (!winningKey && options.length > 0) {
       winningKey = options[0].key || options[0].id || 'A';
@@ -342,17 +357,20 @@ class QuestionService {
     ) || options[0];
 
     let answerText = 'No votes recorded yet.';
+    let winningQuestionText = '';
     if (winningOption) {
       if (typeof winningOption === 'string') {
         answerText = winningOption;
       } else {
-        answerText = winningOption.answer || winningOption.text || winningOption.question || 'No Answer';
+        answerText = winningOption.answer || winningOption.text || 'No Answer';
+        winningQuestionText = winningOption.question || winningOption.text || '';
       }
     }
 
     const result = {
       winningKey: winningKey || 'A',
       answerText,
+      winningQuestionText,
       counts
     };
 

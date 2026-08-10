@@ -61,8 +61,11 @@ export default function RoundPage() {
         const qData = qRes.data;
         q = qData?.question || (Array.isArray(qData) ? qData[0] : (qData?.id ? qData : null));
         setQuestion(q || null);
+        if (q?.pollResult) setPollResult(q.pollResult);
+        else setPollResult(null);
       } else {
         setQuestion(null);
+        setPollResult(null);
       }
 
       if (q?.id) {
@@ -453,7 +456,7 @@ export default function RoundPage() {
         const richData = getRichData();
         
         if (richData) {
-          if (question.type === 'poll') {
+          if (question.type === 'poll' || (richData.options && richData.options[0]?.question)) {
             return (
               <div className="poll-screen" style={{ width: '100%' }}>
                 <PollCard

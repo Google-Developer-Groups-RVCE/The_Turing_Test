@@ -220,18 +220,24 @@ export default function RoundPage() {
     );
   }
 
-  if (!question) {
+  if (!currentRound || currentRound.status !== 'active' || !question) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-        <AlertCircle size={48} className="text-slate-500 mb-4" />
-        <h2 className="text-xl font-semibold text-slate-300 mb-2">No Question Available</h2>
-        <p className="text-slate-500 text-sm mb-6">The admin hasn't set a question for this round yet or event is idle.</p>
+      <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4">
+        <div className="p-5 rounded-full bg-primary-500/10 border border-primary-500/30 mb-6 shadow-[0_0_30px_rgba(14,165,233,0.2)]">
+          <Sparkles size={48} className="text-primary-400 animate-pulse" />
+        </div>
+        <h2 className="font-['Borghan'] text-3xl md:text-5xl font-bold text-white mb-3 tracking-wide">
+          The Turing Test
+        </h2>
+        <p className="text-slate-400 max-w-md text-sm md:text-base leading-relaxed mb-8">
+          Welcome to GDG RVCE's Turing Test Arena. Please stay tuned — the host will start the round shortly!
+        </p>
         <button
           onClick={fetchQuestion}
-          className="btn-primary px-4 py-2 text-sm flex items-center space-x-2"
+          className="btn-primary px-6 py-3 text-sm font-semibold flex items-center space-x-2 shadow-lg"
         >
           <RefreshCw size={16} />
-          <span>Refresh Question</span>
+          <span>Sync Live Status</span>
         </button>
       </div>
     );
@@ -424,7 +430,27 @@ export default function RoundPage() {
           );
         }
 
-        const richData = allRichData.find((d) => d.id === question.id || (d.order && Number(d.order) === Number(question.order)));
+        const getRichData = () => {
+          if (!question) return null;
+          const rName = (currentRound?.name || '').toLowerCase();
+          const rId = String(currentRound?.id || '').toLowerCase();
+
+          let dataset = [];
+          if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
+            dataset = round1Data;
+          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
+            dataset = round2Data;
+          } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+            dataset = pollsData;
+          } else {
+            dataset = allRichData;
+          }
+
+          return dataset.find((d) => d.id === question.id || (d.order && Number(d.order) === Number(question.order))) ||
+                 allRichData.find((d) => d.id === question.id);
+        };
+
+        const richData = getRichData();
         
         if (richData) {
           if (question.type === 'poll') {

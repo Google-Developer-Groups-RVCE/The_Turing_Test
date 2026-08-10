@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   getRounds, createRound, updateRound, deleteRound,
   startRound, pauseRound, resumeRound, restartRound, endRound,
-  extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData
+  extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData, getStage
 } from '../../api/roundApi';
-import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion } from '../../api/questionApi';
+import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { getSettings, updateSettings } from '../../api/settingsApi';
 import { useSocket } from '../../hooks/useSocket';
@@ -113,7 +113,6 @@ export default function RoundManagement() {
             setResponseCount(count);
           }).catch(() => setResponseCount(0));
 
-        const { getStage } = require('../../api/roundApi');
         getStage(active.id).then(res => {
           setActiveStage(res.data?.stage || 'question');
         }).catch(() => setActiveStage('question'));
@@ -394,7 +393,6 @@ export default function RoundManagement() {
                     <button
                       key={opt.id}
                       onClick={() => doAction(`Force ${opt.author}`, () => {
-                         const { overrideOption } = require('../../api/questionApi');
                          const overrideId = opt.id || (opt.author ? opt.author.toLowerCase() + '-opt' : null);
                          if (!overrideId) return Promise.reject(new Error('Invalid option ID'));
                          return overrideOption(activeRound.id, overrideId);

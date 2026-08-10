@@ -188,6 +188,18 @@ const pollsData = `[
     "correctAnswer": "",
     "durationSeconds": 60,
     "points": 0
+  },
+  {
+    "id": "poll6",
+    "text": "Final Submission — Decode the Hidden Profile (Predict Age, Profession, and Hobby)",
+    "type": "profile-guess",
+    "options": [],
+    "correctAnswer": "",
+    "targetAge": 47,
+    "targetProfession": "Lawyer",
+    "targetHobby": "Photography",
+    "durationSeconds": 300,
+    "points": 30
   }
 ]`;
 

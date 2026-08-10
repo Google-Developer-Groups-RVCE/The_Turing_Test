@@ -119,6 +119,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
                 <option value="short">Short Answer</option>
                 <option value="poll">Live Poll</option>
                 <option value="guess-author">Guess the Author (Round 1)</option>
+                <option value="profile-guess">Decode Profile (Round 3 Final)</option>
               </select>
             </div>
             <div>
@@ -167,6 +168,25 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
               <div className="p-3 border border-purple-500/30 rounded-lg bg-purple-500/10">
                 <label className="block text-xs font-bold text-purple-400 mb-1">Gemini's Response</label>
                 <textarea rows={3} className="input-field resize-none text-sm" value={form.options.find(o => o.author === 'Gemini')?.text || ''} onChange={e => handleOptionChange(form.options.findIndex(o => o.author === 'Gemini'), e.target.value, 'text')} placeholder="Enter what Gemini wrote..." />
+              </div>
+            </div>
+          )}
+          {form.type === 'profile-guess' && (
+            <div className="space-y-3 p-4 border border-emerald-500/30 rounded-lg bg-emerald-500/10">
+              <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Target Profile Answers for Evaluation</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Target Age</label>
+                  <input type="number" className="input-field py-1 text-sm" value={form.targetAge || '47'} onChange={e => setForm(f => ({ ...f, targetAge: e.target.value }))} placeholder="47" />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Target Profession</label>
+                  <input type="text" className="input-field py-1 text-sm" value={form.targetProfession || 'Lawyer'} onChange={e => setForm(f => ({ ...f, targetProfession: e.target.value }))} placeholder="Lawyer" />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Target Hobby</label>
+                  <input type="text" className="input-field py-1 text-sm" value={form.targetHobby || 'Photography'} onChange={e => setForm(f => ({ ...f, targetHobby: e.target.value }))} placeholder="Photography" />
+                </div>
               </div>
             </div>
           )}

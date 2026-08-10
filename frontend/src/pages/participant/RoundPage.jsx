@@ -26,6 +26,7 @@ export default function RoundPage() {
   const [question, setQuestion] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [textAnswer, setTextAnswer] = useState('');
+  const [profileGuess, setProfileGuess] = useState({ age: '', profession: '', hobby: '' });
   const [myResponse, setMyResponse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -328,6 +329,59 @@ export default function RoundPage() {
 
       {/* Question Card & Answer Section */}
       {!evaluationData && (() => {
+        if (question.type === 'profile-guess' || question.id === 'poll6') {
+          const handleProfileChange = (field, val) => {
+            const next = { ...profileGuess, [field]: val };
+            setProfileGuess(next);
+            const str = `Age: ${next.age} | Profession: ${next.profession} | Hobby: ${next.hobby}`;
+            setSelectedAnswer(str);
+            setTextAnswer(str);
+          };
+
+          return (
+            <div className="w-full bg-white/5 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md space-y-6">
+              <h2 className="font-['Borghan'] text-2xl md:text-4xl font-bold text-white tracking-wide">{question.text || "Round 3 — Decode the Hidden Profile"}</h2>
+              <p className="text-sm text-slate-400 italic">Based on the clues revealed across Polls 1–5, submit your final guess for Gemini's hidden profile:</p>
+
+              <div className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">1. Predicted Age (Numerical)</label>
+                  <input
+                    type="number"
+                    disabled={isLocked}
+                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
+                    placeholder="e.g. 47"
+                    value={profileGuess.age}
+                    onChange={(e) => handleProfileChange('age', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">2. Predicted Profession</label>
+                  <input
+                    type="text"
+                    disabled={isLocked}
+                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
+                    placeholder="e.g. Lawyer"
+                    value={profileGuess.profession}
+                    onChange={(e) => handleProfileChange('profession', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">3. Predicted Hobby</label>
+                  <input
+                    type="text"
+                    disabled={isLocked}
+                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
+                    placeholder="e.g. Photography"
+                    value={profileGuess.hobby}
+                    onChange={(e) => handleProfileChange('hobby', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        }
+
         if (question.type === 'guess-author') {
           const displayedOpt = question.options?.find(o => o.id === question.displayedOptionId) || question.options?.[0];
           return (

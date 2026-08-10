@@ -42,10 +42,56 @@ class ResponseService {
           if (displayedOption && displayedOption.author) {
              isCorrect = displayedOption.author.trim().toLowerCase() === answer.trim().toLowerCase();
           }
+          if (isCorrect) pointsAwarded = parseInt(q.points) || 10;
+        } else if (q.type === 'profile-guess' || q.id === 'poll6' || q.id === 'r3-q6') {
+          let guessedAge = null;
+          let guessedProf = '';
+          let guessedHobby = '';
+
+          try {
+            if (answer.startsWith('{')) {
+              const parsed = JSON.parse(answer);
+              guessedAge = parseInt(parsed.age);
+              guessedProf = String(parsed.profession || '');
+              guessedHobby = String(parsed.hobby || '');
+            } else {
+              const ageMatch = answer.match(/age:\s*(\d+)/i);
+              const profMatch = answer.match(/profession:\s*([^|]+)/i);
+              const hobbyMatch = answer.match(/hobby:\s*(.+)/i);
+              if (ageMatch) guessedAge = parseInt(ageMatch[1]);
+              if (profMatch) guessedProf = profMatch[1].trim();
+              if (hobbyMatch) guessedHobby = hobbyMatch[1].trim();
+            }
+          } catch (e) {}
+
+          const targetAge = parseInt(q.targetAge || 47);
+          const targetProf = q.targetProfession || 'Lawyer';
+          const targetHobby = q.targetHobby || 'Photography';
+
+          let agePts = 0;
+          if (guessedAge !== null && !isNaN(guessedAge)) {
+            const diff = Math.abs(guessedAge - targetAge);
+            if (diff === 0) agePts = 10;
+            else if (diff <= 2) agePts = 7;
+            else if (diff <= 5) agePts = 4;
+          }
+
+          let profPts = 0;
+          if (guessedProf && (guessedProf.toLowerCase().includes(targetProf.toLowerCase()) || /lawyer|attorney|advocate|legal/i.test(guessedProf))) {
+            profPts = 10;
+          }
+
+          let hobbyPts = 0;
+          if (guessedHobby && (guessedHobby.toLowerCase().includes(targetHobby.toLowerCase()) || /photo|photograph|camera/i.test(guessedHobby))) {
+            hobbyPts = 10;
+          }
+
+          pointsAwarded = agePts + profPts + hobbyPts;
+          isCorrect = pointsAwarded > 0;
         } else {
           isCorrect = q.correctAnswer && q.correctAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
+          if (isCorrect) pointsAwarded = parseInt(q.points) || 10;
         }
-        if (isCorrect) pointsAwarded = parseInt(q.points) || 10;
       }
     }
 

@@ -21,7 +21,7 @@ export default function LoginPage() {
       if (user && user.role === 'admin') navigate('/admin');
       else navigate('/participant');
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+      setError(err.response?.data?.error?.message || err.response?.data?.message || 'Invalid credentials. Please try again.');
     } finally {
       setIsLoading(false);
     }

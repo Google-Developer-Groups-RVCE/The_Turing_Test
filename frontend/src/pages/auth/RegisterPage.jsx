@@ -31,7 +31,7 @@ export default function RegisterPage() {
       if (user && user.role === 'admin') navigate('/admin');
       else navigate('/participant');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Try again.');
+      setError(err.response?.data?.error?.message || err.response?.data?.message || 'Registration failed. Try again.');
     } finally {
       setIsLoading(false);
     }

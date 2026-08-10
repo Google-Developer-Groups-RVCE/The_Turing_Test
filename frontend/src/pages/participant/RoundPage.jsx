@@ -63,9 +63,12 @@ export default function RoundPage() {
         setQuestion(q || null);
         if (q?.pollResult) setPollResult(q.pollResult);
         else setPollResult(null);
+        if (q?.evaluationData) setEvaluationData(q.evaluationData);
+        else setEvaluationData(null);
       } else {
         setQuestion(null);
         setPollResult(null);
+        setEvaluationData(null);
       }
 
       if (q?.id) {

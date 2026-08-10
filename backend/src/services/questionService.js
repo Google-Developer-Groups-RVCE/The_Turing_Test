@@ -109,7 +109,14 @@ class QuestionService {
     const question = await questionStore.getQuestion(roundId, activeId);
     if (!question) return null;
 
-    const { correctAnswer, ...questionWithoutAnswer } = question;
+    let correctAnswer = question.correctAnswer;
+    if (question.type === 'guess-author') {
+      const displayedId = question.displayedOptionId || 'human-opt';
+      const displayedOpt = (question.options || []).find(o => o.id === displayedId);
+      correctAnswer = displayedOpt?.author || 'Human';
+    }
+
+    const { correctAnswer: _discard, ...questionWithoutAnswer } = question;
     
     if (questionWithoutAnswer.type === 'guess-author') {
       questionWithoutAnswer.options = (questionWithoutAnswer.options || []).map(opt => {
@@ -126,11 +133,18 @@ class QuestionService {
       String(questionWithoutAnswer.id).includes('poll')
     ) && questionWithoutAnswer.type !== 'profile-guess';
 
-    if (activeStage === 'evaluated' && isPoll) {
-      try {
-        const result = await this.revealPoll(roundId);
-        questionWithoutAnswer.pollResult = result;
-      } catch (e) {}
+    if (activeStage === 'evaluated') {
+      if (isPoll) {
+        try {
+          const result = await this.revealPoll(roundId);
+          questionWithoutAnswer.pollResult = result;
+        } catch (e) {}
+      } else {
+        questionWithoutAnswer.evaluationData = {
+          questionId: question.id,
+          correctAnswer: correctAnswer || 'N/A'
+        };
+      }
     }
 
     return questionWithoutAnswer;
@@ -300,9 +314,16 @@ class QuestionService {
       return { skipped: true, message: 'Evaluation disabled for this question' };
     }
 
+    let correctAnswer = question.correctAnswer;
+    if (question.type === 'guess-author') {
+      const displayedId = question.displayedOptionId || 'human-opt';
+      const displayedOpt = (question.options || []).find(o => o.id === displayedId);
+      correctAnswer = displayedOpt?.author || 'Human';
+    }
+
     const evaluationData = {
       questionId: question.id,
-      correctAnswer: question.correctAnswer
+      correctAnswer: correctAnswer || 'N/A'
     };
 
     const io = getIO();

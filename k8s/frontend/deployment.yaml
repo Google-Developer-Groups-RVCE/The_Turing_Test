@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/snk189/turing-test-frontend:8d538269d47db42e16af5dee9c955b97e1706e37
+        image: ghcr.io/snk189/turing-test-frontend:afa56702b5a0be8a895f3d4fdf1056db07246636
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80

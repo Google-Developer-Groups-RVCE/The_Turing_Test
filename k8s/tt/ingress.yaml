@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: turing-ingress
-  namespace: turing-test
+  name: tt-ingress
+  namespace: tt
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
@@ -13,7 +13,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: turing-test.local
+  - host: tt.local
     http:
       paths:
       - path: /socket.io

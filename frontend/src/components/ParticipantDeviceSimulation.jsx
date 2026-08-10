@@ -122,7 +122,30 @@ export default function ParticipantDeviceSimulation() {
 
             {/* Options list */}
             <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[220px]">
-              {activeQuestion.type === 'mcq' && activeQuestion.options ? (
+              {activeQuestion.type === 'guess-author' ? (() => {
+                const displayedOpt = activeQuestion.options?.find(o => o.id === activeQuestion.displayedOptionId || o.key === activeQuestion.displayedOptionId) || activeQuestion.options?.[0];
+                return (
+                  <div className="space-y-2">
+                    <div className="p-2.5 rounded-xl bg-dark-900 border border-primary-500/30">
+                      <span className="text-[10px] text-primary-400 font-bold block mb-1">Response to Evaluate:</span>
+                      <p className="text-slate-200 text-xs italic leading-relaxed">"{displayedOpt?.text || displayedOpt?.answer}"</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Human', 'Gemini'].map((author) => (
+                        <button
+                          key={author}
+                          onClick={() => setSimulatedAnswer(author)}
+                          className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-colors ${
+                            simulatedAnswer === author ? 'bg-primary-500/20 border-primary-400 text-white' : 'bg-dark-800/60 border-white/10 text-slate-300 hover:bg-dark-800'
+                          }`}
+                        >
+                          {author}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })() : activeQuestion.type === 'mcq' && activeQuestion.options ? (
                 Object.entries(activeQuestion.options).map(([key, val]) => (
                   <button
                     key={key}

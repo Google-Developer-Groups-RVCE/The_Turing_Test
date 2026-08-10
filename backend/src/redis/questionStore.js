@@ -9,6 +9,7 @@ const questionStore = {
     const entries = Object.entries({
       id: question.id,
       text: question.text,
+      prompt: question.prompt || question.text,
       type: question.type || 'mcq',
       options: JSON.stringify(question.options || []),
       correctAnswer: question.correctAnswer,

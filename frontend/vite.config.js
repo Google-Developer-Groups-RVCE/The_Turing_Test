@@ -9,11 +9,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: process.env.VITE_BACKEND_URL || 'http://localhost:5000',
+        target: 'http://localhost:3000',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: process.env.VITE_BACKEND_URL || 'http://localhost:5000',
+        target: 'http://localhost:3000',
         ws: true,
       },
     }

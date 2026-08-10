@@ -16,17 +16,17 @@ const SALT_ROUNDS = 10;
  * @returns {Promise<string>} bcrypt hash
  */
 const hashPassword = async (password) => {
-  return password; // Store plain text
+  return bcrypt.hash(password, SALT_ROUNDS);
 };
 
 /**
- * Compare a plain-text password against a stored plain-text password.
+ * Compare a plain-text password against a bcrypt hash.
  * @param {string} password
  * @param {string} hash
  * @returns {Promise<boolean>}
  */
 const comparePassword = async (password, hash) => {
-  return password === hash;
+  return bcrypt.compare(password, hash);
 };
 
 module.exports = { hashPassword, comparePassword };

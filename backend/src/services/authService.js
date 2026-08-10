@@ -34,28 +34,10 @@ class AuthService {
   }
 
   async login(username, password) {
-    const normalizedUsername = (username || '').trim();
-    let user = await userStore.getUser(normalizedUsername);
-    if (!user && typeof normalizedUsername === 'string') {
-      user = await userStore.getUser(normalizedUsername.toLowerCase()) || await userStore.getUser(normalizedUsername.toUpperCase());
+    let user = await userStore.getUser(username);
+    if (!user && typeof username === 'string') {
+      user = await userStore.getUser(username.toLowerCase()) || await userStore.getUser(username.toUpperCase());
     }
-    
-    // Auto-create or repair demo accounts (a, b, admin)
-    const lower = normalizedUsername.toLowerCase();
-    if (!user && (lower === 'a' || lower === 'b' || lower === 'admin')) {
-      const role = lower === 'a' || lower === 'admin' ? 'admin' : 'participant';
-      const hashed = await hashPassword(password);
-      user = {
-        username: normalizedUsername,
-        passwordHash: hashed,
-        role,
-        name: lower === 'a' || lower === 'admin' ? 'Super Admin' : `Participant ${normalizedUsername}`,
-        createdAt: Date.now().toString(),
-        status: 'active'
-      };
-      await userStore.createUser(user);
-    }
-
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -64,13 +46,7 @@ class AuthService {
       throw new Error('Account is blocked');
     }
 
-    let isValid = await comparePassword(password, user.passwordHash);
-
-    // Guaranteed bypass for demo accounts (a, b, admin)
-    if (lower === 'a' || lower === 'b' || lower === 'admin') {
-      isValid = true;
-    }
-
+    const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
       throw new Error('Invalid credentials');
     }

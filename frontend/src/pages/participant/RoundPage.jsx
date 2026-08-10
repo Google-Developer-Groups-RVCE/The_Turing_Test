@@ -263,9 +263,7 @@ export default function RoundPage() {
     );
   }
 
-  const displayPollResult = pollResult || (activeStage === 'evaluated' ? question?.pollResult : null);
-
-  if (displayPollResult) {
+  if (pollResult) {
     const getRichData = () => {
       if (!question) return null;
       const rName = (currentRound?.name || '').toLowerCase();
@@ -297,11 +295,11 @@ export default function RoundPage() {
           </div>
 
           <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-            Most Voted Question (Option {displayPollResult.winningKey})
+            Most Voted Question (Option {pollResult.winningKey})
           </h3>
           
           <h2 className="text-white text-xl md:text-2xl font-bold italic leading-relaxed mb-8 px-2">
-            "{displayPollResult.winningQuestionText || (richData && richData.options?.find(o => (o.key || o.id) === displayPollResult.winningKey)?.question) || 'Decoded Question'}"
+            "{pollResult.winningQuestionText || (richData && richData.options.find(o => o.key === pollResult.winningKey)?.question) || 'Decoded Question'}"
           </h2>
 
           <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-purple-500/40 to-transparent mb-8"></div>
@@ -311,7 +309,7 @@ export default function RoundPage() {
               Gemini's Decoded Response:
             </span>
             <p className="text-emerald-300 text-base md:text-lg font-medium leading-relaxed">
-              "{displayPollResult.answerText}"
+              "{pollResult.answerText}"
             </p>
           </div>
         </div>

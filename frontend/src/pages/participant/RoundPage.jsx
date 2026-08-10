@@ -152,12 +152,22 @@ export default function RoundPage() {
         setEvaluationData(data.evaluationData);
       }
     };
+    const handleResponsesCleared = () => {
+      setSelectedAnswer('');
+      setTextAnswer('');
+      setMyResponse(null);
+      setEvaluationData(null);
+      setPollResult(null);
+      setProfileGuess({ age: '', profession: '', hobby: '' });
+      fetchQuestion();
+    };
 
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on('question:changed', handleQuestionChanged);
     socket.on('round:time_extended', handleTimeExtended);
     socket.on('poll:revealed', handlePollRevealed);
     socket.on('question:evaluate', handleQuestionEvaluate);
+    socket.on('responses:cleared', handleResponsesCleared);
 
     return () => {
       socket.off(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
@@ -165,6 +175,7 @@ export default function RoundPage() {
       socket.off('round:time_extended', handleTimeExtended);
       socket.off('poll:revealed', handlePollRevealed);
       socket.off('question:evaluate', handleQuestionEvaluate);
+      socket.off('responses:cleared', handleResponsesCleared);
     };
   }, [socket, fetchQuestion, setCurrentRound]);
 

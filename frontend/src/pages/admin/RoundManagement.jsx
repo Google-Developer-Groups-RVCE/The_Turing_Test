@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   getRounds, createRound, updateRound, deleteRound,
-  startRound, pauseRound, resumeRound, restartRound, endRound,
+  startRound, pauseRound, resumeRound, restartRound, endRound, clearRoundResponses,
   extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData, getStage
 } from '../../api/roundApi';
 import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll } from '../../api/questionApi';
@@ -571,6 +571,14 @@ export default function RoundManagement() {
                     <RotateCcw size={14} /><span>Restart</span>
                   </button>
                 )}
+                <button
+                  onClick={() => doAction('Reset round responses', () => clearRoundResponses(round.id))}
+                  disabled={!!actionLoading}
+                  className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 transition-colors text-sm font-medium"
+                  title="Reset all user submitted answers for this round"
+                >
+                  <RefreshCw size={14} /><span>Reset Responses</span>
+                </button>
                 <button onClick={() => setModal(round)} className="p-1.5 rounded hover:bg-dark-700 text-slate-400 hover:text-white transition-colors" title="Edit">
                   <Edit size={15} />
                 </button>

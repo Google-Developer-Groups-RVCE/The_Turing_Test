@@ -95,7 +95,85 @@ class RoundService {
   }
 
   async restartRound(roundId, adminUsername) {
+    const questionStore = require('../redis/questionStore');
+    const responseStore = require('../redis/responseStore');
+    const settingsStore = require('../redis/settingsStore');
+    const questionService = require('./questionService');
+
+    // 1. Clear all user responses for this round
+    await responseStore.clearRoundResponses(roundId);
+
+    // 2. Reset active stage to 'question'
+    await roundStore.setActiveStage(roundId, 'question');
+
+    // 3. Hide leaderboard
+    await settingsStore.updateSettings({ showLeaderboard: 'false' });
+
+    // 4. Set active question to Q1 (the first question in the round)
+    const questionsOrder = await questionStore.getQuestionsOrder(roundId);
+    let activeQuestion = null;
+    if (questionsOrder && questionsOrder.length > 0) {
+      activeQuestion = await questionService.setActiveQuestion(roundId, questionsOrder[0]);
+    }
+
+    // 5. Set status to active with fresh timestamp
     await this.startRound(roundId, adminUsername);
+
+    // 6. Broadcast all socket events so client devices immediately reset to Q1
+    const io = getIO();
+    if (io) {
+      io.emit('round:stage_changed', { roundId, activeStage: 'question' });
+      io.emit('settings:updated', { showLeaderboard: false });
+      if (activeQuestion) {
+        io.emit('question:changed', { roundId, activeQuestionId: questionsOrder[0], question: activeQuestion });
+      }
+      io.emit('responses:cleared', { roundId });
+    }
+
+    await logStore.addLog({
+      action: 'RESTART_ROUND',
+      adminUsername,
+      timestamp: Date.now().toString(),
+      details: `Restarted round ${roundId} from start`
+    });
+  }
+
+  async clearRoundResponses(roundId, adminUsername) {
+    const responseStore = require('../redis/responseStore');
+    const questionStore = require('../redis/questionStore');
+    const questionService = require('./questionService');
+
+    // 1. Clear all user responses for this round
+    await responseStore.clearRoundResponses(roundId);
+
+    // 2. Reset active stage to 'question'
+    await roundStore.setActiveStage(roundId, 'question');
+
+    // 3. Reset active question to Q1
+    const questionsOrder = await questionStore.getQuestionsOrder(roundId);
+    let activeQuestion = null;
+    if (questionsOrder && questionsOrder.length > 0) {
+      activeQuestion = await questionService.setActiveQuestion(roundId, questionsOrder[0]);
+    }
+
+    // 4. Broadcast socket events
+    const io = getIO();
+    if (io) {
+      io.emit('round:stage_changed', { roundId, activeStage: 'question' });
+      if (activeQuestion) {
+        io.emit('question:changed', { roundId, activeQuestionId: questionsOrder[0], question: activeQuestion });
+      }
+      io.emit('responses:cleared', { roundId });
+    }
+
+    await logStore.addLog({
+      action: 'CLEAR_ROUND_RESPONSES',
+      adminUsername,
+      timestamp: Date.now().toString(),
+      details: `Cleared all responses for round ${roundId}`
+    });
+
+    return { message: `Responses cleared for round ${roundId}` };
   }
 
   async endRound(roundId, adminUsername) {

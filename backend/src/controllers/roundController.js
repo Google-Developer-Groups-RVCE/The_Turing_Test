@@ -74,6 +74,13 @@ class RoundController {
     } catch (err) { next(err); }
   }
 
+  async clearRoundResponses(req, res, next) {
+    try {
+      const result = await roundService.clearRoundResponses(req.params.roundId, req.user.username);
+      res.status(200).json(result);
+    } catch (err) { next(err); }
+  }
+
   async resetEvent(req, res, next) {
     try {
       await roundService.resetEvent(req.user.username);

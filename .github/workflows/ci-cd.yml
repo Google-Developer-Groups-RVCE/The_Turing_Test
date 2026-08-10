@@ -67,8 +67,8 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:latest
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:latest
 
       - name: Build and Push Frontend Image
         uses: docker/build-push-action@v5
@@ -76,15 +76,19 @@ jobs:
           context: ./frontend
           push: true
           tags: |
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:latest
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:latest
 
       - name: Update Kubernetes Manifests (GitOps trigger for ArgoCD)
         run: |
-          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
-          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
-          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
-          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
+          sed -i 's|image: .*tt-sip-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
+          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
+          sed -i 's|image: .*tt-sip-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
+          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
+          sed -i 's|image: .*tt-sip-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
+          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
+          sed -i 's|image: .*tt-sip-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
+          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
 
       - name: Commit and Push Updated Manifests
         run: |

@@ -82,11 +82,11 @@ router.post('/start', async (req, res) => {
       return res.json({ success: true, url: currentUrl, status: 'online', message: 'Already running' });
     }
 
-    const target = req.body?.port ? `http://localhost:${req.body.port}` : (req.body?.target || 'http://localhost:80');
+    const target = req.body?.port ? `http://127.0.0.1:${req.body.port}` : (req.body?.target || 'http://127.0.0.1:80');
     const domain = req.body?.domain || DEFAULT_DOMAIN;
     const authtoken = process.env.NGROK_AUTHTOKEN || DEFAULT_AUTHTOKEN;
 
-    const args = ['ngrok', 'http', target, '--host-header=turing-test.local', `--authtoken=${authtoken}`, `--url=${domain}`, '--log=stdout'];
+    const args = ['ngrok', 'http', target, `--authtoken=${authtoken}`, `--url=${domain}`, '--log=stdout'];
 
     // Spawn npx ngrok
     ngrokProcess = spawn('npx', args, {

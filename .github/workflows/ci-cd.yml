@@ -40,6 +40,9 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -80,12 +83,14 @@ jobs:
         run: |
           sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
           sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
+          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
+          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
 
       - name: Commit and Push Updated Manifests
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml
+          git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml k8s-tt/backend.yaml k8s-tt/frontend.yaml
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else

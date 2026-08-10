@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: turing-test
+  namespace: tt
   labels:
     app: frontend
 spec:
@@ -28,3 +28,16 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: tt
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: frontend

@@ -7,9 +7,10 @@ import { getLeaderboard } from '../../api/leaderboardApi';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import {
   Activity, Server, Wifi, Database, Users, Trophy,
-  CheckCircle, XCircle, Clock, Cpu, HardDrive, BarChart2, Globe, Play, Square, ExternalLink
+  CheckCircle, XCircle, Clock, Cpu, HardDrive, BarChart2, Globe, Play, Square, ExternalLink, Sparkles
 } from 'lucide-react';
 import { getNgrokStatus, startNgrok, stopNgrok } from '../../api/ngrokApi';
+import { getR5Status, openR5Voting, getR5VotingStatus, showR5Results, resetR5 } from '../../api/r5Api';
 
 function StatCard({ title, value, sub, icon: Icon, color = 'primary', status }) {
   const colorMap = {
@@ -61,6 +62,12 @@ export default function AdminDashboard() {
 
   const [isStartingRound, setIsStartingRound] = useState(false);
   const [roundStartError, setRoundStartError] = useState(null);
+
+  const [r5Phase, setR5Phase] = useState('prompt');
+  const [r5TotalSub, setR5TotalSub] = useState(0);
+  const [r5TotalVote, setR5TotalVote] = useState(0);
+  const [r5Expected, setR5Expected] = useState(0);
+  const [isR5ActionLoading, setIsR5ActionLoading] = useState(false);
 
   const handleQuickStartRound = async (roundId) => {
     setIsStartingRound(true);
@@ -133,6 +140,22 @@ export default function AdminDashboard() {
 
   useEffect(() => { fetchData(); }, []);
 
+  useEffect(() => {
+    if (currentRound?.id === 'round_5_reverse') {
+      const fetchR5 = async () => {
+        try {
+          const sRes = await getR5Status();
+          setR5Phase(sRes.data.phase || 'prompt');
+          setR5TotalSub(sRes.data.totalSubmitted || 0);
+          setR5Expected(sRes.data.totalExpected || 0);
+          const vRes = await getR5VotingStatus();
+          setR5TotalVote(vRes.data.totalVoted || 0);
+        } catch {}
+      };
+      fetchR5();
+    }
+  }, [currentRound]);
+
   // Live socket events
   useEffect(() => {
     if (!socket) return;
@@ -144,10 +167,17 @@ export default function AdminDashboard() {
     const handleLeaderboard = (d) => { if (d.leaderboard) setLeaderboard(d.leaderboard); };
     const handleLog = (d) => setRecentLogs((prev) => [d.logEntry, ...prev].slice(0, 10));
 
+    const handleR5Phase = (d) => { if(d?.phase) setR5Phase(d.phase); };
+    const handleR5Resp = (d) => { if(d?.totalSubmitted !== undefined) setR5TotalSub(d.totalSubmitted); if(d?.totalExpected !== undefined) setR5Expected(d.totalExpected); };
+    const handleR5Vote = (d) => { if(d?.totalVoted !== undefined) setR5TotalVote(d.totalVoted); };
+
     socket.on(SOCKET_EVENTS.PRESENCE_ONLINE, handlePresence);
     socket.on(SOCKET_EVENTS.PRESENCE_OFFLINE, handlePresence);
     socket.on(SOCKET_EVENTS.LEADERBOARD_UPDATE, handleLeaderboard);
     socket.on(SOCKET_EVENTS.LOG_NEW, handleLog);
+    socket.on('r5:phase_changed', handleR5Phase);
+    socket.on('r5:response_received', handleR5Resp);
+    socket.on('r5:vote_received', handleR5Vote);
     // Re-fetch health (which has connectedClients) on connection established
     socket.on('connect', fetchData);
     return () => {
@@ -155,6 +185,9 @@ export default function AdminDashboard() {
       socket.off(SOCKET_EVENTS.PRESENCE_OFFLINE, handlePresence);
       socket.off(SOCKET_EVENTS.LEADERBOARD_UPDATE, handleLeaderboard);
       socket.off(SOCKET_EVENTS.LOG_NEW, handleLog);
+      socket.off('r5:phase_changed', handleR5Phase);
+      socket.off('r5:response_received', handleR5Resp);
+      socket.off('r5:vote_received', handleR5Vote);
       socket.off('connect', fetchData);
     };
   }, [socket]);
@@ -347,6 +380,70 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+
+        {/* Round 5 Controls */}
+        {currentRound?.id === 'round_5_reverse' && (
+          <div className="card mt-4 border-violet-500/30 bg-violet-900/10">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-violet-400 flex items-center space-x-2">
+                <Sparkles size={16} />
+                <span>Round 5 Control Panel</span>
+              </p>
+              <span className="px-2 py-1 text-xs font-bold rounded bg-violet-500/20 text-violet-300 uppercase">
+                Phase: {r5Phase}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="p-3 rounded border border-white/10 bg-black/20">
+                <p className="text-xs text-slate-500 uppercase mb-1">Submissions</p>
+                <p className="text-xl font-bold text-white">{r5TotalSub} <span className="text-sm text-slate-400 font-normal">/ {r5Expected}</span></p>
+              </div>
+              <div className="p-3 rounded border border-white/10 bg-black/20">
+                <p className="text-xs text-slate-500 uppercase mb-1">Votes Cast</p>
+                <p className="text-xl font-bold text-white">{r5TotalVote} <span className="text-sm text-slate-400 font-normal">/ {r5Expected}</span></p>
+              </div>
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                onClick={async () => {
+                  setIsR5ActionLoading(true);
+                  try { await openR5Voting(); setR5Phase('voting'); } catch(e) { alert(e.response?.data?.message || e.message); }
+                  setIsR5ActionLoading(false);
+                }}
+                disabled={isR5ActionLoading || r5Phase !== 'prompt'}
+                className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm transition-colors"
+              >
+                Open Voting
+              </button>
+              <button
+                onClick={async () => {
+                  setIsR5ActionLoading(true);
+                  try { await showR5Results(); setR5Phase('results'); } catch(e) { alert(e.response?.data?.message || e.message); }
+                  setIsR5ActionLoading(false);
+                }}
+                disabled={isR5ActionLoading || r5Phase !== 'voting'}
+                className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white py-2 rounded font-semibold text-sm transition-colors"
+              >
+                Show Results
+              </button>
+              <button
+                onClick={async () => {
+                  if(window.confirm('Reset Round 5? This clears all responses and votes.')) {
+                    setIsR5ActionLoading(true);
+                    try { await resetR5(); setR5Phase('prompt'); setR5TotalSub(0); setR5TotalVote(0); } catch(e) { alert(e.response?.data?.message || e.message); }
+                    setIsR5ActionLoading(false);
+                  }
+                }}
+                disabled={isR5ActionLoading}
+                className="px-4 bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 disabled:opacity-50 border border-rose-500/30 rounded font-semibold text-sm transition-colors"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Quick Start Round */}
         <div className="card mt-4 border-dark-700">

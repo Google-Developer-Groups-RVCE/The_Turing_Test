@@ -14,7 +14,7 @@ class SeedService {
       { id: 'round_2_coding',    name: 'Round 2 – Algorithms & Coding',       status: 'pending', durationSeconds: '300', order: '2' },
       { id: 'round_3_decode',    name: 'Round 3 – Decode the Context',        status: 'pending', durationSeconds: '300', order: '3' },
     ];
-    for (const r of rounds) await roundStore.saveRound(r);
+    for (const r of rounds) await roundStore.createRound(r);
 
     // 2. Questions for Round 1 (MCQ - 1 minute each)
     const r1Questions = [
@@ -38,8 +38,44 @@ class SeedService {
     // 4. Questions for Round 3 (5 polls + 1 profile-guess)
     await this.seedRound3Questions('round_3_decode');
 
-    await logStore.addLog({ action: 'SEED_SAMPLE_DATA', adminUsername, timestamp: Date.now().toString(), details: 'Seeded 3 rounds (Round 3 with 5 polls + profile-guess)' });
-    return { message: 'Seeded 3 sample rounds (Round 3: 5 polls + profile-guess)' };
+    // --- Round 5: Reverse Turing Test ---
+    const r5Exists = await roundStore.getRound('round_5_reverse');
+    if (!r5Exists) {
+      await roundStore.createRound({
+        id: 'round_5_reverse',
+        name: 'Round 5 – Reverse Turing Test',
+        status: 'pending',
+        durationSeconds: '600',
+        order: '5'
+      });
+    }
+    const r5Store = require('../redis/r5Store');
+    const currentGemini = await r5Store.getGeminiResponse();
+    if (!currentGemini) {
+      await r5Store.setGeminiResponse("The quiet hours when the world is asleep are where your future self is built step by step. Every page you read tonight is bringing you closer to the moment you walk out of that exam knowing you gave it everything.");
+    }
+    const currentPhase = await r5Store.getPhase();
+    if (!currentPhase) {
+      await r5Store.setPhase('prompt');
+    }
+    const r5QExists = await questionStore.getQuestionsOrder('round_5_reverse');
+    if (!r5QExists || r5QExists.length === 0) {
+      await questionStore.addQuestion('round_5_reverse', {
+        id: 'r5_q1',
+        text: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
+        type: 'reverse-turing',
+        options: [],
+        correctAnswer: '',
+        points: '0',
+        order: '1',
+        durationSeconds: '600',
+        showEvaluation: false
+      });
+      await questionStore.setActiveQuestionId('round_5_reverse', 'r5_q1');
+    }
+
+    await logStore.addLog({ action: 'SEED_SAMPLE_DATA', adminUsername, timestamp: Date.now().toString(), details: 'Seeded sample rounds including Round 5' });
+    return { message: 'Seeded sample rounds including Round 5' };
   }
 
   /**

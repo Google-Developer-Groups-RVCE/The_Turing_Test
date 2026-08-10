@@ -16,20 +16,20 @@ class SeedService {
     ];
     for (const r of rounds) await roundStore.saveRound(r);
 
-    // 2. Questions for Round 1 (MCQ)
+    // 2. Questions for Round 1 (MCQ - 1 minute each)
     const r1Questions = [
-      { id: 'q1_1', text: 'If 5 machines take 5 minutes to make 5 widgets, how long would 100 machines take to make 100 widgets?', type: 'mcq', options: ['5 minutes', '100 minutes', '50 minutes', '1 minute'], correctAnswer: '5 minutes', points: '10', order: '1' },
-      { id: 'q1_2', text: 'Which number logically completes the sequence: 2, 6, 12, 20, 30, __?', type: 'mcq', options: ['42', '40', '36', '48'], correctAnswer: '42', points: '10', order: '2' },
-      { id: 'q1_3', text: 'Look at this series: 7, 10, 8, 11, 9, 12, __. What number should come next?', type: 'mcq', options: ['10', '13', '7', '14'], correctAnswer: '10', points: '10', order: '3' },
+      { id: 'q1_1', text: 'If 5 machines take 5 minutes to make 5 widgets, how long would 100 machines take to make 100 widgets?', type: 'mcq', options: ['5 minutes', '100 minutes', '50 minutes', '1 minute'], correctAnswer: '5 minutes', points: '10', order: '1', durationSeconds: '60' },
+      { id: 'q1_2', text: 'Which number logically completes the sequence: 2, 6, 12, 20, 30, __?', type: 'mcq', options: ['42', '40', '36', '48'], correctAnswer: '42', points: '10', order: '2', durationSeconds: '60' },
+      { id: 'q1_3', text: 'Look at this series: 7, 10, 8, 11, 9, 12, __. What number should come next?', type: 'mcq', options: ['10', '13', '7', '14'], correctAnswer: '10', points: '10', order: '3', durationSeconds: '60' },
     ];
     for (const q of r1Questions) await questionStore.addQuestion('round_1_aptitude', q);
     await questionStore.setActiveQuestionId('round_1_aptitude', 'q1_1');
 
-    // 3. Questions for Round 2 (MCQ / coding)
+    // 3. Questions for Round 2 (MCQ / coding - 1 minute each)
     const r2Questions = [
-      { id: 'q2_1', text: 'What is the worst-case time complexity of QuickSort?', type: 'mcq', options: ['O(n log n)', 'O(n²)', 'O(n)', 'O(log n)'], correctAnswer: 'O(n²)', points: '10', order: '1' },
-      { id: 'q2_2', text: 'Which data structure is primarily used to implement Breadth-First Search (BFS) in a graph?', type: 'mcq', options: ['Queue', 'Stack', 'Priority Queue', 'Array'], correctAnswer: 'Queue', points: '10', order: '2' },
-      { id: 'q2_3', text: "What will be the output of 3 + '3' - 3 in JavaScript?", type: 'mcq', options: ['30', 'NaN', '33', '0'], correctAnswer: '30', points: '10', order: '3' },
+      { id: 'q2_1', text: 'What is the worst-case time complexity of QuickSort?', type: 'mcq', options: ['O(n log n)', 'O(n²)', 'O(n)', 'O(log n)'], correctAnswer: 'O(n²)', points: '10', order: '1', durationSeconds: '60' },
+      { id: 'q2_2', text: 'Which data structure is primarily used to implement Breadth-First Search (BFS) in a graph?', type: 'mcq', options: ['Queue', 'Stack', 'Priority Queue', 'Array'], correctAnswer: 'Queue', points: '10', order: '2', durationSeconds: '60' },
+      { id: 'q2_3', text: "What will be the output of 3 + '3' - 3 in JavaScript?", type: 'mcq', options: ['30', 'NaN', '33', '0'], correctAnswer: '30', points: '10', order: '3', durationSeconds: '60' },
     ];
     for (const q of r2Questions) await questionStore.addQuestion('round_2_coding', q);
     await questionStore.setActiveQuestionId('round_2_coding', 'q2_1');
@@ -48,7 +48,12 @@ class SeedService {
   async seedRound3Questions(roundId) {
     const existing = await questionStore.getQuestionsOrder(roundId);
     if (existing && existing.length >= 6) {
-      return { message: 'Round 3 questions already seeded' };
+      // Still update existing poll durations to match requirements
+      for (let i = 1; i <= 5; i++) {
+        await questionStore.updateQuestion(roundId, `poll${i}`, { durationSeconds: '120' });
+      }
+      await questionStore.updateQuestion(roundId, 'poll6', { durationSeconds: '240' });
+      return { message: 'Round 3 questions updated' };
     }
 
     const r3Questions = [
@@ -124,7 +129,7 @@ class SeedService {
         correctAnswer: 'Age: 47 | Profession: Lawyer | Hobby: Photography',
         points: '30',
         showEvaluation: true,
-        durationSeconds: '180',
+        durationSeconds: '240',
         // Scoring targets
         targetAge: '47',
         targetProfession: 'Lawyer',

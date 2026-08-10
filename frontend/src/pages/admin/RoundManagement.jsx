@@ -28,7 +28,10 @@ function RoundModal({ round, onClose, onSave }) {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave(form);
+      await onSave({
+        ...form,
+        durationSeconds: parseInt(form.durationSeconds) || 60,
+      });
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save round');
@@ -50,7 +53,7 @@ function RoundModal({ round, onClose, onSave }) {
           </div>
           <div>
             <label className="block text-sm text-slate-400 mb-1">Duration (seconds)</label>
-            <input type="number" min="30" max="3600" className="input-field" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: parseInt(e.target.value) || 300 }))} />
+            <input type="number" min="5" max="3600" className="input-field" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: e.target.value === '' ? '' : parseInt(e.target.value) }))} />
           </div>
           <div className="flex space-x-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-dark-600 text-slate-400 hover:text-white">Cancel</button>

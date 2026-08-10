@@ -108,9 +108,9 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
         text: form.text,
         type: form.type,
         correctAnswer: answer,
-        points: form.points,
-        durationSeconds: form.durationSeconds,
-        order: form.order,
+        points: parseInt(form.points) || 10,
+        durationSeconds: parseInt(form.durationSeconds) || 60,
+        order: parseInt(form.order) || 1,
         showEvaluation: form.showEvaluation,
         options: validOptions,
       };
@@ -151,11 +151,11 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
             </div>
             <div>
               <label className="block text-sm text-slate-400 mb-1">Points</label>
-              <input type="number" min="1" max="1000" className="input-field" value={form.points} onChange={e => setForm(f => ({ ...f, points: parseInt(e.target.value) || 10 }))} />
+              <input type="number" min="1" max="1000" className="input-field" value={form.points} onChange={e => setForm(f => ({ ...f, points: e.target.value === '' ? '' : parseInt(e.target.value) }))} />
             </div>
             <div>
               <label className="block text-sm text-slate-400 mb-1">Time (seconds)</label>
-              <input type="number" min="5" max="3600" className="input-field" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: parseInt(e.target.value) || 300 }))} />
+              <input type="number" min="5" max="3600" className="input-field" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: e.target.value === '' ? '' : parseInt(e.target.value) }))} />
             </div>
           </div>
           <div className="grid grid-cols-12 gap-3">
@@ -284,7 +284,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Display Order</label>
-              <input type="number" min="1" className="input-field" value={form.order} onChange={e => setForm(f => ({ ...f, order: parseInt(e.target.value) || 1 }))} />
+              <input type="number" min="1" className="input-field" value={form.order} onChange={e => setForm(f => ({ ...f, order: e.target.value === '' ? '' : parseInt(e.target.value) }))} />
             </div>
             <div className="flex items-center mt-6">
               <label className="flex items-center space-x-2 cursor-pointer">

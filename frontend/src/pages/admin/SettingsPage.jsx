@@ -91,11 +91,11 @@ export default function SettingsPage() {
               min="30"
               max="3600"
               className="input-field"
-              value={settings.roundDurationSeconds || 300}
-              onChange={e => setSettings(s => ({ ...s, roundDurationSeconds: parseInt(e.target.value) || 300 }))}
+              value={settings.roundDurationSeconds ?? 60}
+              onChange={e => setSettings(s => ({ ...s, roundDurationSeconds: e.target.value === '' ? '' : parseInt(e.target.value) }))}
             />
             <p className="text-xs text-slate-600 mt-1">
-              {Math.floor((settings.roundDurationSeconds || 300) / 60)} minutes {(settings.roundDurationSeconds || 300) % 60} seconds
+              {Math.floor(((parseInt(settings.roundDurationSeconds) || 60)) / 60)} minutes {((parseInt(settings.roundDurationSeconds) || 60)) % 60} seconds
             </p>
           </div>
 

@@ -108,7 +108,11 @@ export default function RoundPage() {
   // Socket: round changed & question changed — update question live
   useEffect(() => {
     if (!socket) return;
-    const handleRoundChanged = () => fetchQuestion();
+    const handleRoundChanged = () => {
+      setPollResult(null);
+      setEvaluationData(null);
+      fetchQuestion();
+    };
     const handleQuestionChanged = (data) => {
       if (data?.question) {
         setQuestion(data.question);
@@ -116,8 +120,11 @@ export default function RoundPage() {
         setTextAnswer('');
         setMyResponse(null);
         setEvaluationData(null);
+        setPollResult(null);
         setError('');
       } else {
+        setPollResult(null);
+        setEvaluationData(null);
         fetchQuestion();
       }
     };

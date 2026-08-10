@@ -376,7 +376,10 @@ export default function RoundManagement() {
                 className="flex-1 py-2 px-3 rounded-lg border border-primary-500/40 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
               >
                 {(() => {
-                  const isPoll = activeQuestion && (activeQuestion.type === 'poll' || String(activeQuestion.id).includes('poll')) && activeQuestion.type !== 'profile-guess';
+                  const isPoll = (
+                    (activeRound && (String(activeRound.id).includes('3') || activeRound.name?.toLowerCase().includes('round 3'))) ||
+                    (activeQuestion && (activeQuestion.type === 'poll' || String(activeQuestion.id).includes('poll')))
+                  ) && activeQuestion?.type !== 'profile-guess' && activeQuestion?.id !== 'poll6';
                   let btnLabel = 'Next Question';
                   if (activeStage === 'question') {
                     btnLabel = isPoll ? 'Reveal Poll Result' : 'Evaluate Answer';

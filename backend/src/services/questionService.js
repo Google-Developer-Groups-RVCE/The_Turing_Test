@@ -161,12 +161,19 @@ class QuestionService {
     let activeStage = await roundStore.getActiveStage(roundId) || 'question';
 
     const order = await questionStore.getQuestionsOrder(roundId);
+    const activeId = await questionStore.getActiveQuestionId(roundId);
+    const question = await questionStore.getQuestion(roundId, activeId);
+
+    const isPoll = question && (
+      question.type === 'poll' ||
+      String(roundId).includes('3') ||
+      String(roundId).includes('r3') ||
+      String(question.id).includes('poll')
+    ) && question.type !== 'profile-guess' && question.id !== 'poll6' && question.id !== 'r3-q6';
 
     if (activeStage === 'question') {
       await roundStore.setActiveStage(roundId, 'evaluated');
-      const activeId = await questionStore.getActiveQuestionId(roundId);
-      const question = await questionStore.getQuestion(roundId, activeId);
-      if (question && (question.type === 'poll' || String(roundId).includes('3') || String(question.id).includes('poll'))) {
+      if (isPoll) {
         try { await this.revealPoll(roundId); } catch (e) {}
       } else {
         try { await this.evaluateQuestion(roundId); } catch (e) {}
@@ -177,18 +184,31 @@ class QuestionService {
     }
 
     if (activeStage === 'evaluated') {
-      await roundStore.setActiveStage(roundId, 'leaderboard');
-      const settingsStore = require('../redis/settingsStore');
-      await settingsStore.updateSettings({ showLeaderboard: 'true' });
-      const io = getIO();
-      if (io) io.emit('round:stage_changed', { roundId, activeStage: 'leaderboard' });
-      return { stage: 'leaderboard' };
+      if (isPoll) {
+        // FOR POLLS 1-5: Skip leaderboard and advance straight to next question
+        await roundStore.setActiveStage(roundId, 'question');
+        const settingsStore = require('../redis/settingsStore');
+        await settingsStore.updateSettings({ showLeaderboard: 'false' });
+        const io = getIO();
+        if (io) io.emit('settings:updated', { showLeaderboard: false });
+      } else {
+        // FOR STANDARD QUESTIONS & FINAL QUESTION (Q6): Show Leaderboard
+        await roundStore.setActiveStage(roundId, 'leaderboard');
+        const settingsStore = require('../redis/settingsStore');
+        await settingsStore.updateSettings({ showLeaderboard: 'true' });
+        const io = getIO();
+        if (io) io.emit('round:stage_changed', { roundId, activeStage: 'leaderboard' });
+        if (io) io.emit('settings:updated', { showLeaderboard: true });
+        return { stage: 'leaderboard' };
+      }
     }
 
     if (activeStage === 'leaderboard') {
       await roundStore.setActiveStage(roundId, 'question');
       const settingsStore = require('../redis/settingsStore');
       await settingsStore.updateSettings({ showLeaderboard: 'false' });
+      const io = getIO();
+      if (io) io.emit('settings:updated', { showLeaderboard: false });
     }
 
     if (!order || order.length === 0) {
@@ -197,7 +217,6 @@ class QuestionService {
       return { stage: 'question', question: null };
     }
 
-    const activeId = await questionStore.getActiveQuestionId(roundId);
     const currentIndex = order.indexOf(activeId);
     let nextIndex = 0;
     if (currentIndex >= 0 && currentIndex < order.length - 1) {

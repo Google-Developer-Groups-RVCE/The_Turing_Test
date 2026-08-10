@@ -394,9 +394,8 @@ class QuestionService {
     const question = await questionStore.getQuestion(roundId, activeId);
     if (!question) throw new Error('Active question not found');
 
-    const { getResponses } = require('../redis/responseStore');
-    const responses = await getResponses(roundId);
-    const pollResponses = responses.filter(r => r.questionId === question.id);
+    const responseService = require('./responseService');
+    const pollResponses = await responseService.getResponses(roundId, question.id);
 
     const counts = {};
     for (const r of pollResponses) {

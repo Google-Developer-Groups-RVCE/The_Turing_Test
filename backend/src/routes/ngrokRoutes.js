@@ -72,9 +72,9 @@ router.post('/start', async (req, res) => {
     // From the host machine, turing-test.local maps to localhost via ingress
     const target = req.body?.port ? `http://localhost:${req.body.port}` : (req.body?.target || 'http://localhost:80');
     const domain = req.body?.domain;
-    const authtoken = process.env.NGROK_AUTHTOKEN;
+    const authtoken = process.env.NGROK_AUTHTOKEN || '36tFxCc1jtMj815lmQkNtd3Q0Ak_32HSVw9KNxX3bLt5xmG7Z';
 
-    const args = ['http', target, '--log=stdout'];
+    const args = ['http', target, '--host-header=turing-test.local', '--log=stdout'];
     if (authtoken) args.push(`--authtoken=${authtoken}`);
     if (domain) args.push(`--url=${domain}`);
 

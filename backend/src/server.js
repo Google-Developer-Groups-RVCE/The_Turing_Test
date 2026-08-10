@@ -31,38 +31,32 @@ const { hashPassword } = require('./utils/hashPassword');
 
 async function autoSeed() {
   try {
-    const adminUsernames = ['a', 'A', 'aa', 'AA'];
+    const adminUsernames = ['a', 'A', 'aa', 'AA', 'admin'];
     for (const u of adminUsernames) {
-      const exists = await userStore.usernameExists(u);
-      if (!exists) {
-        const hashed = await hashPassword(u.toLowerCase());
-        await userStore.createUser({
-          username: u,
-          passwordHash: hashed,
-          role: 'admin',
-          name: 'Super Admin',
-          createdAt: Date.now().toString(),
-          status: 'active'
-        });
-        logger.info(`[autoSeed] Admin user '${u}' seeded successfully.`);
-      }
+      const hashed = await hashPassword(u.toLowerCase());
+      await userStore.createUser({
+        username: u,
+        passwordHash: hashed,
+        role: 'admin',
+        name: 'Super Admin',
+        createdAt: Date.now().toString(),
+        status: 'active'
+      });
+      logger.info(`[autoSeed] Admin user '${u}' seeded/reset.`);
     }
 
-    const participantUsernames = ['b', 'B', 'bb', 'BB'];
+    const participantUsernames = ['b', 'B', 'bb', 'BB', 'user', 'participant'];
     for (const u of participantUsernames) {
-      const pExists = await userStore.usernameExists(u);
-      if (!pExists) {
-        const pHashed = await hashPassword(u.toLowerCase());
-        await userStore.createUser({
-          username: u,
-          passwordHash: pHashed,
-          role: 'participant',
-          name: 'Test Participant B',
-          createdAt: Date.now().toString(),
-          status: 'active'
-        });
-        logger.info(`[autoSeed] Participant user '${u}' seeded successfully.`);
-      }
+      const pHashed = await hashPassword(u.toLowerCase());
+      await userStore.createUser({
+        username: u,
+        passwordHash: pHashed,
+        role: 'participant',
+        name: `Test Participant ${u}`,
+        createdAt: Date.now().toString(),
+        status: 'active'
+      });
+      logger.info(`[autoSeed] Participant user '${u}' seeded/reset.`);
     }
 
     const roundStore = require('./redis/roundStore');

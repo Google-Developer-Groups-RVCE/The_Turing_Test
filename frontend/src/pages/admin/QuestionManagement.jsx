@@ -18,6 +18,26 @@ function normalizeOptions(options, type) {
      gemini.id = gemini.id || 'gemini-opt';
      return [human, gemini];
   }
+  if (type === 'poll') {
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return [
+        { key: 'A', question: '', answer: '' },
+        { key: 'B', question: '', answer: '' },
+        { key: 'C', question: '', answer: '' }
+      ];
+    }
+    return arr.map((o, i) => {
+      const key = String.fromCharCode(65 + i);
+      if (typeof o === 'object' && o !== null) {
+        return {
+          key: o.key || key,
+          question: o.question || o.text || '',
+          answer: o.answer || o.text || ''
+        };
+      }
+      return { key, question: String(o || ''), answer: String(o || '') };
+    });
+  }
   return arr.map(o => (typeof o === 'object' && o !== null) ? (o.text || o.answer || o.id || '') : String(o || ''));
 }
 
@@ -62,16 +82,23 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
     if (form.type === 'guess-author') {
        validOptions = form.options.filter(o => o.text.trim());
        if (validOptions.length < 2) { setError('Both Human and Gemini responses are required'); return; }
-    } else if (form.type === 'mcq' || form.type === 'poll') {
+    } else if (form.type === 'poll') {
+       validOptions = form.options.filter(o => o.question.trim());
+       if (validOptions.length === 0) { setError('At least one poll option is required'); return; }
+    } else if (form.type === 'mcq') {
        validOptions = form.options.map(getOptText).filter(o => o.trim());
-       if (validOptions.length === 0) { setError('At least one option is required for this question type'); return; }
+       if (validOptions.length === 0) { setError('At least one option is required for MCQ'); return; }
     }
     
     let answer = form.correctAnswer.trim();
-    if ((form.type === 'mcq' || form.type === 'poll') && (!answer || !validOptions.includes(answer))) {
+    if (form.type === 'mcq' && (!answer || !validOptions.includes(answer))) {
       answer = validOptions[0] || '';
+    } else if (form.type === 'poll') {
+      answer = 'Poll Answer'; // Polls don't have a single correct answer
     } else if (form.type === 'guess-author' && !answer) {
-      answer = 'Human'; // Default to Human if not specified, though random is better if handled by backend
+      answer = 'Human';
+    } else if (form.type === 'profile-guess') {
+      answer = 'Profile Guess';
     }
     if (!answer) { setError('Correct answer is required'); return; }
     
@@ -145,7 +172,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
               <input type="text" className="input-field" value={form.imageHeight} onChange={e => setForm(f => ({ ...f, imageHeight: e.target.value }))} placeholder="e.g. auto" />
             </div>
           </div>
-          {(form.type === 'mcq' || form.type === 'poll') && (
+          {form.type === 'mcq' && (
             <div>
               <label className="block text-sm text-slate-400 mb-2">Options</label>
               <div className="space-y-2">
@@ -153,6 +180,52 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
                   <div key={i} className="flex items-center space-x-2">
                     <span className="w-6 h-6 flex items-center justify-center text-xs font-bold text-slate-500 bg-dark-700 rounded">{String.fromCharCode(65 + i)}</span>
                     <input className="input-field py-2 text-sm flex-1" value={opt} onChange={e => handleOptionChange(i, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + i)}`} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {form.type === 'poll' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm text-slate-400 font-bold">Poll Options & Revealed Answers</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextKey = String.fromCharCode(65 + form.options.length);
+                    setForm(f => ({ ...f, options: [...f.options, { key: nextKey, question: '', answer: '' }] }));
+                  }}
+                  className="text-xs text-primary-400 hover:text-primary-300 font-bold flex items-center space-x-1"
+                >
+                  <Plus size={14} /><span>Add Option</span>
+                </button>
+              </div>
+              <div className="space-y-3">
+                {form.options.map((opt, i) => (
+                  <div key={i} className="p-3 border border-dark-600 rounded-lg bg-dark-900/60 space-y-2 relative">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-primary-400">Option {opt.key || String.fromCharCode(65 + i)}</span>
+                      {form.options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = form.options.filter((_, idx) => idx !== i);
+                            setForm(f => ({ ...f, options: opts }));
+                          }}
+                          className="text-rose-400 hover:text-rose-300 text-xs"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-500 mb-0.5">Poll Question / Prompt Text (Option {String.fromCharCode(65 + i)})</label>
+                      <input className="input-field py-1 text-xs" value={opt.question} onChange={e => handleOptionChange(i, e.target.value, 'question')} placeholder="e.g. What does a perfect Sunday look like for you?" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-500 mb-0.5">Revealed Answer Text (Shown if this option gets max votes)</label>
+                      <textarea rows={2} className="input-field py-1 text-xs resize-none" value={opt.answer} onChange={e => handleOptionChange(i, e.target.value, 'answer')} placeholder="e.g. A slow morning, a good lunch, and a quiet evening..." />
+                    </div>
                   </div>
                 ))}
               </div>

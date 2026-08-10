@@ -1,6 +1,54 @@
 const questionStore = require('../redis/questionStore');
 const roundStore = require('../redis/roundStore');
 
+const POLLS_DATA = [
+  {
+    id: "poll1",
+    order: 1,
+    options: [
+      { key: "A", question: "What does a perfect Sunday look like for you?", answer: "A slow morning, a good lunch, maybe getting a few things done, and a quiet evening. I've started appreciating days where absolutely nothing interesting happens." },
+      { key: "B", question: "What's something your friends often tease you about?", answer: "Probably how quickly I start thinking about going home during gatherings. Staying out past midnight somehow stopped feeling worth it a while ago." },
+      { key: "C", question: "What's one thing you almost never leave home without?", answer: "My wallet. I use my phone for payments quite often now, but leaving without a wallet still makes me feel like I've forgotten something important." }
+    ]
+  },
+  {
+    id: "poll2",
+    order: 2,
+    options: [
+      { key: "A", question: "What's something younger people do that you find interesting?", answer: "How naturally they document ordinary things. A meal arrives, someone notices something funny, or a song starts playing and a phone immediately comes out. I rarely think of doing that first." },
+      { key: "B", question: "What's a change in everyday life that still amazes you?", answer: "Probably how many separate things have quietly disappeared into one device. I used to think of maps, music, photographs and payments as completely unrelated things." },
+      { key: "C", question: "How did you usually discover new music growing up?", answer: "Mostly through friends or hearing something somewhere repeatedly. Sometimes you'd like one song enough to take a chance on everything else by the same artist." }
+    ]
+  },
+  {
+    id: "poll3",
+    order: 3,
+    options: [
+      { key: "A", question: "What's the most tiring part of your work?", answer: "Probably revisiting the same information repeatedly. Sometimes one detail that seemed insignificant at first changes how everything else fits together." },
+      { key: "B", question: "What skill do you think you're unusually good at?", answer: "Remembering small differences in how people explain things. I tend to notice when a detail changes slightly the second time something is discussed." },
+      { key: "C", question: "What's something you do before an important meeting?", answer: "I usually go through everything beforehand and make a rough mental list of what might come up. I prefer having more information than I need rather than missing something important." }
+    ]
+  },
+  {
+    id: "poll4",
+    order: 4,
+    options: [
+      { key: "A", question: "What's something you find interesting about conversations?", answer: "How differently two people can remember the same situation. Neither person necessarily thinks they're wrong, but the details can still be surprisingly different." },
+      { key: "B", question: "What's something you've become less impressed by over time?", answer: "Confidence. Someone sounding completely certain doesn't really tell me whether they're right anymore. I tend to pay more attention to the details." },
+      { key: "C", question: "What do your friends sometimes find annoying about you?", answer: "I ask too many follow-up questions. Sometimes they just want a quick opinion, and I somehow turn it into a much longer conversation before answering." }
+    ]
+  },
+  {
+    id: "poll5",
+    order: 5,
+    options: [
+      { key: "A", question: "What kind of moments do you remember most clearly?", answer: "Usually very brief ones. A particular expression, something unusual happening behind everyone else, or a place looking completely different for a few seconds." },
+      { key: "B", question: "What's something you're unusually patient about?", answer: "Waiting when I feel the timing matters. I don't mind staying in the same place for a while if rushing would mean missing something interesting." },
+      { key: "C", question: "When you visit somewhere new, what do you usually do first?", answer: "Usually walk around without deciding too much beforehand. I tend to notice smaller details and occasionally end up spending far too long in places other people pass through quickly." }
+    ]
+  }
+];
+
 const getIO = () => {
   try {
     return require('../config/socket').getIO();
@@ -118,7 +166,7 @@ class QuestionService {
       await roundStore.setActiveStage(roundId, 'evaluated');
       const activeId = await questionStore.getActiveQuestionId(roundId);
       const question = await questionStore.getQuestion(roundId, activeId);
-      if (question && question.type === 'poll') {
+      if (question && (question.type === 'poll' || String(roundId).includes('3') || String(question.id).includes('poll'))) {
         try { await this.revealPoll(roundId); } catch (e) {}
       } else {
         try { await this.evaluateQuestion(roundId); } catch (e) {}
@@ -218,8 +266,8 @@ class QuestionService {
 
   async revealPoll(roundId) {
     const question = await this.getActiveQuestion(roundId);
-    if (!question || question.type !== 'poll') {
-      throw new Error('Active question is not a poll');
+    if (!question) {
+      throw new Error('Active question not found');
     }
 
     const { getResponses } = require('../redis/responseStore');
@@ -228,7 +276,8 @@ class QuestionService {
 
     const counts = {};
     for (const r of pollResponses) {
-      counts[r.answer] = (counts[r.answer] || 0) + 1;
+      const ans = (r.answer || '').trim().toUpperCase();
+      if (ans) counts[ans] = (counts[ans] || 0) + 1;
     }
 
     let winningKey = null;
@@ -240,14 +289,30 @@ class QuestionService {
       }
     }
 
-    if (!winningKey && question.options.length > 0) {
-      winningKey = question.options[0].key; // default if no votes
+    const pollMatch = POLLS_DATA.find(p => p.id === question.id || (p.order && Number(p.order) === Number(question.order)));
+    const options = pollMatch?.options || question.options || [];
+
+    if (!winningKey && options.length > 0) {
+      winningKey = options[0].key || 'A';
     }
 
-    const winningOption = question.options.find(o => o.key === winningKey);
+    const winningOption = options.find(o => 
+      (o.key && o.key.toUpperCase() === (winningKey || '').toUpperCase()) ||
+      (typeof o === 'string' && o.trim().toUpperCase() === (winningKey || '').toUpperCase())
+    ) || options[0];
+
+    let answerText = 'No votes recorded yet.';
+    if (winningOption) {
+      if (typeof winningOption === 'string') {
+        answerText = winningOption;
+      } else {
+        answerText = winningOption.answer || winningOption.text || winningOption.question || 'No Answer';
+      }
+    }
+
     const result = {
-      winningKey,
-      answerText: winningOption ? winningOption.answer : 'No Answer',
+      winningKey: winningKey || 'A',
+      answerText,
       counts
     };
 

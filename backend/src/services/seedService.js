@@ -16,11 +16,14 @@ class SeedService {
     ];
     for (const r of rounds) await roundStore.createRound(r);
 
-    // 2. Questions for Round 1 (Human vs AI Writing - 1 minute each)
+    // 2. Questions for Round 1 (Human vs Gemini Writing - 6 Questions, 1 minute each)
     const r1Questions = [
-      { id: 'q1_1', text: 'Look at the text below. Can you tell if it was written by a Human or ChatGPT?', type: 'mcq', options: ['Response 1 (Human)', 'Response 2 (AI)'], correctAnswer: 'Response 1 (Human)', points: '10', order: '1', durationSeconds: '60' },
-      { id: 'q1_2', text: 'Which of these two responses feels more human and authentic?', type: 'mcq', options: ['Response 1 (Human)', 'Response 2 (AI)'], correctAnswer: 'Response 1 (Human)', points: '10', order: '2', durationSeconds: '60' },
-      { id: 'q1_3', text: 'Is social media doing more harm than good?', type: 'mcq', options: ['Response 1 (Human: "More harm probably, but I say that while still using it every day...")', 'Response 2 (AI: "It\'s mixed. Social media has clear benefits like connectivity...")'], correctAnswer: 'Response 1 (Human: "More harm probably, but I say that while still using it every day...")', points: '10', order: '3', durationSeconds: '60' },
+      { id: 'q1_1', text: "What's your take on vibe coding, just letting AI write most of your code?", type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 2', points: '10', order: '1', durationSeconds: '60' },
+      { id: 'q1_2', text: 'How much do you trust AI chatbots to give you correct information?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 1', points: '10', order: '2', durationSeconds: '60' },
+      { id: 'q1_3', text: 'Do you think phones have made us less social?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 2', points: '10', order: '3', durationSeconds: '60' },
+      { id: 'q1_4', text: 'What app do you think you spend way too much time on?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 1', points: '10', order: '4', durationSeconds: '60' },
+      { id: 'q1_5', text: 'Would you rather lose your phone for a week or your laptop for a week?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 2', points: '10', order: '5', durationSeconds: '60' },
+      { id: 'q1_6', text: 'Do you think social media does more harm than good?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 1', points: '10', order: '6', durationSeconds: '60' },
     ];
     for (const q of r1Questions) await questionStore.addQuestion('round_1_aptitude', q);
     await questionStore.setActiveQuestionId('round_1_aptitude', 'q1_1');

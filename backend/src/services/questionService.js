@@ -136,8 +136,54 @@ class QuestionService {
     if (activeStage === 'evaluated') {
       if (isPoll) {
         try {
-          const result = await this.revealPoll(roundId);
-          questionWithoutAnswer.pollResult = result;
+          const pollMatch = POLLS_DATA.find(p => p.id === question.id || (p.order && Number(p.order) === Number(question.order)));
+          let dbOpts = [];
+          if (typeof question.options === 'string') {
+            try { dbOpts = JSON.parse(question.options); } catch (e) {}
+          } else if (Array.isArray(question.options)) {
+            dbOpts = question.options;
+          }
+          const options = (pollMatch && pollMatch.options && pollMatch.options.length > 0) ? pollMatch.options : ((dbOpts && dbOpts.length > 0) ? dbOpts : []);
+          
+          const { getResponses } = require('../redis/responseStore');
+          const responses = await getResponses(roundId).catch(() => []);
+          const pollResponses = responses.filter(r => r.questionId === question.id);
+          const counts = {};
+          for (const r of pollResponses) {
+            const ans = (r.answer || '').trim().toUpperCase();
+            if (ans) counts[ans] = (counts[ans] || 0) + 1;
+          }
+          let winningKey = null;
+          let maxCount = -1;
+          for (const key of Object.keys(counts)) {
+            if (counts[key] > maxCount) {
+              maxCount = counts[key];
+              winningKey = key;
+            }
+          }
+          if (!winningKey && options.length > 0) winningKey = options[0].key || options[0].id || 'A';
+          const winningOption = options.find(o => 
+            (o.key && o.key.toUpperCase() === (winningKey || '').toUpperCase()) ||
+            (o.id && o.id.toUpperCase() === (winningKey || '').toUpperCase()) ||
+            (typeof o === 'string' && o.trim().toUpperCase() === (winningKey || '').toUpperCase())
+          ) || options[0];
+
+          let answerText = 'No votes recorded yet.';
+          let winningQuestionText = '';
+          if (winningOption) {
+            if (typeof winningOption === 'string') answerText = winningOption;
+            else {
+              answerText = winningOption.answer || winningOption.text || 'No Answer';
+              winningQuestionText = winningOption.question || winningOption.text || '';
+            }
+          }
+
+          questionWithoutAnswer.pollResult = {
+            winningKey: winningKey || 'A',
+            answerText,
+            winningQuestionText,
+            counts
+          };
         } catch (e) {}
       } else {
         questionWithoutAnswer.evaluationData = {
@@ -333,10 +379,10 @@ class QuestionService {
   }
 
   async revealPoll(roundId) {
-    const question = await this.getActiveQuestion(roundId);
-    if (!question) {
-      throw new Error('Active question not found');
-    }
+    const activeId = await questionStore.getActiveQuestionId(roundId);
+    if (!activeId) throw new Error('No active question');
+    const question = await questionStore.getQuestion(roundId, activeId);
+    if (!question) throw new Error('Active question not found');
 
     const { getResponses } = require('../redis/responseStore');
     const responses = await getResponses(roundId);

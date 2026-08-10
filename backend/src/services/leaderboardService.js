@@ -122,14 +122,16 @@ class LeaderboardService {
   /** Enrich leaderboard entries with user name from Redis. */
   async _enrichEntries(entries) {
     const enriched = await Promise.all(
-      entries.map(async (e) => {
-        const user = await userStore.getUser(e.value || e.username);
-        return {
-          username: e.value || e.username,
-          name: user?.name || e.value || e.username,
-          score: Number(e.score),
-        };
-      })
+      entries
+        .filter(e => (e.value || e.username) !== 'simulated_user')
+        .map(async (e) => {
+          const user = await userStore.getUser(e.value || e.username);
+          return {
+            username: e.value || e.username,
+            name: user?.name || e.value || e.username,
+            score: Number(e.score),
+          };
+        })
     );
     return enriched;
   }

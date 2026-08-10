@@ -57,7 +57,7 @@ class ResponseService {
       pointsAwarded
     });
 
-    if (pointsAwarded > 0) {
+    if (pointsAwarded > 0 && username !== 'simulated_user') {
       await leaderboardService.updateScore(username, roundId, pointsAwarded);
     }
 

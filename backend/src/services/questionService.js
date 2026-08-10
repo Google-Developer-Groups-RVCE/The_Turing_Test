@@ -110,15 +110,28 @@ class QuestionService {
   }
 
   async nextQuestion(roundId) {
-    const settingsStore = require('../redis/settingsStore');
-    const settings = await settingsStore.getSettings();
-
     let activeStage = await roundStore.getActiveStage(roundId) || 'question';
 
     const order = await questionStore.getQuestionsOrder(roundId);
-    // Even if no questions, we can show leaderboard if enabled
-    if (settings.showLeaderboard === 'true' && activeStage === 'question') {
+
+    if (activeStage === 'question') {
+      await roundStore.setActiveStage(roundId, 'evaluated');
+      const activeId = await questionStore.getActiveQuestionId(roundId);
+      const question = await questionStore.getQuestion(roundId, activeId);
+      if (question && question.type === 'poll') {
+        try { await this.revealPoll(roundId); } catch (e) {}
+      } else {
+        try { await this.evaluateQuestion(roundId); } catch (e) {}
+      }
+      const io = getIO();
+      if (io) io.emit('round:stage_changed', { roundId, activeStage: 'evaluated' });
+      return { stage: 'evaluated' };
+    }
+
+    if (activeStage === 'evaluated') {
       await roundStore.setActiveStage(roundId, 'leaderboard');
+      const settingsStore = require('../redis/settingsStore');
+      await settingsStore.updateSettings({ showLeaderboard: 'true' });
       const io = getIO();
       if (io) io.emit('round:stage_changed', { roundId, activeStage: 'leaderboard' });
       return { stage: 'leaderboard' };
@@ -126,6 +139,8 @@ class QuestionService {
 
     if (activeStage === 'leaderboard') {
       await roundStore.setActiveStage(roundId, 'question');
+      const settingsStore = require('../redis/settingsStore');
+      await settingsStore.updateSettings({ showLeaderboard: 'false' });
     }
 
     if (!order || order.length === 0) {

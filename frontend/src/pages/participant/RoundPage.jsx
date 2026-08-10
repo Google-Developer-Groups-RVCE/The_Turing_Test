@@ -162,7 +162,8 @@ export default function RoundPage() {
 
   const handleSubmit = async () => {
     if (myResponse) return; // Prevent duplicate submissions
-    const isOptionsBased = question?.type === 'mcq' || question?.type === 'guess-author' || question?.type === 'poll';
+    const richData = allRichData.find((d) => d.id === question?.id);
+    const isOptionsBased = question?.type === 'mcq' || question?.type === 'guess-author' || question?.type === 'poll' || (richData && richData.type !== 'text');
     const answer = isOptionsBased ? selectedAnswer : textAnswer;
     if (!answer || (typeof answer === 'string' && !answer.trim())) {
       setError('Please select an option or type your answer before submitting.');
@@ -470,7 +471,7 @@ export default function RoundPage() {
           {!isLocked ? (
             <button
               onClick={handleSubmit}
-              disabled={submitting || (!selectedAnswer && !textAnswer.trim() && question.type !== 'guess-author') || (question.type === 'guess-author' && !selectedAnswer)}
+              disabled={submitting || (!selectedAnswer && !textAnswer.trim())}
               className="relative overflow-hidden font-['Cutepunch'] text-xl tracking-widest py-3 px-10 rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-sky-400 text-white shadow-[0_4px_20px_rgba(14,165,233,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all hover:-translate-y-0.5 hover:scale-105 hover:shadow-[0_8px_28px_rgba(14,165,233,0.65),inset_0_1px_0_rgba(255,255,255,0.35)] active:translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 w-full mt-4"
             >
               {submitting ? (

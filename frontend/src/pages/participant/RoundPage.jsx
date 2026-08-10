@@ -41,7 +41,7 @@ export default function RoundPage() {
   }, [currentRound]);
 
   const fetchQuestion = useCallback(async () => {
-    setLoading(true);
+    if (!question) setLoading(true);
     try {
       const rRes = await getCurrentRound().catch(() => null);
       const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRoundRef.current);

@@ -221,8 +221,7 @@ class QuestionService {
         durationSeconds: updatedRound.durationSeconds,
         startedAt: updatedRound.startedAt
       });
-      const io = getIO();
-      if (io) io.emit('round:changed', { roundId, roundData: updatedRound });
+    }
     }
 
     const io = getIO();

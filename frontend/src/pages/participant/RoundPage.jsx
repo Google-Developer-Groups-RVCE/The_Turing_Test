@@ -162,9 +162,7 @@ export default function RoundPage() {
 
   const handleSubmit = async () => {
     if (myResponse) return; // Prevent duplicate submissions
-    const richData = allRichData.find((d) => d.id === question?.id);
-    const isOptionsBased = question?.type === 'mcq' || question?.type === 'guess-author' || question?.type === 'poll' || (richData && richData.type !== 'text');
-    const answer = isOptionsBased ? selectedAnswer : textAnswer;
+    const answer = selectedAnswer || textAnswer;
     if (!answer || (typeof answer === 'string' && !answer.trim())) {
       setError('Please select an option or type your answer before submitting.');
       return;
@@ -372,7 +370,7 @@ export default function RoundPage() {
           );
         }
 
-        const richData = allRichData.find((d) => d.id === question.id);
+        const richData = allRichData.find((d) => d.id === question.id || (d.order && Number(d.order) === Number(question.order)));
         
         if (richData) {
           if (question.type === 'poll') {

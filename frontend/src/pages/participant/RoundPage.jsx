@@ -125,6 +125,9 @@ export default function RoundPage() {
         clearTimeout(roundEndTimer);
         roundEndTimer = null;
       }
+      if (data?.roundData) {
+        setCurrentRound(data.roundData);
+      }
       setPollResult(null);
       setEvaluationData(null);
       setSelectedAnswer('');

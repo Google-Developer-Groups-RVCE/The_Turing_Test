@@ -116,20 +116,15 @@ class RoundService {
       activeQuestion = await questionService.setActiveQuestion(roundId, questionsOrder[0]);
     }
 
-    // 5. If this round is the active round or no round is active, start it; otherwise mark as pending
-    const currentActiveId = await roundStore.getCurrentRound();
-    if (!currentActiveId || currentActiveId === roundId) {
-      await this.startRound(roundId, adminUsername);
-    } else {
-      await roundStore.updateRound(roundId, { status: 'pending', startedAt: '', endedAt: '' });
-    }
+    // 5. Always start this round as the active round
+    await this.startRound(roundId, adminUsername);
 
-    // 6. Broadcast socket events so client devices reset state for this round
+    // 6. Broadcast socket events so client devices immediately reset to Q1
     const io = getIO();
     if (io) {
       io.emit('round:stage_changed', { roundId, activeStage: 'question' });
       io.emit('settings:updated', { showLeaderboard: false });
-      if (activeQuestion && (!currentActiveId || currentActiveId === roundId)) {
+      if (activeQuestion) {
         io.emit('question:changed', { roundId, activeQuestionId: questionsOrder[0], question: activeQuestion });
       }
       io.emit('responses:cleared', { roundId });
@@ -194,37 +189,29 @@ class RoundService {
     const io = getIO();
     if (io) io.emit('round:ended', { roundId });
 
-    // --- Auto-advance to next pending round ---
+    // --- Sequential Progression: Auto-advance to the next round in sequence ---
     const order = await roundStore.getRoundsOrder();
     const currentIndex = order.indexOf(roundId);
-    let nextRound = null;
 
-    if (currentIndex >= 0) {
-      // Look for the next round in sequence that is still 'pending'
-      for (let i = currentIndex + 1; i < order.length; i++) {
-        const candidate = await roundStore.getRound(order[i]);
-        if (candidate && candidate.status === 'pending') {
-          nextRound = candidate;
-          break;
-        }
-      }
-    }
-
-    if (nextRound) {
-      // Small delay so clients process the 'ended' event before the next round starts
+    if (currentIndex >= 0 && currentIndex < order.length - 1) {
+      const nextRoundId = order[currentIndex + 1];
+      console.log(`[roundService] Sequential progression: Round ${roundId} ended -> Auto-starting ${nextRoundId}`);
       setTimeout(async () => {
         try {
-          await this.startRound(nextRound.id, adminUsername);
+          await this.restartRound(nextRoundId, adminUsername || 'system');
           await logStore.addLog({
             action: 'AUTO_ADVANCE_ROUND',
             adminUsername,
             timestamp: Date.now().toString(),
-            details: `Auto-advanced from round ${roundId} to ${nextRound.id}`
+            details: `Sequential auto-advance from ${roundId} to ${nextRoundId}`
           });
         } catch (err) {
-          console.error(`[roundService] Failed to auto-advance to round ${nextRound.id}:`, err.message);
+          console.error(`[roundService] Failed to auto-advance to ${nextRoundId}:`, err.message);
         }
-      }, 2000);
+      }, 1500);
+    } else {
+      console.log(`[roundService] Final round ${roundId} ended. Ending event.`);
+      await this.endEvent(adminUsername || 'system');
     }
   }
 

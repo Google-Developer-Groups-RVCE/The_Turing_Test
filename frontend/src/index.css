@@ -1,66 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Cutepunch";
-  src: url("/cutepunch-personal-use-only/Cutepunch Personal Use Only.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Racing58";
-  src: url("/racing-58/Racing-58-Regular.otf") format("opentype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Tastoine";
-  src: url("/tastoine/Tastoine.otf") format("opentype"),
-       url("/tastoine/Tastoine.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Borghan";
-  src: url("/borghan/Borghan.otf") format("opentype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   body {
-    @apply bg-[#0d1b2a] text-white font-sans overflow-x-hidden;
+    @apply bg-dark-900 text-slate-200 antialiased overflow-x-hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  :root {
+    --scrollbar-bg: #0f172a;
+    --scrollbar-thumb: #334155;
+    --scrollbar-thumb-hover: #475569;
   }
 }
 
 @layer components {
-  .page-bg {
-    @apply fixed inset-0 z-0 bg-cover bg-center opacity-10 pointer-events-none;
-    background-image: url("/reference/Background.avif");
-    filter: saturate(0.3) brightness(0.8);
-  }
-  
   .page-wrap {
     @apply relative z-10 min-h-screen flex flex-col;
   }
-  
-  .card {
-    @apply bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md;
-  }
-  
-  .input-field {
-    @apply w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors;
-  }
-  
+
   .btn-primary {
-    @apply px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-4 py-2 bg-primary-600 text-white rounded-lg font-medium transition-all duration-200
+      hover:bg-primary-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.35)]
+      active:scale-[0.97]
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:bg-primary-600;
   }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-dark-900/60 border border-dark-700 rounded-lg
+      focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50
+      text-white placeholder-slate-500 transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-dark-800 border border-dark-700 rounded-xl p-6 shadow-xl;
+  }
+
+  .glass {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 16px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+.pulse-ring {
+  animation: pulse-ring 2s infinite;
 }

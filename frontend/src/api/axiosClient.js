@@ -25,11 +25,14 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Auto logout if token is invalid or expired
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
-      // Prevent infinite page reload loops when already on login/register page
-      if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
+      // Auto logout if token is invalid or expired, EXCEPT when in simulation preview mode
+      if (
+        !window.location.pathname.startsWith('/login') &&
+        !window.location.pathname.startsWith('/register') &&
+        !window.location.pathname.startsWith('/simulation')
+      ) {
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         window.location.href = '/login';
       }
     }

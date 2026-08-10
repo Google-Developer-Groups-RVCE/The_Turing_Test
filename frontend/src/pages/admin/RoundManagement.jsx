@@ -10,6 +10,7 @@ import { getSettings, updateSettings } from '../../api/settingsApi';
 import { useSocket } from '../../hooks/useSocket';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import { SOCKET_EVENTS } from '../../utils/constants';
+import ParticipantDeviceSimulation from '../../components/ParticipantDeviceSimulation';
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
   RefreshCw, X, AlertTriangle, SkipForward, SkipBack, Eye, Trophy, Monitor, CheckCircle,
@@ -90,20 +91,21 @@ export default function RoundManagement() {
 
   const { currentRound } = useContext(EventStateContext);
 
-  const getActiveRound = useCallback((roundList = rounds) => {
+  const getActiveRound = useCallback((roundList) => {
     const cId = currentRound?.id || (typeof currentRound === 'string' ? currentRound : null);
-    if (cId) {
-      const match = roundList.find(r => r.id === cId);
+    const list = Array.isArray(roundList) ? roundList : rounds;
+    if (cId && list.length > 0) {
+      const match = list.find(r => r.id === cId);
       if (match) return match;
     }
-    return roundList.find(r => r.status === 'active') || roundList[0];
+    return list.find(r => r.status === 'active') || list[0];
   }, [currentRound, rounds]);
 
-  const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 3000); };
+  const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 4000); };
   const showError = (m) => { setError(m); setTimeout(() => setError(''), 5000); };
 
-  const fetchRounds = useCallback(async () => {
-    setLoading(true);
+  const fetchRounds = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     try {
       const res = await getRounds();
       const list = res.data.rounds || [];
@@ -137,7 +139,7 @@ export default function RoundManagement() {
         setActiveStage('question');
       }
     } catch { showError('Failed to load rounds'); }
-    finally { setLoading(false); }
+    finally { if (isInitial) setLoading(false); }
   }, [getActiveRound]);
 
   const fetchSettingsState = useCallback(async () => {
@@ -150,7 +152,7 @@ export default function RoundManagement() {
   }, [setShowLeaderboard]);
 
   useEffect(() => {
-    fetchRounds();
+    fetchRounds(true);
     fetchSettingsState();
   }, [fetchRounds, fetchSettingsState]);
 
@@ -355,9 +357,21 @@ export default function RoundManagement() {
         </div>
       </div>
 
-      {(error || success) && (
-        <div className={`p-3 rounded-lg text-sm border ${error ? 'bg-rose-900/40 border-rose-500/40 text-rose-300' : 'bg-primary-900/40 border-primary-500/40 text-primary-300'}`}>
-          {error || success}
+      {/* Toast Notification (Floating Bottom-Right) */}
+      {success && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3 bg-emerald-600/90 text-white px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-emerald-400/40 text-sm font-medium animate-fade-in">
+          <CheckCircle size={18} className="text-emerald-200" />
+          <span>{success}</span>
+          <button onClick={() => setSuccess('')} className="ml-2 text-white/70 hover:text-white">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3 rounded-lg text-sm border bg-rose-900/40 border-rose-500/40 text-rose-300 flex items-center justify-between mb-2">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-rose-400 hover:text-white"><X size={16} /></button>
         </div>
       )}
 
@@ -516,14 +530,8 @@ export default function RoundManagement() {
               <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-pulse" />
             </div>
 
-            {/* Smartphone Bezel Simulator Frame */}
-            <div className="p-1 rounded-3xl bg-dark-950 border-[6px] border-dark-700 shadow-2xl relative h-[450px] flex flex-col justify-between overflow-hidden">
-              <iframe
-                src="/simulation"
-                className="w-full h-full border-0 rounded-2xl bg-dark-900"
-                title="Participant Simulator"
-              />
-            </div>
+            {/* Native Participant Device Simulation */}
+            <ParticipantDeviceSimulation />
           </div>
 
           <div className="mt-4 pt-3 border-t border-dark-700 text-xs text-slate-500 flex justify-between items-center">

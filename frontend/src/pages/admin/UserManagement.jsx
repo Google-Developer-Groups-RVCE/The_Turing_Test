@@ -345,10 +345,21 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {(error || success) && (
-        <div className={`p-3 rounded-lg text-sm border ${error ? 'bg-rose-900/40 border-rose-500/40 text-rose-300' : 'bg-primary-900/40 border-primary-500/40 text-primary-300'}`}>
-          {error || success}
-          <button className="ml-2 opacity-60 hover:opacity-100" onClick={clearMessages}>✕</button>
+      {/* Toast Notification (Floating Bottom-Right) */}
+      {success && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3 bg-emerald-600/90 text-white px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-emerald-400/40 text-sm font-medium animate-fade-in">
+          <CheckCircle size={18} className="text-emerald-200" />
+          <span>{success}</span>
+          <button onClick={() => setSuccess('')} className="ml-2 text-white/70 hover:text-white">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3 rounded-lg text-sm border bg-rose-900/40 border-rose-500/40 text-rose-300 flex items-center justify-between mb-2">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-rose-400 hover:text-white"><X size={16} /></button>
         </div>
       )}
 

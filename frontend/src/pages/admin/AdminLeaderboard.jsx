@@ -135,7 +135,16 @@ export default function AdminLeaderboard() {
         </div>
       </div>
 
-      {success && <div className="p-3 rounded-lg text-sm border bg-primary-900/40 border-primary-500/40 text-primary-300">{success}</div>}
+      {/* Toast Notification (Floating Bottom-Right) */}
+      {success && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3 bg-emerald-600/90 text-white px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-emerald-400/40 text-sm font-medium animate-fade-in">
+          <CheckCircle size={18} className="text-emerald-200" />
+          <span>{success}</span>
+          <button onClick={() => setSuccess('')} className="ml-2 text-white/70 hover:text-white">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Round Selector */}
       <div className="flex gap-3">

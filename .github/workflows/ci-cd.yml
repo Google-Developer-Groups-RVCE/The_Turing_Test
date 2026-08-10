@@ -22,7 +22,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
 
       - name: Install Backend Dependencies
         working-directory: ./backend
@@ -40,9 +44,6 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,39 +63,37 @@ jobs:
         run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Build and Push Backend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
           tags: |
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:latest
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:latest
 
       - name: Build and Push Frontend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
           tags: |
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}
-            ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:latest
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:latest
 
       - name: Update Kubernetes Manifests (GitOps trigger for ArgoCD)
         run: |
-          sed -i 's|image: .*tt-sip-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
-          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
-          sed -i 's|image: .*tt-sip-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
-          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
-          sed -i 's|image: .*tt-sip-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
-          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
-          sed -i 's|image: .*tt-sip-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
-          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
+          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
+          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
 
       - name: Commit and Push Updated Manifests
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml k8s-tt/backend.yaml k8s-tt/frontend.yaml
+          git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else

@@ -249,6 +249,60 @@ export default function RoundPage() {
     );
   }
 
+  if (pollResult) {
+    const getRichData = () => {
+      if (!question) return null;
+      const rName = (currentRound?.name || '').toLowerCase();
+      const rId = String(currentRound?.id || '').toLowerCase();
+
+      let dataset = [];
+      if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
+        dataset = round1Data;
+      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
+        dataset = round2Data;
+      } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+        dataset = pollsData;
+      } else {
+        dataset = allRichData;
+      }
+
+      return dataset.find((d) => d.id === question.id || (d.order && Number(d.order) === Number(question.order))) ||
+             allRichData.find((d) => d.id === question.id);
+    };
+    const richData = getRichData();
+
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-8 px-4 text-center w-full max-w-2xl mx-auto animate-fade-in">
+        <div className="w-full bg-gradient-to-br from-purple-900/30 via-dark-900/90 to-purple-950/30 border-2 border-purple-500/40 rounded-3xl p-8 shadow-[0_0_50px_rgba(168,85,247,0.25)] backdrop-blur-md">
+          <div className="inline-flex items-center space-x-2 bg-purple-500/20 border border-purple-400/30 px-4 py-1.5 rounded-full mb-6">
+            <span className="text-purple-300 text-xs font-extrabold uppercase tracking-widest animate-pulse">
+              ★ Live Poll Reveal
+            </span>
+          </div>
+
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
+            Most Voted Question (Option {pollResult.winningKey})
+          </h3>
+          
+          <h2 className="text-white text-xl md:text-2xl font-bold italic leading-relaxed mb-8 px-2">
+            "{pollResult.winningQuestionText || (richData && richData.options.find(o => o.key === pollResult.winningKey)?.question) || 'Decoded Question'}"
+          </h2>
+
+          <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-purple-500/40 to-transparent mb-8"></div>
+
+          <div className="p-6 rounded-2xl bg-dark-950/80 border border-purple-500/30 text-left shadow-inner">
+            <span className="text-xs font-extrabold text-purple-400 block uppercase tracking-wider mb-3">
+              Gemini's Decoded Response:
+            </span>
+            <p className="text-emerald-300 text-base md:text-lg font-medium leading-relaxed">
+              "{pollResult.answerText}"
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full">
       {/* Round Header */}

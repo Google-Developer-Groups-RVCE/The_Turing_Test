@@ -357,7 +357,10 @@ export default function RoundManagement() {
               <span className="flex items-center space-x-1"><HelpCircle size={14} className="text-primary-400" /><span>Question Progression</span></span>
               {activeRound && (
                 <span className="text-primary-300 font-mono">
-                  Question {roundQuestions.findIndex(q => q.id === activeQuestion?.id) + 1} of {roundQuestions.length}
+                  Question {(() => {
+                    const idx = roundQuestions.findIndex(q => q.id === activeQuestion?.id);
+                    return idx >= 0 ? idx + 1 : (roundQuestions.length > 0 ? 1 : 0);
+                  })()} of {roundQuestions.length}
                 </span>
               )}
             </div>

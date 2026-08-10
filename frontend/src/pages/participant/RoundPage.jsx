@@ -38,19 +38,19 @@ export default function RoundPage() {
   const fetchQuestion = useCallback(async () => {
     setLoading(true);
     try {
-      let roundToUse = currentRound;
-      if (!roundToUse) {
-        const rRes = await getCurrentRound();
-        roundToUse = rRes.data?.round || (rRes.data?.id ? rRes.data : null);
-        if (roundToUse) {
-          setCurrentRound(roundToUse);
-          setEventStatus(roundToUse.status === 'active' ? 'running' : roundToUse.status === 'paused' ? 'paused' : 'idle');
-        }
+      const rRes = await getCurrentRound().catch(() => null);
+      const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRound);
+      
+      if (roundToUse) {
+        setCurrentRound(roundToUse);
+        setEventStatus(roundToUse.status === 'active' ? 'running' : roundToUse.status === 'paused' ? 'paused' : roundToUse.status === 'ended' ? 'ended' : 'idle');
       }
 
       const roundId = typeof roundToUse === 'string' ? roundToUse : roundToUse?.id;
-      if (!roundId) {
+      if (!roundId || roundToUse?.status !== 'active') {
         setQuestion(null);
+        setPollResult(null);
+        setEvaluationData(null);
         setLoading(false);
         return;
       }

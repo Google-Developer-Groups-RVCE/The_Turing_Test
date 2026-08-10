@@ -23,6 +23,22 @@ export default function PollCard({ poll, selectedOption, onSelect, pollResult })
           );
         })}
       </div>
+
+      {pollResult && (
+        <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-purple-900/40 via-dark-900 to-purple-950/40 border-2 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+          <div className="flex items-center space-x-2 text-purple-300 text-xs font-bold uppercase tracking-wider mb-2">
+            <span className="p-1 bg-purple-500/20 rounded-full">★</span>
+            <span>Most Voted Question by Participants (Option {pollResult.winningKey})</span>
+          </div>
+          <h4 className="text-white text-base font-bold mb-3 italic">
+            "{pollResult.winningQuestionText || poll.options.find(o => o.key === pollResult.winningKey)?.question}"
+          </h4>
+          <div className="p-4 rounded-xl bg-dark-950/80 border border-purple-500/30 text-emerald-300 text-base leading-relaxed font-medium">
+            <span className="text-xs font-bold text-slate-400 block uppercase mb-1">Gemini's Response Revealed:</span>
+            "{pollResult.answerText}"
+          </div>
+        </div>
+      )}
     </div>
   );
 }

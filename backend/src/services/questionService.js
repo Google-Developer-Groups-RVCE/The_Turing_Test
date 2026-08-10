@@ -237,7 +237,7 @@ class QuestionService {
 
     const order = await questionStore.getQuestionsOrder(roundId);
     const activeId = await questionStore.getActiveQuestionId(roundId);
-    const question = await questionStore.getQuestion(roundId, activeId);
+    const question = await this.getActiveQuestion(roundId);
 
     const isPoll = question && (
       question.type === 'poll' ||
@@ -253,9 +253,10 @@ class QuestionService {
       } else {
         try { await this.evaluateQuestion(roundId); } catch (e) {}
       }
+      const updatedQuestion = await this.getActiveQuestion(roundId);
       const io = getIO();
       if (io) io.emit('round:stage_changed', { roundId, activeStage: 'evaluated' });
-      return { stage: 'evaluated' };
+      return { stage: 'evaluated', question: updatedQuestion };
     }
 
     if (activeStage === 'evaluated') {
@@ -287,7 +288,7 @@ class QuestionService {
         const io = getIO();
         if (io) io.emit('round:stage_changed', { roundId, activeStage: 'leaderboard' });
         if (io) io.emit('settings:updated', { showLeaderboard: true });
-        return { stage: 'leaderboard' };
+        return { stage: 'leaderboard', question };
       }
     }
 

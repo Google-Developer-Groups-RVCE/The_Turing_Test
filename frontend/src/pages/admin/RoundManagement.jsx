@@ -216,11 +216,16 @@ export default function RoundManagement() {
     }
     doAction('Next Step', async () => {
       const res = await nextQuestion(activeRound.id);
-      if (res.data?.question) {
-        setActiveQuestionState(res.data.question);
-      }
-      if (res.data?.stage) {
-        setActiveStage(res.data.stage);
+      const data = res.data?.question;
+      if (data) {
+        if (data.question) {
+          setActiveQuestionState(data.question);
+        } else if (data.id) {
+          setActiveQuestionState(data);
+        }
+        if (data.stage) {
+          setActiveStage(data.stage);
+        }
       }
     });
   };

@@ -128,27 +128,31 @@ class RoundService {
     const responseStore = require('../redis/responseStore');
     const settingsStore = require('../redis/settingsStore');
     const questionService = require('./questionService');
+    const leaderboardService = require('./leaderboardService');
 
     // 1. Clear all user responses for this round
     await responseStore.clearRoundResponses(roundId);
 
-    // 2. Reset active stage to 'question'
+    // 2. Recalculate leaderboard so cleared responses are removed from scores
+    await leaderboardService.recalculateLeaderboard(adminUsername);
+
+    // 3. Reset active stage to 'question'
     await roundStore.setActiveStage(roundId, 'question');
 
-    // 3. Hide leaderboard
+    // 4. Hide leaderboard
     await settingsStore.updateSettings({ showLeaderboard: 'false' });
 
-    // 4. Set active question to Q1 (the first question in the round)
+    // 5. Set active question to Q1 (the first question in the round)
     const questionsOrder = await questionStore.getQuestionsOrder(roundId);
     let activeQuestion = null;
     if (questionsOrder && questionsOrder.length > 0) {
       activeQuestion = await questionService.setActiveQuestion(roundId, questionsOrder[0]);
     }
 
-    // 5. Always start this round as the active round
+    // 6. Always start this round as the active round
     await this.startRound(roundId, adminUsername);
 
-    // 6. Broadcast socket events so client devices immediately reset to Q1
+    // 7. Broadcast socket events so client devices immediately reset to Q1
     const io = getIO();
     if (io) {
       io.emit('round:stage_changed', { roundId, activeStage: 'question' });
@@ -171,21 +175,25 @@ class RoundService {
     const responseStore = require('../redis/responseStore');
     const questionStore = require('../redis/questionStore');
     const questionService = require('./questionService');
+    const leaderboardService = require('./leaderboardService');
 
     // 1. Clear all user responses for this round
     await responseStore.clearRoundResponses(roundId);
 
-    // 2. Reset active stage to 'question'
+    // 2. Recalculate leaderboard so cleared responses are removed from scores
+    await leaderboardService.recalculateLeaderboard(adminUsername);
+
+    // 3. Reset active stage to 'question'
     await roundStore.setActiveStage(roundId, 'question');
 
-    // 3. Reset active question to Q1
+    // 4. Reset active question to Q1
     const questionsOrder = await questionStore.getQuestionsOrder(roundId);
     let activeQuestion = null;
     if (questionsOrder && questionsOrder.length > 0) {
       activeQuestion = await questionService.setActiveQuestion(roundId, questionsOrder[0]);
     }
 
-    // 4. Broadcast socket events
+    // 5. Broadcast socket events
     const io = getIO();
     if (io) {
       io.emit('round:stage_changed', { roundId, activeStage: 'question' });
@@ -245,9 +253,24 @@ class RoundService {
   }
 
   async resetEvent(adminUsername) {
+    const responseStore = require('../redis/responseStore');
+    const leaderboardService = require('./leaderboardService');
+    const questionStore = require('../redis/questionStore');
+    const questionService = require('./questionService');
+
+    // 1. Clear all responses and reset leaderboard
+    await responseStore.clearAllResponses();
+    await leaderboardService.resetLeaderboard(adminUsername || 'system');
+
+    // 2. Reset round statuses to pending and set Q1 as active question for each round
     const order = await roundStore.getRoundsOrder();
     for (const id of order) {
       await roundStore.updateRound(id, { status: 'pending', startedAt: '', endedAt: '' });
+      await roundStore.setActiveStage(id, 'question');
+      const questionsOrder = await questionStore.getQuestionsOrder(id);
+      if (questionsOrder && questionsOrder.length > 0) {
+        await questionService.setActiveQuestion(id, questionsOrder[0]);
+      }
     }
     await roundStore.setCurrentRound('');
     await roundStore.setEventState('idle', adminUsername);
@@ -256,11 +279,15 @@ class RoundService {
       action: 'RESET_EVENT',
       adminUsername,
       timestamp: Date.now().toString(),
-      details: `Event reset`
+      details: `Event reset: cleared responses, reset leaderboard, set rounds to pending`
     });
 
     const io = getIO();
-    if (io) io.emit('event:reset', {});
+    if (io) {
+      io.emit('event:reset', {});
+      io.emit('responses:cleared', {});
+      io.emit('leaderboard:update', { leaderboard: [] });
+    }
   }
 
   async extendRoundTime(roundId, extraSeconds, adminUsername) {

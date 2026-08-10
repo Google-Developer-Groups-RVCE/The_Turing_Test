@@ -4,7 +4,7 @@ import {
   startRound, pauseRound, resumeRound, restartRound, endRound,
   extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData, getStage
 } from '../../api/roundApi';
-import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption } from '../../api/questionApi';
+import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { getSettings, updateSettings } from '../../api/settingsApi';
 import { useSocket } from '../../hooks/useSocket';
@@ -229,7 +229,6 @@ export default function RoundManagement() {
     const activeRound = rounds.find(r => r.status === 'active');
     if (!activeRound) return;
     doAction('Evaluate Poll', async () => {
-      const { revealPoll } = require('../../api/questionApi');
       await revealPoll(activeRound.id);
     });
   };

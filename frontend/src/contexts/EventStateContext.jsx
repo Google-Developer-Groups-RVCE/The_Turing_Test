@@ -3,6 +3,7 @@ import { SocketContext } from './SocketContext';
 import { SOCKET_EVENTS } from '../utils/constants';
 import { getCurrentRound } from '../api/roundApi';
 import { getSettings } from '../api/settingsApi';
+import axiosClient from '../api/axiosClient';
 
 export const EventStateContext = createContext(null);
 
@@ -40,7 +41,7 @@ export const EventStateProvider = ({ children }) => {
       }
 
       if (rRes.status === 'fulfilled' && rRes.value.data?.round) {
-        const stageRes = await require('../api/axiosClient').default.get(`/rounds/${rRes.value.data.round.id}/stage`);
+        const stageRes = await axiosClient.get(`/rounds/${rRes.value.data.round.id}/stage`);
         if (stageRes.data?.stage) {
           setActiveStage(stageRes.data.stage);
         }

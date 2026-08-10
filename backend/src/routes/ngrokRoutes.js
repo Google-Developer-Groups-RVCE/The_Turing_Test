@@ -9,33 +9,50 @@ const router = express.Router();
 let ngrokProcess = null;
 let currentUrl = null;
 
+const DEFAULT_AUTHTOKEN = process.env.NGROK_AUTHTOKEN || '36tFxCc1jtMj815lmQkNtd3Q0Ak_32HSVw9KNxX3bLt5xmG7Z';
+const DEFAULT_DOMAIN = 'nondefensible-helminthological-tennie.ngrok-free.dev';
+
 /**
- * Poll ngrok's local API at localhost:4040 to get the active tunnel URL.
- * Retries up to `retries` times with a 1-second delay between each.
+ * Poll ngrok's local API at localhost (ports 4040, 4041, 4042) to get active tunnel URL.
  */
 function getNgrokUrl(retries = 10) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
     const tryFetch = () => {
-      const req = http.get('http://localhost:4040/api/tunnels', (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(data);
-            const httpsUrl = parsed.tunnels?.find(t => t.proto === 'https')?.public_url;
-            if (httpsUrl) return resolve(httpsUrl);
-          } catch {}
-          retry();
+      const ports = [4040, 4041, 4042];
+      let checked = 0;
+      let found = false;
+
+      ports.forEach(port => {
+        const req = http.get(`http://127.0.0.1:${port}/api/tunnels`, (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => {
+            try {
+              const parsed = JSON.parse(data);
+              const httpsUrl = parsed.tunnels?.find(t => t.proto === 'https')?.public_url || parsed.tunnels?.[0]?.public_url;
+              if (httpsUrl && !found) {
+                found = true;
+                return resolve(httpsUrl);
+              }
+            } catch {}
+            checked++;
+            if (checked === ports.length && !found) retry();
+          });
+        });
+        req.on('error', () => {
+          checked++;
+          if (checked === ports.length && !found) retry();
         });
       });
-      req.on('error', retry);
     };
+
     const retry = () => {
       attempts++;
       if (attempts >= retries) return reject(new Error('Could not get ngrok URL after ' + retries + ' attempts'));
       setTimeout(tryFetch, 1500);
     };
+
     tryFetch();
   });
 }
@@ -44,16 +61,14 @@ function getNgrokUrl(retries = 10) {
 router.get('/status', async (req, res) => {
   try {
     if (ngrokProcess && currentUrl) {
-      res.json({ status: 'online', url: currentUrl });
-    } else {
-      // Try to detect an already-running ngrok
-      try {
-        const url = await getNgrokUrl(1);
-        currentUrl = url;
-        res.json({ status: 'online', url: currentUrl });
-      } catch {
-        res.json({ status: 'offline', url: null });
-      }
+      return res.json({ status: 'online', url: currentUrl });
+    }
+    try {
+      const url = await getNgrokUrl(1);
+      currentUrl = url;
+      return res.json({ status: 'online', url: currentUrl });
+    } catch {
+      res.json({ status: 'offline', url: null });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -67,19 +82,15 @@ router.post('/start', async (req, res) => {
       return res.json({ success: true, url: currentUrl, status: 'online', message: 'Already running' });
     }
 
-    // The target to expose — the frontend service inside k8s is at turing-test.local
-    // but from inside docker/k8s the frontend listens on port 80
-    // From the host machine, turing-test.local maps to localhost via ingress
     const target = req.body?.port ? `http://localhost:${req.body.port}` : (req.body?.target || 'http://localhost:80');
-    const domain = req.body?.domain;
-    const authtoken = process.env.NGROK_AUTHTOKEN || '36tFxCc1jtMj815lmQkNtd3Q0Ak_32HSVw9KNxX3bLt5xmG7Z';
+    const domain = req.body?.domain || DEFAULT_DOMAIN;
+    const authtoken = process.env.NGROK_AUTHTOKEN || DEFAULT_AUTHTOKEN;
 
-    const args = ['http', target, '--host-header=turing-test.local', '--log=stdout'];
-    if (authtoken) args.push(`--authtoken=${authtoken}`);
-    if (domain) args.push(`--url=${domain}`);
+    const args = ['ngrok', 'http', target, '--host-header=turing-test.local', `--authtoken=${authtoken}`, `--url=${domain}`, '--log=stdout'];
 
-    // Spawn ngrok — it will automatically read ngrok.yml for the auth token
-    ngrokProcess = spawn('ngrok', args, {
+    // Spawn npx ngrok
+    ngrokProcess = spawn('npx', args, {
+      shell: true,
       detached: false,
       stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -93,14 +104,12 @@ router.post('/start', async (req, res) => {
       console.error('[ngrok]', data.toString());
     });
 
-    // Wait for ngrok to start then fetch URL
     try {
       currentUrl = await getNgrokUrl(12);
       res.json({ success: true, url: currentUrl, status: 'online' });
     } catch (err) {
-      // Kill the process if we can't get the URL
       if (ngrokProcess) { ngrokProcess.kill(); ngrokProcess = null; }
-      res.status(500).json({ error: 'ngrok started but could not get public URL. Check ngrok is installed and authenticated.' });
+      res.status(500).json({ error: 'ngrok started but could not get public URL. Check authtoken and domain.' });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });

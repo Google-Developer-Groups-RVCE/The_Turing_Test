@@ -16,11 +16,11 @@ class SeedService {
     ];
     for (const r of rounds) await roundStore.saveRound(r);
 
-    // 2. Questions for Round 1 (MCQ - 1 minute each)
+    // 2. Questions for Round 1 (Human vs AI Writing - 1 minute each)
     const r1Questions = [
-      { id: 'q1_1', text: 'If 5 machines take 5 minutes to make 5 widgets, how long would 100 machines take to make 100 widgets?', type: 'mcq', options: ['5 minutes', '100 minutes', '50 minutes', '1 minute'], correctAnswer: '5 minutes', points: '10', order: '1', durationSeconds: '60' },
-      { id: 'q1_2', text: 'Which number logically completes the sequence: 2, 6, 12, 20, 30, __?', type: 'mcq', options: ['42', '40', '36', '48'], correctAnswer: '42', points: '10', order: '2', durationSeconds: '60' },
-      { id: 'q1_3', text: 'Look at this series: 7, 10, 8, 11, 9, 12, __. What number should come next?', type: 'mcq', options: ['10', '13', '7', '14'], correctAnswer: '10', points: '10', order: '3', durationSeconds: '60' },
+      { id: 'q1_1', text: 'Look at the text below. Can you tell if it was written by a Human or ChatGPT?', type: 'mcq', options: ['Response 1 (Human)', 'Response 2 (AI)'], correctAnswer: 'Response 1 (Human)', points: '10', order: '1', durationSeconds: '60' },
+      { id: 'q1_2', text: 'Which of these two responses feels more human and authentic?', type: 'mcq', options: ['Response 1 (Human)', 'Response 2 (AI)'], correctAnswer: 'Response 1 (Human)', points: '10', order: '2', durationSeconds: '60' },
+      { id: 'q1_3', text: 'Is social media doing more harm than good?', type: 'mcq', options: ['Response 1 (Human: "More harm probably, but I say that while still using it every day...")', 'Response 2 (AI: "It\'s mixed. Social media has clear benefits like connectivity...")'], correctAnswer: 'Response 1 (Human: "More harm probably, but I say that while still using it every day...")', points: '10', order: '3', durationSeconds: '60' },
     ];
     for (const q of r1Questions) await questionStore.addQuestion('round_1_aptitude', q);
     await questionStore.setActiveQuestionId('round_1_aptitude', 'q1_1');

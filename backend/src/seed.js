@@ -1,19 +1,14 @@
 /**
  * seed.js
  * ------------------------------------------------------------------
- * Zero-Dependency Native Redis Seeding Script for GDG Turing Test
+ * Single Master Seeding Script for GDG Turing Test
+ * Inserts the REAL exact Round 1, Round 2, and Round 3 Questions into Redis.
  * 
- * Works out-of-the-box with standard Node.js (requires no node_modules!)
+ * Zero external dependencies — runs natively on Node.js!
  * 
  * Usage:
- *   1. Seed built-in Round 1, 2, 3 questions & default accounts:
- *      node src/seed.js
- * 
- *   2. Seed from custom JSON file:
- *      node src/seed.js path/to/questions.json
- * 
- *   3. Connect to remote Redis:
- *      REDIS_HOST=redis.turing-test.svc.cluster.local REDIS_PORT=6379 node src/seed.js
+ *   node seed.js
+ *   REDIS_HOST=redis-service node seed.js
  * ------------------------------------------------------------------
  */
 
@@ -25,9 +20,8 @@ const net = require('net');
 const host = process.env.REDIS_HOST || 'redis-service';
 const port = parseInt(process.env.REDIS_PORT) || 6379;
 const password = process.env.REDIS_PASSWORD || null;
-const customJsonArg = process.argv[2];
 
-console.log('\n🌱 GDG Turing Test — Native Redis Seeder');
+console.log('\n🌟 GDG Turing Test — Real Questions Seeder Script');
 console.log(`Connecting to Redis at ${host}:${port}...\n`);
 
 function sendCommand(socket, command, ...args) {
@@ -71,8 +65,8 @@ async function runSeeder() {
   }
 
   try {
-    // 1. Seed Default Accounts
-    console.log('\n👤 1. Seeding Default Accounts...');
+    // 1. Seed Accounts
+    console.log('\n👤 1. Seeding User Accounts...');
     const adminPassHash = '$2a$10$e.wPZ99Y7w9pU6XJk0oJEOw5d/z4KxK1Jk8p4k1m8n9o0p1q2r3s4';
     const userPassHash = '$2a$10$e.wPZ99Y7w9pU6XJk0oJEOw5d/z4KxK1Jk8p4k1m8n9o0p1q2r3s4';
 
@@ -88,58 +82,14 @@ async function runSeeder() {
     await sendCommand(socket, 'SADD', 'users:all', 'user1');
     await sendCommand(socket, 'SADD', 'users:participants', 'user1');
 
-    console.log(`    ✓ Admin Account: "admin" / "Admin@123"`);
-    console.log(`    ✓ Participant Account: "user1" / "User@123"`);
+    console.log(`    ✓ Admin: "admin" / "Admin@123"`);
+    console.log(`    ✓ Participant: "user1" / "User@123"`);
 
-    // 2. Custom JSON file mode
-    if (customJsonArg && fs.existsSync(customJsonArg)) {
-      console.log(`\n📁 Loading custom questions from: ${customJsonArg}`);
-      const rawData = fs.readFileSync(customJsonArg, 'utf8');
-      const payload = JSON.parse(rawData);
-
-      if (Array.isArray(payload.rounds)) {
-        await sendCommand(socket, 'DEL', 'rounds:order');
-        for (const r of payload.rounds) {
-          const args = [];
-          for (const [k, v] of Object.entries(r)) args.push(k, v);
-          await sendCommand(socket, 'HSET', `round:${r.id}`, ...args);
-          await sendCommand(socket, 'RPUSH', 'rounds:order', r.id);
-          console.log(`    ✓ Custom Round: [${r.id}] ${r.name}`);
-        }
-      }
-
-      if (payload.questions && typeof payload.questions === 'object') {
-        for (const [roundId, qList] of Object.entries(payload.questions)) {
-          if (Array.isArray(qList)) {
-            await sendCommand(socket, 'DEL', `questions:${roundId}:order`);
-            for (const q of qList) {
-              const args = [];
-              for (const [k, v] of Object.entries(q)) {
-                args.push(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
-              }
-              await sendCommand(socket, 'HSET', `question:${roundId}:${q.id}`, ...args);
-              await sendCommand(socket, 'RPUSH', `questions:${roundId}:order`, q.id);
-            }
-            if (qList.length > 0) {
-              await sendCommand(socket, 'SET', `round:active_question:${roundId}`, qList[0].id);
-            }
-            console.log(`    ✓ Custom Questions for [${roundId}]: ${qList.length} items`);
-          }
-        }
-      }
-
-      console.log('\n=========================================');
-      console.log('✅ Custom Questions Loaded into Redis!');
-      console.log('=========================================\n');
-      socket.end();
-      return;
-    }
-
-    // 3. Built-in Round 1, 2, 3 Questions
-    console.log('\n📚 2. Seeding Rounds 1, 2 & 3...');
+    // 2. Seed Rounds
+    console.log('\n📚 2. Registering Rounds...');
     const rounds = [
-      { id: 'round_1_aptitude', name: 'Round 1 – Aptitude & Logic', status: 'pending', durationSeconds: '300', order: '1' },
-      { id: 'round_2_coding', name: 'Round 2 – Algorithms & Image Challenges', status: 'pending', durationSeconds: '300', order: '2' },
+      { id: 'round_1_aptitude', name: 'Round 1 – Human vs AI Writing', status: 'pending', durationSeconds: '300', order: '1' },
+      { id: 'round_2_coding', name: 'Round 2 – AI Image Challenges', status: 'pending', durationSeconds: '300', order: '2' },
       { id: 'round_3_decode', name: 'Round 3 – Decode the Context', status: 'pending', durationSeconds: '300', order: '3' },
     ];
 
@@ -150,12 +100,39 @@ async function runSeeder() {
       console.log(`    ✓ Round Registered: [${r.id}] ${r.name}`);
     }
 
-    // ROUND 1
-    console.log('\n❓ Seeding Round 1 Questions...');
+    // REAL ROUND 1 QUESTIONS
+    console.log('\n❓ 3. Seeding REAL Round 1 Questions (Human vs AI Writing)...');
     const r1Questions = [
-      { id: 'q1_1', text: 'If 5 machines take 5 minutes to make 5 widgets, how long would 100 machines take to make 100 widgets?', type: 'mcq', options: JSON.stringify(['5 minutes', '100 minutes', '50 minutes', '1 minute']), correctAnswer: '5 minutes', points: '10', order: '1', durationSeconds: '60' },
-      { id: 'q1_2', text: 'Which number logically completes the sequence: 2, 6, 12, 20, 30, __?', type: 'mcq', options: JSON.stringify(['42', '40', '36', '48']), correctAnswer: '42', points: '10', order: '2', durationSeconds: '60' },
-      { id: 'q1_3', text: 'Look at this series: 7, 10, 8, 11, 9, 12, __. What number should come next?', type: 'mcq', options: JSON.stringify(['10', '13', '7', '14']), correctAnswer: '10', points: '10', order: '3', durationSeconds: '60' },
+      {
+        id: 'q1_1',
+        text: 'Look at the text below. Can you tell if it was written by a Human or ChatGPT?',
+        type: 'mcq',
+        options: JSON.stringify(['Response 1 (Human)', 'Response 2 (AI)']),
+        correctAnswer: 'Response 1 (Human)',
+        points: '10',
+        order: '1',
+        durationSeconds: '60'
+      },
+      {
+        id: 'q1_2',
+        text: 'Which of these two responses feels more human and authentic?',
+        type: 'mcq',
+        options: JSON.stringify(['Response 1 (Human)', 'Response 2 (AI)']),
+        correctAnswer: 'Response 1 (Human)',
+        points: '10',
+        order: '2',
+        durationSeconds: '60'
+      },
+      {
+        id: 'q1_3',
+        text: 'Is social media doing more harm than good?',
+        type: 'mcq',
+        options: JSON.stringify(['Response 1 (Human: "More harm probably, but I say that while still using it every day...")', 'Response 2 (AI: "It\'s mixed. Social media has clear benefits like connectivity...")']),
+        correctAnswer: 'Response 1 (Human: "More harm probably, but I say that while still using it every day...")',
+        points: '10',
+        order: '3',
+        durationSeconds: '60'
+      }
     ];
 
     await sendCommand(socket, 'DEL', 'questions:round_1_aptitude:order');
@@ -164,15 +141,57 @@ async function runSeeder() {
       await sendCommand(socket, 'RPUSH', 'questions:round_1_aptitude:order', q.id);
     }
     await sendCommand(socket, 'SET', 'round:active_question:round_1_aptitude', 'q1_1');
-    console.log(`    ✓ Round 1: 3 MCQs seeded (Active: q1_1)`);
+    console.log(`    ✓ Round 1: 3 Human vs AI Writing Questions Seeded (Active: q1_1)`);
 
-    // ROUND 2
-    console.log('\n🖼️ Seeding Round 2 Questions (Image Challenges)...');
+    // REAL ROUND 2 QUESTIONS (IMAGE CHALLENGES)
+    console.log('\n🖼️ 4. Seeding REAL Round 2 Questions (AI Image Challenges)...');
     const r2Questions = [
-      { id: 'q2_1', text: 'Round 2 — Server Room: Which image is AI-generated?', type: 'mcq', options: JSON.stringify(['Image 1 (AI)', 'Image 2 (Real)']), correctAnswer: 'Image 1 (AI)', points: '10', order: '1', durationSeconds: '60', imageUrl: '/reference/r2/image1.webp' },
-      { id: 'q2_2', text: 'Round 2 — Wildlife Photography: Which part of the image was AI-edited?', type: 'mcq', options: JSON.stringify(['The head / face', 'The stripes on the abdomen', 'The legs', 'The background']), correctAnswer: 'The background', points: '10', order: '2', durationSeconds: '60', imageUrl: '/reference/r2/image3.webp' },
-      { id: 'q2_3', text: 'Round 2 — Street Photography: Write a prompt that recreates this image as closely as possible.', type: 'text', options: JSON.stringify([]), correctAnswer: '', points: '10', order: '3', durationSeconds: '60', imageUrl: '/reference/r2/image4.webp' },
-      { id: 'q2_4', text: 'Round 2 — Bird Photography: Is this image real or AI-generated?', type: 'mcq', options: JSON.stringify(['Real', 'AI-generated']), correctAnswer: 'AI-generated', points: '10', order: '4', durationSeconds: '60', imageUrl: '/reference/r2/image5.webp' },
+      {
+        id: 'q2_1',
+        text: 'Round 2 — Server Room: Which image is AI-generated?',
+        type: 'mcq',
+        options: JSON.stringify(['Image 1 (AI)', 'Image 2 (Real)']),
+        correctAnswer: 'Image 1 (AI)',
+        points: '10',
+        order: '1',
+        durationSeconds: '60',
+        imageUrl: '/reference/r2/image1.webp'
+      },
+      {
+        id: 'q2_2',
+        text: 'Round 2 — Wildlife Photography: Which part of the image was AI-edited?',
+        type: 'mcq',
+        options: JSON.stringify(['The head / face', 'The stripes on the abdomen', 'The legs', 'The background']),
+        correctAnswer: 'The background',
+        points: '10',
+        order: '2',
+        durationSeconds: '60',
+        imageUrl: '/reference/r2/image3.webp'
+      },
+      {
+        id: 'q2_3',
+        text: 'Round 2 — Street Photography: Write a prompt that recreates this image as closely as possible.',
+        type: 'text',
+        options: JSON.stringify([]),
+        correctAnswer: '',
+        points: '10',
+        order: '3',
+        durationSeconds: '60',
+        imageUrl: '/reference/r2/image4.webp',
+        placeholder: 'Describe the scene, lighting, camera style, subjects, atmosphere, and other details...',
+        minLength: '10'
+      },
+      {
+        id: 'q2_4',
+        text: 'Round 2 — Bird Photography: Is this image real or AI-generated?',
+        type: 'mcq',
+        options: JSON.stringify(['Real', 'AI-generated']),
+        correctAnswer: 'AI-generated',
+        points: '10',
+        order: '4',
+        durationSeconds: '60',
+        imageUrl: '/reference/r2/image5.webp'
+      }
     ];
 
     await sendCommand(socket, 'DEL', 'questions:round_2_coding:order');
@@ -181,18 +200,18 @@ async function runSeeder() {
       await sendCommand(socket, 'RPUSH', 'questions:round_2_coding:order', q.id);
     }
     await sendCommand(socket, 'SET', 'round:active_question:round_2_coding', 'q2_1');
-    console.log(`    ✓ Round 2: 4 Image Challenges seeded (Active: q2_1)`);
+    console.log(`    ✓ Round 2: 4 Real AI Image Challenges Seeded (Active: q2_1)`);
 
-    // ROUND 3
-    console.log('\n🕵️ Seeding Round 3 Questions (5 Polls + Profile Guess)...');
+    // REAL ROUND 3 QUESTIONS (5 POLLS + PROFILE GUESS)
+    console.log('\n🕵️ 5. Seeding REAL Round 3 Questions (5 Polls + Profile Guess)...');
     const r3Questions = [
       {
         id: 'poll1', order: '1', type: 'poll',
         text: 'Poll 1 – Daily Life: Vote for the question you want Gemini to answer',
         options: JSON.stringify([
-          { key: 'A', question: "What does a perfect Sunday look like for you?", answer: "A slow morning, a good lunch, maybe getting a few things done, and a quiet evening." },
-          { key: 'B', question: "What's something your friends often tease you about?", answer: "Probably how quickly I start thinking about going home during gatherings." },
-          { key: 'C', question: "What's one thing you almost never leave home without?", answer: "My wallet. Leaving without a wallet still makes me feel like I've forgotten something." }
+          { key: 'A', question: "What does a perfect Sunday look like for you?", answer: "A slow morning, a good lunch, maybe getting a few things done, and a quiet evening. I've started appreciating days where absolutely nothing interesting happens." },
+          { key: 'B', question: "What's something your friends often tease you about?", answer: "Probably how quickly I start thinking about going home during gatherings. Staying out past midnight somehow stopped feeling worth it a while ago." },
+          { key: 'C', question: "What's one thing you almost never leave home without?", answer: "My wallet. I use my phone for payments quite often now, but leaving without a wallet still makes me feel like I've forgotten something important." }
         ]),
         correctAnswer: '', points: '0', showEvaluation: 'false', durationSeconds: '120'
       },
@@ -200,9 +219,9 @@ async function runSeeder() {
         id: 'poll2', order: '2', type: 'poll',
         text: 'Poll 2 – Memories & Experiences: Vote for the question you want Gemini to answer',
         options: JSON.stringify([
-          { key: 'A', question: "What's something younger people do that you find interesting?", answer: "How naturally they document ordinary things." },
-          { key: 'B', question: "What's a change in everyday life that still amazes you?", answer: "How many separate things have quietly disappeared into one device." },
-          { key: 'C', question: "How did you usually discover new music growing up?", answer: "Mostly through friends or hearing something somewhere repeatedly." }
+          { key: 'A', question: "What's something younger people do that you find interesting?", answer: "How naturally they document ordinary things. A meal arrives, someone notices something funny, or a song starts playing and a phone immediately comes out. I rarely think of doing that first." },
+          { key: 'B', question: "What's a change in everyday life that still amazes you?", answer: "Probably how many separate things have quietly disappeared into one device. I used to think of maps, music, photographs and payments as completely unrelated things." },
+          { key: 'C', question: "How did you usually discover new music growing up?", answer: "Mostly through friends or hearing something somewhere repeatedly. Sometimes you'd like one song enough to take a chance on everything else by the same artist." }
         ]),
         correctAnswer: '', points: '0', showEvaluation: 'false', durationSeconds: '120'
       },
@@ -210,9 +229,9 @@ async function runSeeder() {
         id: 'poll3', order: '3', type: 'poll',
         text: 'Poll 3 – Work & Thinking: Vote for the question you want Gemini to answer',
         options: JSON.stringify([
-          { key: 'A', question: "What's the most tiring part of your work?", answer: "Probably revisiting the same information repeatedly." },
-          { key: 'B', question: "What skill do you think you're unusually good at?", answer: "Remembering small differences in how people explain things." },
-          { key: 'C', question: "What's something you do before an important meeting?", answer: "I usually go through everything beforehand and make a rough mental list." }
+          { key: 'A', question: "What's the most tiring part of your work?", answer: "Probably revisiting the same information repeatedly. Sometimes one detail that seemed insignificant at first changes how everything else fits together." },
+          { key: 'B', question: "What skill do you think you're unusually good at?", answer: "Remembering small differences in how people explain things. I tend to notice when a detail changes slightly the second time something is discussed." },
+          { key: 'C', question: "What's something you do before an important meeting?", answer: "I usually go through everything beforehand and make a rough mental list of what might come up. I prefer having more information than I need rather than missing something important." }
         ]),
         correctAnswer: '', points: '0', showEvaluation: 'false', durationSeconds: '120'
       },
@@ -220,9 +239,9 @@ async function runSeeder() {
         id: 'poll4', order: '4', type: 'poll',
         text: 'Poll 4 – Behaviour & Perspective: Vote for the question you want Gemini to answer',
         options: JSON.stringify([
-          { key: 'A', question: "What's something you find interesting about conversations?", answer: "How differently two people can remember the same situation." },
-          { key: 'B', question: "What's something you've become less impressed by over time?", answer: "Confidence. Someone sounding completely certain doesn't really tell me whether they're right." },
-          { key: 'C', question: "What do your friends sometimes find annoying about you?", answer: "I ask too many follow-up questions." }
+          { key: 'A', question: "What's something you find interesting about conversations?", answer: "How differently two people can remember the same situation. Neither person necessarily thinks they're wrong, but the details can still be surprisingly different." },
+          { key: 'B', question: "What's something you've become less impressed by over time?", answer: "Confidence. Someone sounding completely certain doesn't really tell me whether they're right anymore. I tend to pay more attention to the details." },
+          { key: 'C', question: "What do your friends sometimes find annoying about you?", answer: "I ask too many follow-up questions. Sometimes they just want a quick opinion, and I somehow turn it into a much longer conversation before answering." }
         ]),
         correctAnswer: '', points: '0', showEvaluation: 'false', durationSeconds: '120'
       },
@@ -230,9 +249,9 @@ async function runSeeder() {
         id: 'poll5', order: '5', type: 'poll',
         text: 'Poll 5 – Personal Interests: Vote for the question you want Gemini to answer',
         options: JSON.stringify([
-          { key: 'A', question: "What kind of moments do you remember most clearly?", answer: "Usually very brief ones. A particular expression or something unusual." },
-          { key: 'B', question: "What's something you're unusually patient about?", answer: "Waiting when I feel the timing matters." },
-          { key: 'C', question: "When you visit somewhere new, what do you usually do first?", answer: "Usually walk around without deciding too much beforehand." }
+          { key: 'A', question: "What kind of moments do you remember most clearly?", answer: "Usually very brief ones. A particular expression, something unusual happening behind everyone else, or a place looking completely different for a few seconds." },
+          { key: 'B', question: "What's something you're unusually patient about?", answer: "Waiting when I feel the timing matters. I don't mind staying in the same place for a while if rushing would mean missing something interesting." },
+          { key: 'C', question: "When you visit somewhere new, what do you usually do first?", answer: "Usually walk around without deciding too much beforehand. I tend to notice smaller details and occasionally end up spending far too long in places other people pass through quickly." }
         ]),
         correctAnswer: '', points: '0', showEvaluation: 'false', durationSeconds: '120'
       },
@@ -252,10 +271,10 @@ async function runSeeder() {
       await sendCommand(socket, 'RPUSH', 'questions:round_3_decode:order', q.id);
     }
     await sendCommand(socket, 'SET', 'round:active_question:round_3_decode', 'poll1');
-    console.log(`    ✓ Round 3: 5 Poll Questions + 1 Profile Guess seeded (Active: poll1)`);
+    console.log(`    ✓ Round 3: 5 Poll Questions + 1 Profile Guess Seeded (Active: poll1)`);
 
     console.log('\n=========================================');
-    console.log('✅ Native Redis Seeding Completed!');
+    console.log('✅ Real Questions Seeding Complete!');
     console.log('=========================================\n');
   } catch (err) {
     console.error('❌ Seeder Error:', err);

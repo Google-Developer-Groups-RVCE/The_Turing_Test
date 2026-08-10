@@ -409,8 +409,40 @@ export default function RoundPage() {
         </div>
       )}
 
+      {/* Poll Result View */}
+      {pollResult && (
+        <div className="w-full bg-dark-900/80 border border-purple-500/30 rounded-xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center text-center">
+          <Sparkles size={64} className="text-purple-400 mb-4 animate-pulse" />
+          <h2 className="font-['Borghan'] text-3xl md:text-4xl font-bold text-white mb-2 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Community Choice</h2>
+          
+          <div className="w-full mt-6 p-6 rounded-2xl bg-purple-900/20 border border-purple-500/40 text-left shadow-[0_0_30px_rgba(168,85,247,0.15)]">
+            <p className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-3">Majority Voted Question</p>
+            <p className="text-xl font-medium text-white leading-relaxed">"{pollResult.winningQuestionText || question.text}"</p>
+            
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-purple-500/50 to-transparent my-6" />
+            
+            <p className="text-xs text-pink-400 font-bold uppercase tracking-wider mb-3">Corresponding Answer</p>
+            <p className="text-lg font-medium text-purple-100 leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5">
+              {pollResult.answerText}
+            </p>
+          </div>
+          
+          {Object.keys(pollResult.counts || {}).length > 0 && (
+            <div className="w-full mt-6 flex justify-center space-x-4">
+              {Object.entries(pollResult.counts || {}).sort((a,b) => b[1]-a[1]).map(([key, count]) => (
+                <div key={key} className={`px-5 py-3 rounded-xl border ${key === pollResult.winningKey ? 'bg-purple-600/30 border-purple-400 shadow-lg' : 'bg-dark-800 border-dark-600'} text-center`}>
+                  <div className="text-xs text-slate-400 font-bold mb-1">Option {key}</div>
+                  <div className="text-xl text-white font-mono font-bold">{count}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+
       {/* Question Card & Answer Section */}
-      {!evaluationData && (() => {
+      {!evaluationData && !pollResult && (() => {
         if (question.type === 'profile-guess' || question.id === 'poll6') {
           const handleProfileChange = (field, val) => {
             const next = { ...profileGuess, [field]: val };
@@ -618,7 +650,7 @@ export default function RoundPage() {
         );
       })()}
 
-      {!evaluationData && (
+      {!evaluationData && !pollResult && (
         <div className="poll-actions mt-2">
           {error && <p role="alert" className="poll-error text-center">{error}</p>}
 
@@ -647,18 +679,6 @@ export default function RoundPage() {
             <div className="mt-4 p-3 bg-dark-900/60 border border-dark-700 rounded-lg text-center text-xs text-slate-400 font-medium flex items-center justify-center space-x-2">
               <Lock size={14} className="text-primary-400" />
               <span>Submission locked for this round. Stay tuned for results.</span>
-            </div>
-          )}
-
-          {pollResult && (
-            <div className="mt-6 p-5 rounded-xl border border-purple-500/40 bg-purple-900/20 text-purple-100 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.2)]">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-purple-400 mb-2 flex items-center space-x-2">
-                <Sparkles size={16} />
-                <span>Poll Results are in!</span>
-              </h4>
-              <div className="text-lg font-medium leading-relaxed">
-                {pollResult.answerText}
-              </div>
             </div>
           )}
         </div>

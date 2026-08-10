@@ -12,8 +12,10 @@ function normalizeOptions(options, type) {
   if (!Array.isArray(arr)) return type === 'guess-author' ? [{ text: '', author: 'Human' }, { text: '', author: 'Gemini' }] : ['', '', '', ''];
   
   if (type === 'guess-author') {
-     const human = arr.find(o => o?.author === 'Human') || { text: '', author: 'Human', id: 'human-opt' };
-     const gemini = arr.find(o => o?.author === 'Gemini') || { text: '', author: 'Gemini', id: 'gemini-opt' };
+     const human = arr.find(o => o?.author === 'Human') || { text: '', author: 'Human' };
+     const gemini = arr.find(o => o?.author === 'Gemini') || { text: '', author: 'Gemini' };
+     human.id = human.id || 'human-opt';
+     gemini.id = gemini.id || 'gemini-opt';
      return [human, gemini];
   }
   return arr.map(o => (typeof o === 'object' && o !== null) ? (o.text || o.answer || o.id || '') : String(o || ''));

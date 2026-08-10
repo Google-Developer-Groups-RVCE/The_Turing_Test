@@ -13,7 +13,7 @@ import { SOCKET_EVENTS } from '../../utils/constants';
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
   RefreshCw, X, AlertTriangle, SkipForward, SkipBack, Eye, Trophy, Monitor, CheckCircle,
-  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle
+  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle, ArrowRightCircle
 } from 'lucide-react';
 
 function RoundModal({ round, onClose, onSave }) {
@@ -81,6 +81,7 @@ export default function RoundManagement() {
   const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
 
   const [activeQuestion, setActiveQuestionState] = useState(null);
+  const [activeStage, setActiveStage] = useState('question');
   const [roundQuestions, setRoundQuestions] = useState([]);
   const [responseCount, setResponseCount] = useState(0);
 
@@ -111,10 +112,16 @@ export default function RoundManagement() {
             const count = respRes.data?.total || (Array.isArray(respRes.data) ? respRes.data.length : 0);
             setResponseCount(count);
           }).catch(() => setResponseCount(0));
+
+        const { getStage } = require('../../api/roundApi');
+        getStage(active.id).then(res => {
+          setActiveStage(res.data?.stage || 'question');
+        }).catch(() => setActiveStage('question'));
       } else {
         setActiveQuestionState(null);
         setRoundQuestions([]);
         setResponseCount(0);
+        setActiveStage('question');
       }
     } catch { showError('Failed to load rounds'); }
     finally { setLoading(false); }
@@ -143,12 +150,17 @@ export default function RoundManagement() {
       if (data?.question) setActiveQuestionState(data.question);
     };
 
+    const handleStageChanged = (data) => {
+      if (data?.activeStage) setActiveStage(data.activeStage);
+    };
+
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, refresh);
     socket.on(SOCKET_EVENTS.ROUND_PAUSED, refresh);
     socket.on(SOCKET_EVENTS.ROUND_RESUMED, refresh);
     socket.on(SOCKET_EVENTS.ROUND_ENDED, refresh);
     socket.on(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
     socket.on('question:changed', handleQuestionChanged);
+    socket.on('round:stage_changed', handleStageChanged);
 
     return () => {
       socket.off(SOCKET_EVENTS.ROUND_CHANGED, refresh);
@@ -157,6 +169,7 @@ export default function RoundManagement() {
       socket.off(SOCKET_EVENTS.ROUND_ENDED, refresh);
       socket.off(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
       socket.off('question:changed', handleQuestionChanged);
+      socket.off('round:stage_changed', handleStageChanged);
     };
   }, [socket, fetchRounds]);
 
@@ -202,10 +215,13 @@ export default function RoundManagement() {
       showError('No active round. Please start a round first.');
       return;
     }
-    doAction('Next Question', async () => {
+    doAction('Next Step', async () => {
       const res = await nextQuestion(activeRound.id);
       if (res.data?.question) {
         setActiveQuestionState(res.data.question);
+      }
+      if (res.data?.stage) {
+        setActiveStage(res.data.stage);
       }
     });
   };
@@ -354,47 +370,21 @@ export default function RoundManagement() {
                 disabled={!!actionLoading || !activeRound}
                 className="flex-1 py-2 px-3 rounded-lg border border-dark-600 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
               >
-                <SkipBack size={14} /><span>Previous Question</span>
+                <SkipBack size={14} /><span>Previous</span>
               </button>
               <button
                 onClick={handleNextQuestion}
                 disabled={!!actionLoading || !activeRound}
                 className="flex-1 py-2 px-3 rounded-lg border border-primary-500/40 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
               >
-                <span>Next Question</span><SkipForward size={14} />
+                <span>{activeStage === 'question' ? 'Evaluate Answer' : activeStage === 'evaluated' ? 'Show Leaderboard' : 'Next Question'}</span>
+                <ArrowRightCircle size={14} />
               </button>
             </div>
             
-            {activeQuestion?.type === 'poll' ? (
-              <div className="flex pt-2">
-                <button
-                  onClick={handleRevealPoll}
-                  disabled={!!actionLoading || !activeRound}
-                  className="w-full py-2 px-3 rounded-lg border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-xs font-bold flex items-center justify-center space-x-2 transition-colors disabled:opacity-40"
-                >
-                  <Sparkles size={14} />
-                  <span>Evaluate & Reveal Poll Result</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex pt-2">
-                <button
-                  onClick={async () => {
-                    const activeRound = rounds.find(r => r.status === 'active');
-                    if (!activeRound) return;
-                    doAction('Evaluate Question', async () => {
-                      const { evaluateQuestion } = require('../../api/questionApi');
-                      await evaluateQuestion(activeRound.id);
-                    });
-                  }}
-                  disabled={!!actionLoading || !activeRound}
-                  className="w-full py-2 px-3 rounded-lg border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 text-xs font-bold flex items-center justify-center space-x-2 transition-colors disabled:opacity-40"
-                >
-                  <CheckCircle size={14} />
-                  <span>Evaluate & Reveal Answer</span>
-                </button>
-              </div>
-            )}
+            <div className="text-xs text-center py-1 font-medium text-slate-400">
+              Current Stage: <span className="text-white capitalize">{activeStage}</span>
+            </div>
             
             {activeQuestion?.type === 'guess-author' && (
               <div className="pt-3 space-y-2 border-t border-dark-700 mt-2">
@@ -405,7 +395,9 @@ export default function RoundManagement() {
                       key={opt.id}
                       onClick={() => doAction(`Force ${opt.author}`, () => {
                          const { overrideOption } = require('../../api/questionApi');
-                         return overrideOption(activeRound.id, opt.id);
+                         const overrideId = opt.id || (opt.author ? opt.author.toLowerCase() + '-opt' : null);
+                         if (!overrideId) return Promise.reject(new Error('Invalid option ID'));
+                         return overrideOption(activeRound.id, overrideId);
                       })}
                       disabled={!!actionLoading}
                       className={`flex-1 py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${activeQuestion.displayedOptionId === opt.id ? 'bg-primary-500/20 border-primary-500/50 text-primary-300' : 'bg-dark-800 border-dark-600 text-slate-400 hover:bg-dark-700'}`}
@@ -436,25 +428,7 @@ export default function RoundManagement() {
             )}
           </div>
 
-          {/* Show Leaderboard Toggle Switch */}
-          <div className="p-4 rounded-xl bg-dark-900/60 border border-dark-700 flex items-center justify-between">
-            <div>
-              <div className="text-sm font-bold text-white flex items-center space-x-2">
-                <Trophy size={16} className="text-yellow-400" />
-                <span>Show Leaderboard to Participants</span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {showLeaderboard ? 'ON — Live scores currently broadcasted to participants' : 'OFF — Participants see GDG Club Waiting Room'}
-              </p>
-            </div>
-            <button
-              onClick={handleToggleLeaderboard}
-              disabled={togglingLeaderboard}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showLeaderboard ? 'bg-primary-500' : 'bg-dark-700'}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showLeaderboard ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
+
 
           {/* Live Extra Time */}
           {activeRound && (

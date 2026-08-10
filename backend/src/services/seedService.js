@@ -25,11 +25,12 @@ class SeedService {
     for (const q of r1Questions) await questionStore.addQuestion('round_1_aptitude', q);
     await questionStore.setActiveQuestionId('round_1_aptitude', 'q1_1');
 
-    // 3. Questions for Round 2 (MCQ / coding - 1 minute each)
+    // 3. Questions for Round 2 (Algorithms, AI vs Real & Image Challenges)
     const r2Questions = [
-      { id: 'q2_1', text: 'What is the worst-case time complexity of QuickSort?', type: 'mcq', options: ['O(n log n)', 'O(n²)', 'O(n)', 'O(log n)'], correctAnswer: 'O(n²)', points: '10', order: '1', durationSeconds: '60' },
-      { id: 'q2_2', text: 'Which data structure is primarily used to implement Breadth-First Search (BFS) in a graph?', type: 'mcq', options: ['Queue', 'Stack', 'Priority Queue', 'Array'], correctAnswer: 'Queue', points: '10', order: '2', durationSeconds: '60' },
-      { id: 'q2_3', text: "What will be the output of 3 + '3' - 3 in JavaScript?", type: 'mcq', options: ['30', 'NaN', '33', '0'], correctAnswer: '30', points: '10', order: '3', durationSeconds: '60' },
+      { id: 'q2_1', text: 'Round 2 — Server Room: Which image is AI-generated?', type: 'mcq', options: ['Image 1 (AI)', 'Image 2 (Real)'], correctAnswer: 'Image 1 (AI)', points: '10', order: '1', durationSeconds: '60', imageUrl: '/reference/r2/image1.webp' },
+      { id: 'q2_2', text: 'Round 2 — Wildlife Photography: Which part of the image was AI-edited?', type: 'mcq', options: ['The head / face', 'The stripes on the abdomen', 'The legs', 'The background'], correctAnswer: 'The background', points: '10', order: '2', durationSeconds: '60', imageUrl: '/reference/r2/image3.webp' },
+      { id: 'q2_3', text: 'Round 2 — Street Photography: Write a prompt that recreates this image as closely as possible.', type: 'text', options: [], correctAnswer: '', points: '10', order: '3', durationSeconds: '60', imageUrl: '/reference/r2/image4.webp' },
+      { id: 'q2_4', text: 'Round 2 — Bird Photography: Is this image real or AI-generated?', type: 'mcq', options: ['Real', 'AI-generated'], correctAnswer: 'AI-generated', points: '10', order: '4', durationSeconds: '60', imageUrl: '/reference/r2/image5.webp' },
     ];
     for (const q of r2Questions) await questionStore.addQuestion('round_2_coding', q);
     await questionStore.setActiveQuestionId('round_2_coding', 'q2_1');

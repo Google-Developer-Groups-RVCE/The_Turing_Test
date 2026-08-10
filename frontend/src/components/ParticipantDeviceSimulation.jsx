@@ -111,6 +111,13 @@ export default function ParticipantDeviceSimulation() {
               <h4 className="text-sm font-bold text-white leading-snug">
                 {activeQuestion.text || 'Question loaded'}
               </h4>
+              {activeQuestion.imageUrl && (
+                <img
+                  src={activeQuestion.imageUrl}
+                  alt="Question Visual"
+                  className="w-full max-h-36 object-cover rounded-xl border border-white/10 my-1"
+                />
+              )}
             </div>
 
             {/* Options list */}

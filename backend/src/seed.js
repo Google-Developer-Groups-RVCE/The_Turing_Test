@@ -22,7 +22,7 @@
 const fs = require('fs');
 const net = require('net');
 
-const host = process.env.REDIS_HOST || 'redis';
+const host = process.env.REDIS_HOST || 'redis-service';
 const port = parseInt(process.env.REDIS_PORT) || 6379;
 const password = process.env.REDIS_PASSWORD || null;
 const customJsonArg = process.argv[2];

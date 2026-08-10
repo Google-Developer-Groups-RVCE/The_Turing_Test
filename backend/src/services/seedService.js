@@ -14,16 +14,13 @@ class SeedService {
       { id: 'round_2_coding',    name: 'Round 2 – Algorithms & Coding',       status: 'pending', durationSeconds: '300', order: '2' },
       { id: 'round_3_decode',    name: 'Round 3 – Decode the Context',        status: 'pending', durationSeconds: '300', order: '3' },
     ];
-    for (const r of rounds) await roundStore.createRound(r);
+    for (const r of rounds) await roundStore.saveRound(r);
 
-    // 2. Questions for Round 1 (Human vs Gemini Writing - 6 Questions, 1 minute each)
+    // 2. Questions for Round 1 (MCQ - 1 minute each)
     const r1Questions = [
-      { id: 'q1_1', text: "What's your take on vibe coding, just letting AI write most of your code?", type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 2', points: '10', order: '1', durationSeconds: '60' },
-      { id: 'q1_2', text: 'How much do you trust AI chatbots to give you correct information?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 1', points: '10', order: '2', durationSeconds: '60' },
-      { id: 'q1_3', text: 'Do you think phones have made us less social?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 2', points: '10', order: '3', durationSeconds: '60' },
-      { id: 'q1_4', text: 'What app do you think you spend way too much time on?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 1', points: '10', order: '4', durationSeconds: '60' },
-      { id: 'q1_5', text: 'Would you rather lose your phone for a week or your laptop for a week?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 2', points: '10', order: '5', durationSeconds: '60' },
-      { id: 'q1_6', text: 'Do you think social media does more harm than good?', type: 'mcq', options: ['Response 1', 'Response 2'], correctAnswer: 'Response 1', points: '10', order: '6', durationSeconds: '60' },
+      { id: 'q1_1', text: 'If 5 machines take 5 minutes to make 5 widgets, how long would 100 machines take to make 100 widgets?', type: 'mcq', options: ['5 minutes', '100 minutes', '50 minutes', '1 minute'], correctAnswer: '5 minutes', points: '10', order: '1', durationSeconds: '60' },
+      { id: 'q1_2', text: 'Which number logically completes the sequence: 2, 6, 12, 20, 30, __?', type: 'mcq', options: ['42', '40', '36', '48'], correctAnswer: '42', points: '10', order: '2', durationSeconds: '60' },
+      { id: 'q1_3', text: 'Look at this series: 7, 10, 8, 11, 9, 12, __. What number should come next?', type: 'mcq', options: ['10', '13', '7', '14'], correctAnswer: '10', points: '10', order: '3', durationSeconds: '60' },
     ];
     for (const q of r1Questions) await questionStore.addQuestion('round_1_aptitude', q);
     await questionStore.setActiveQuestionId('round_1_aptitude', 'q1_1');
@@ -41,8 +38,8 @@ class SeedService {
     // 4. Questions for Round 3 (5 polls + 1 profile-guess)
     await this.seedRound3Questions('round_3_decode');
 
-    await logStore.addLog({ action: 'SEED_REAL_DATA', adminUsername, timestamp: Date.now().toString(), details: 'Seeded Rounds 1, 2, 3 with real data' });
-    return { message: 'Seeded real data for Rounds 1, 2, and 3' };
+    await logStore.addLog({ action: 'SEED_SAMPLE_DATA', adminUsername, timestamp: Date.now().toString(), details: 'Seeded 3 rounds (Round 3 with 5 polls + profile-guess)' });
+    return { message: 'Seeded 3 sample rounds (Round 3: 5 polls + profile-guess)' };
   }
 
   /**

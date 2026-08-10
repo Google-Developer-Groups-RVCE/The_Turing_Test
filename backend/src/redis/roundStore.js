@@ -15,10 +15,7 @@ const roundStore = {
       'durationSeconds', String(round.durationSeconds || 300),
       'order', String(round.order || Date.now())
     );
-    const existing = await redisClient.lrange(keys.ROUNDS_ORDER, 0, -1);
-    if (!existing.includes(round.id)) {
-      await redisClient.rpush(keys.ROUNDS_ORDER, round.id);
-    }
+    await redisClient.rpush(keys.ROUNDS_ORDER, round.id);
   },
 
   async getRound(roundId) {

@@ -66,7 +66,7 @@ export default function LoginPage() {
               className="input-field pl-9"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter username (e.g. a or b)"
+              placeholder="Enter your registered username"
             />
           </div>
         </div>

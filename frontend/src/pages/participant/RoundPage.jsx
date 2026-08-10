@@ -35,14 +35,21 @@ export default function RoundPage() {
   const [pollResult, setPollResult] = useState(null);
   const [evaluationData, setEvaluationData] = useState(null);
 
+  const currentRoundRef = React.useRef(currentRound);
+  useEffect(() => {
+    currentRoundRef.current = currentRound;
+  }, [currentRound]);
+
   const fetchQuestion = useCallback(async () => {
     setLoading(true);
     try {
       const rRes = await getCurrentRound().catch(() => null);
-      const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRound);
+      const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRoundRef.current);
       
       if (roundToUse) {
-        setCurrentRound(roundToUse);
+        if (!currentRoundRef.current || currentRoundRef.current.id !== roundToUse.id || currentRoundRef.current.status !== roundToUse.status) {
+          setCurrentRound(roundToUse);
+        }
         setEventStatus(roundToUse.status === 'active' ? 'running' : roundToUse.status === 'paused' ? 'paused' : roundToUse.status === 'ended' ? 'ended' : 'idle');
       }
 
@@ -92,7 +99,7 @@ export default function RoundPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentRound, setCurrentRound, setEventStatus]);
+  }, [setCurrentRound, setEventStatus]);
 
   useEffect(() => {
     fetchQuestion();

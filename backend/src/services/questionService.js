@@ -51,7 +51,7 @@ const POLLS_DATA = [
 
 const getIO = () => {
   try {
-    return require('../config/socket').getIO();
+    return require('../sockets/socketServer').getIO();
   } catch(e) {
     return null;
   }
@@ -185,12 +185,25 @@ class QuestionService {
 
     if (activeStage === 'evaluated') {
       if (isPoll) {
-        // FOR POLLS 1-5: Skip leaderboard and advance straight to next question
+        // FOR POLLS 1-5: Skip leaderboard stage completely!
         await roundStore.setActiveStage(roundId, 'question');
         const settingsStore = require('../redis/settingsStore');
         await settingsStore.updateSettings({ showLeaderboard: 'false' });
         const io = getIO();
         if (io) io.emit('settings:updated', { showLeaderboard: false });
+        if (io) io.emit('round:stage_changed', { roundId, activeStage: 'question' });
+
+        if (!order || order.length === 0) {
+          return { stage: 'question', question: null };
+        }
+        const currentIndex = order.indexOf(activeId);
+        let nextIndex = 0;
+        if (currentIndex >= 0 && currentIndex < order.length - 1) {
+          nextIndex = currentIndex + 1;
+        }
+        const nextQuestionId = order[nextIndex];
+        const newQuestion = await this.setActiveQuestion(roundId, nextQuestionId);
+        return { stage: 'question', question: newQuestion };
       } else {
         // FOR STANDARD QUESTIONS & FINAL QUESTION (Q6): Show Leaderboard
         await roundStore.setActiveStage(roundId, 'leaderboard');
@@ -308,15 +321,23 @@ class QuestionService {
       }
     }
 
+    let dbOpts = [];
+    if (typeof question.options === 'string') {
+      try { dbOpts = JSON.parse(question.options); } catch (e) {}
+    } else if (Array.isArray(question.options)) {
+      dbOpts = question.options;
+    }
+
     const pollMatch = POLLS_DATA.find(p => p.id === question.id || (p.order && Number(p.order) === Number(question.order)));
-    const options = pollMatch?.options || question.options || [];
+    const options = (dbOpts && dbOpts.length > 0) ? dbOpts : (pollMatch?.options || []);
 
     if (!winningKey && options.length > 0) {
-      winningKey = options[0].key || 'A';
+      winningKey = options[0].key || options[0].id || 'A';
     }
 
     const winningOption = options.find(o => 
       (o.key && o.key.toUpperCase() === (winningKey || '').toUpperCase()) ||
+      (o.id && o.id.toUpperCase() === (winningKey || '').toUpperCase()) ||
       (typeof o === 'string' && o.trim().toUpperCase() === (winningKey || '').toUpperCase())
     ) || options[0];
 

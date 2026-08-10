@@ -3,13 +3,19 @@ import { getRounds } from '../../api/roundApi';
 import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from '../../api/questionApi';
 import { HelpCircle, Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Image } from 'lucide-react';
 
-function normalizeOptions(options) {
-  if (!options) return ['', '', '', ''];
+function normalizeOptions(options, type) {
+  if (!options) return type === 'guess-author' ? [{ text: '', author: 'Human' }, { text: '', author: 'Gemini' }] : ['', '', '', ''];
   let arr = options;
   if (typeof options === 'string') {
     try { arr = JSON.parse(options); } catch { arr = []; }
   }
-  if (!Array.isArray(arr)) return ['', '', '', ''];
+  if (!Array.isArray(arr)) return type === 'guess-author' ? [{ text: '', author: 'Human' }, { text: '', author: 'Gemini' }] : ['', '', '', ''];
+  
+  if (type === 'guess-author') {
+     const human = arr.find(o => o?.author === 'Human') || { text: '', author: 'Human', id: 'human-opt' };
+     const gemini = arr.find(o => o?.author === 'Gemini') || { text: '', author: 'Gemini', id: 'gemini-opt' };
+     return [human, gemini];
+  }
   return arr.map(o => (typeof o === 'object' && o !== null) ? (o.text || o.answer || o.id || '') : String(o || ''));
 }
 
@@ -23,7 +29,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
   const [form, setForm] = useState({
     text: question?.text || '',
     type: question?.type || 'mcq',
-    options: normalizeOptions(question?.options),
+    options: normalizeOptions(question?.options, question?.type || 'mcq'),
     correctAnswer: question?.correctAnswer || '',
     points: question?.points || 10,
     durationSeconds: question?.durationSeconds || 300,
@@ -36,22 +42,37 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const handleOptionChange = (idx, value) => {
+  const handleOptionChange = (idx, value, field = null) => {
     const opts = [...form.options];
-    opts[idx] = value;
+    if (field) {
+      opts[idx] = { ...opts[idx], [field]: value };
+    } else {
+      opts[idx] = value;
+    }
     setForm(f => ({ ...f, options: opts }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.text.trim()) { setError('Question text is required'); return; }
-    const validOptions = (form.type === 'mcq' || form.type === 'poll') ? form.options.map(getOptText).filter(o => o.trim()) : [];
-    if ((form.type === 'mcq' || form.type === 'poll') && validOptions.length === 0) { setError('At least one option is required for this question type'); return; }
+    
+    let validOptions = [];
+    if (form.type === 'guess-author') {
+       validOptions = form.options.filter(o => o.text.trim());
+       if (validOptions.length < 2) { setError('Both Human and Gemini responses are required'); return; }
+    } else if (form.type === 'mcq' || form.type === 'poll') {
+       validOptions = form.options.map(getOptText).filter(o => o.trim());
+       if (validOptions.length === 0) { setError('At least one option is required for this question type'); return; }
+    }
+    
     let answer = form.correctAnswer.trim();
     if ((form.type === 'mcq' || form.type === 'poll') && (!answer || !validOptions.includes(answer))) {
       answer = validOptions[0] || '';
+    } else if (form.type === 'guess-author' && !answer) {
+      answer = 'Human'; // Default to Human if not specified, though random is better if handled by backend
     }
     if (!answer) { setError('Correct answer is required'); return; }
+    
     setSaving(true);
     try {
       const payload = {
@@ -91,10 +112,11 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Type</label>
-              <select className="input-field" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+              <select className="input-field" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value, options: normalizeOptions(f.options, e.target.value) }))}>
                 <option value="mcq">Multiple Choice (MCQ)</option>
                 <option value="short">Short Answer</option>
                 <option value="poll">Live Poll</option>
+                <option value="guess-author">Guess the Author (Round 1)</option>
               </select>
             </div>
             <div>
@@ -133,14 +155,32 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
               </div>
             </div>
           )}
+          {form.type === 'guess-author' && (
+            <div className="space-y-4">
+              <label className="block text-sm text-slate-400 mb-2">Responses to display</label>
+              <div className="p-3 border border-blue-500/30 rounded-lg bg-blue-500/10">
+                <label className="block text-xs font-bold text-blue-400 mb-1">Human's Response</label>
+                <textarea rows={3} className="input-field resize-none text-sm" value={form.options.find(o => o.author === 'Human')?.text || ''} onChange={e => handleOptionChange(form.options.findIndex(o => o.author === 'Human'), e.target.value, 'text')} placeholder="Enter what the human wrote..." />
+              </div>
+              <div className="p-3 border border-purple-500/30 rounded-lg bg-purple-500/10">
+                <label className="block text-xs font-bold text-purple-400 mb-1">Gemini's Response</label>
+                <textarea rows={3} className="input-field resize-none text-sm" value={form.options.find(o => o.author === 'Gemini')?.text || ''} onChange={e => handleOptionChange(form.options.findIndex(o => o.author === 'Gemini'), e.target.value, 'text')} placeholder="Enter what Gemini wrote..." />
+              </div>
+            </div>
+          )}
           <div>
             <label className="block text-sm text-slate-400 mb-1">Correct Answer</label>
             {(form.type === 'mcq' || form.type === 'poll') ? (
               <select className="input-field" value={form.correctAnswer} onChange={e => setForm(f => ({ ...f, correctAnswer: e.target.value }))}>
                 <option value="">Select correct option</option>
-                {form.options.filter(o => o.trim()).map((opt, i) => (
+                {form.options.filter(o => typeof o === 'string' && o.trim()).map((opt, i) => (
                   <option key={i} value={opt}>{String.fromCharCode(65 + i)}: {opt}</option>
                 ))}
+              </select>
+            ) : form.type === 'guess-author' ? (
+              <select className="input-field" value={form.correctAnswer} onChange={e => setForm(f => ({ ...f, correctAnswer: e.target.value }))}>
+                <option value="Human">Human</option>
+                <option value="Gemini">Gemini</option>
               </select>
             ) : (
               <input className="input-field" value={form.correctAnswer} onChange={e => setForm(f => ({ ...f, correctAnswer: e.target.value }))} placeholder="Exact correct answer (case-insensitive)" />
@@ -273,8 +313,8 @@ export default function QuestionManagement() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="text-xs font-bold text-slate-500">Q{idx + 1}</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${q.type === 'mcq' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
-                    {q.type === 'mcq' ? 'MCQ' : 'Short Answer'}
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${q.type === 'mcq' ? 'bg-blue-500/20 text-blue-400' : q.type === 'guess-author' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                    {q.type === 'mcq' ? 'MCQ' : q.type === 'guess-author' ? 'Guess Author' : 'Short Answer'}
                   </span>
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-primary-500/10 text-primary-400">{q.points} pts</span>
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-400">{q.durationSeconds || 300}s</span>
@@ -282,10 +322,21 @@ export default function QuestionManagement() {
                 <p className="text-white font-medium">{q.text}</p>
                 {q.type === 'mcq' && normalizeOptions(q.options).length > 0 && (
                   <div className="mt-2 grid grid-cols-2 gap-1.5">
-                    {normalizeOptions(q.options).map((opt, i) => (
+                    {normalizeOptions(q.options, 'mcq').map((opt, i) => (
                       <div key={i} className={`text-xs px-2 py-1 rounded border ${opt === q.correctAnswer ? 'border-primary-500/40 bg-primary-500/10 text-primary-400' : 'border-dark-700 text-slate-500'}`}>
                         <span className="font-bold mr-1">{String.fromCharCode(65 + i)}.</span>{opt}
                         {opt === q.correctAnswer && <span className="ml-1 text-primary-500">✓</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {q.type === 'guess-author' && normalizeOptions(q.options, 'guess-author').length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    {normalizeOptions(q.options, 'guess-author').map((opt, i) => (
+                      <div key={i} className={`text-xs px-2 py-1.5 rounded border flex space-x-2 ${opt.author === q.correctAnswer ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-dark-700 text-slate-400'}`}>
+                        <span className="font-bold uppercase w-14 shrink-0">{opt.author}:</span>
+                        <span className="truncate flex-1">{opt.text}</span>
+                        {opt.author === q.correctAnswer && <span className="ml-1 font-bold text-emerald-500">✓ Correct</span>}
                       </div>
                     ))}
                   </div>

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import AuthLayout from '../layouts/AuthLayout';
 import ParticipantLayout from '../layouts/ParticipantLayout';
+import SimulationLayout from '../layouts/SimulationLayout';
 import AdminLayout from '../layouts/AdminLayout';
 
 // Auth Pages
@@ -35,6 +36,13 @@ export default function AppRoutes() {
 
       {/* Participant Routes */}
       <Route path="/participant" element={<ParticipantLayout />}>
+        <Route index element={<WaitingScreen />} />
+        <Route path="round" element={<RoundPage />} />
+        <Route path="leaderboard" element={<LeaderboardPage />} />
+      </Route>
+
+      {/* Simulation Routes */}
+      <Route path="/simulation" element={<SimulationLayout />}>
         <Route index element={<WaitingScreen />} />
         <Route path="round" element={<RoundPage />} />
         <Route path="leaderboard" element={<LeaderboardPage />} />

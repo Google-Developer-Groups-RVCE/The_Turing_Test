@@ -10,6 +10,7 @@ import { getSettings, updateSettings } from '../../api/settingsApi';
 import { useSocket } from '../../hooks/useSocket';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import { SOCKET_EVENTS } from '../../utils/constants';
+import ParticipantDeviceSimulation from '../../components/ParticipantDeviceSimulation';
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
   RefreshCw, X, AlertTriangle, SkipForward, SkipBack, Eye, Trophy, Monitor, CheckCircle,
@@ -529,14 +530,8 @@ export default function RoundManagement() {
               <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-pulse" />
             </div>
 
-            {/* Smartphone Bezel Simulator Frame */}
-            <div className="p-1.5 rounded-3xl bg-dark-950 border-[6px] border-dark-700 shadow-2xl relative h-[540px] flex flex-col justify-between overflow-hidden">
-              <iframe
-                src="/simulation"
-                className="w-full h-full border-0 rounded-2xl bg-[#0d1b2a]"
-                title="Participant Simulator"
-              />
-            </div>
+            {/* Native Participant Device Simulation */}
+            <ParticipantDeviceSimulation />
           </div>
 
           <div className="mt-4 pt-3 border-t border-dark-700 text-xs text-slate-500 flex justify-between items-center">

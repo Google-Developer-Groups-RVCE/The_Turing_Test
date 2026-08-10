@@ -24,6 +24,7 @@ class LeaderboardService {
    * Broadcasts leaderboard:update to all clients.
    */
   async updateScore(username, roundId, pointsToAdd) {
+    if (!username || username === 'simulated_user' || username === 'sample_user' || username.startsWith('simulated_') || username.startsWith('sample_')) return;
     await leaderboardStore.updateScore(username, pointsToAdd);
     await leaderboardStore.updateRoundScore(roundId, username, pointsToAdd);
     const leaderboard = await this.getOverallLeaderboard();
@@ -97,6 +98,7 @@ class LeaderboardService {
       for (const questionId of questionsOrder) {
         const respondedUsers = await responseStore.getRespondedUsers(roundId, questionId);
         for (const username of respondedUsers) {
+          if (!username || username === 'simulated_user' || username === 'sample_user' || username.startsWith('simulated_') || username.startsWith('sample_')) continue;
           const response = await responseStore.getResponse(roundId, questionId, username);
           if (response && response.pointsAwarded && Number(response.pointsAwarded) > 0) {
             await redisClient.zincrby(keys.LEADERBOARD, Number(response.pointsAwarded), username);
@@ -123,7 +125,10 @@ class LeaderboardService {
   async _enrichEntries(entries) {
     const enriched = await Promise.all(
       entries
-        .filter(e => (e.value || e.username) !== 'simulated_user')
+        .filter(e => {
+          const u = e.value || e.username || '';
+          return u && u !== 'simulated_user' && u !== 'sample_user' && !u.startsWith('simulated_') && !u.startsWith('sample_');
+        })
         .map(async (e) => {
           const user = await userStore.getUser(e.value || e.username);
           return {

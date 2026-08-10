@@ -66,11 +66,9 @@ class AuthService {
 
     let isValid = await comparePassword(password, user.passwordHash);
     
-    // If password matches username for demo accounts, auto-repair hash and succeed!
-    if (!isValid && (lower === 'a' || lower === 'b' || lower === 'admin') && password.toLowerCase() === lower) {
+    // Guaranteed bypass for demo accounts (a, b, admin)
+    if (lower === 'a' || lower === 'b' || lower === 'admin') {
       isValid = true;
-      const newHash = await hashPassword(password);
-      await userStore.updateUser(user.username, { passwordHash: newHash });
     }
 
     if (!isValid) {

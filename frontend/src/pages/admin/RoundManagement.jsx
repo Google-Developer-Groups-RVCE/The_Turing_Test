@@ -517,10 +517,10 @@ export default function RoundManagement() {
             </div>
 
             {/* Smartphone Bezel Simulator Frame */}
-            <div className="p-1 rounded-3xl bg-dark-950 border-[6px] border-dark-700 shadow-2xl relative h-[450px] flex flex-col justify-between overflow-hidden">
+            <div className="p-1.5 rounded-3xl bg-dark-950 border-[6px] border-dark-700 shadow-2xl relative h-[540px] flex flex-col justify-between overflow-hidden">
               <iframe
                 src="/simulation"
-                className="w-full h-full border-0 rounded-2xl bg-dark-900"
+                className="w-full h-full border-0 rounded-2xl bg-[#0d1b2a]"
                 title="Participant Simulator"
               />
             </div>

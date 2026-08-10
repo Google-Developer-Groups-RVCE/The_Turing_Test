@@ -26,8 +26,10 @@ export default function ParticipantLayout() {
       <div className="page-wrap">
         <header className="fixed top-0 inset-x-0 h-16 bg-[#0a111a]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 sm:px-6 z-50 shadow-lg">
           <div className="flex items-center space-x-3">
-            <img src="/reference/gdg_symbol.png" alt="GDG Logo" className="w-8 h-8 object-contain" />
-            <h1 className="text-xl font-bold text-white tracking-wide" style={{ fontFamily: 'Cutepunch, sans-serif' }}>The Turing Test</h1>
+            <div className="w-8 h-8 rounded-lg bg-primary-500/20 border border-primary-500/40 flex items-center justify-center text-primary-400 font-bold text-sm">
+              T
+            </div>
+            <h1 className="text-xl font-bold text-white tracking-wide">The Turing Test</h1>
             <span className={`hidden sm:inline-block px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider ${
               eventStatus === 'running' ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30' :
               eventStatus === 'paused' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :

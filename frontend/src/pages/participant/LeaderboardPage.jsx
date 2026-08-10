@@ -18,11 +18,13 @@ export default function LeaderboardPage() {
 
   // Auto-navigate away when admin disables leaderboard view
   useEffect(() => {
+    const isSim = window.location.pathname.startsWith('/simulation');
+    const basePath = isSim ? '/simulation' : '/participant';
     if (activeStage !== 'leaderboard' && eventStatus !== 'ended') {
       if (currentRound && (currentRound.status === 'active' || eventStatus === 'running')) {
-        navigate('/participant/round', { replace: true });
+        navigate(`${basePath}/round`, { replace: true });
       } else {
-        navigate('/participant', { replace: true });
+        navigate(basePath, { replace: true });
       }
     }
   }, [activeStage, currentRound, eventStatus, navigate]);

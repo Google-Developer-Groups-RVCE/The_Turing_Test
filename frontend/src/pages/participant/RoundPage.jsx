@@ -107,8 +107,10 @@ export default function RoundPage() {
 
   // Transition to Leaderboard if active stage is leaderboard or round ended
   useEffect(() => {
+    const isSim = window.location.pathname.startsWith('/simulation');
+    const basePath = isSim ? '/simulation' : '/participant';
     if (activeStage === 'leaderboard' || eventStatus === 'ended') {
-      navigate('/participant/leaderboard', { replace: true });
+      navigate(`${basePath}/leaderboard`, { replace: true });
     }
   }, [activeStage, eventStatus, navigate]);
 

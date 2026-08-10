@@ -85,15 +85,19 @@ export default function WaitingScreen() {
 
   // Auto-navigate to active round when currentRound is active
   useEffect(() => {
+    const isSim = window.location.pathname.startsWith('/simulation');
+    const basePath = isSim ? '/simulation' : '/participant';
     if (currentRound && (currentRound.status === 'active' || eventStatus === 'running')) {
-      navigate('/participant/round', { replace: true });
+      navigate(`${basePath}/round`, { replace: true });
     }
   }, [currentRound, eventStatus, navigate]);
 
   // Auto-navigate to leaderboard if admin enabled showLeaderboard
   useEffect(() => {
+    const isSim = window.location.pathname.startsWith('/simulation');
+    const basePath = isSim ? '/simulation' : '/participant';
     if (activeStage === 'leaderboard' || eventStatus === 'ended') {
-      navigate('/participant/leaderboard', { replace: true });
+      navigate(`${basePath}/leaderboard`, { replace: true });
     }
   }, [activeStage, eventStatus, navigate]);
 

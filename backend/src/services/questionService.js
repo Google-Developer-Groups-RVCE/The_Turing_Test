@@ -228,7 +228,6 @@ class QuestionService {
         startedAt: updatedRound.startedAt
       });
     }
-    }
 
     const io = getIO();
     if (io) {

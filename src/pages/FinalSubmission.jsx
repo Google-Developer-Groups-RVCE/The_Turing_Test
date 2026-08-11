@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useSession } from "../context/SessionContext.jsx";
 import { submitFinalGuess } from "../api/responseService.js";
 import Loader from "../components/Loader.jsx";
@@ -8,6 +8,7 @@ import { TopNav } from "./TeamEntry.jsx";
 export default function FinalSubmission() {
   const { teamId } = useSession();
   const navigate = useNavigate();
+
   const [predictedAge, setPredictedAge] = useState("");
   const [predictedProfession, setPredictedProfession] = useState("");
   const [predictedHobby, setPredictedHobby] = useState("");
@@ -20,19 +21,27 @@ export default function FinalSubmission() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!predictedAge || !predictedProfession.trim() || !predictedHobby.trim()) {
+
+    if (
+      !predictedAge ||
+      !predictedProfession.trim() ||
+      !predictedHobby.trim()
+    ) {
       setError("Please fill in all three predictions.");
       return;
     }
+
     setError("");
     setSubmitting(true);
+
     try {
       await submitFinalGuess({
         teamId,
         predictedAge: Number(predictedAge),
         predictedProfession: predictedProfession.trim(),
-        predictedHobby: predictedHobby.trim()
+        predictedHobby: predictedHobby.trim(),
       });
+
       navigate("/thank-you");
     } catch (err) {
       setError("Could not submit your final guess. Please try again.");
@@ -43,16 +52,31 @@ export default function FinalSubmission() {
 
   return (
     <>
-      <div className="page-bg" aria-hidden="true" />
       <TopNav />
-      <div className="page-wrap">
-        <div className="final-screen">
-          <div className="final-card">
-            <h1 className="final-title">Final Submission</h1>
-            <p className="final-subtitle">Submit your team's guess for the hidden profile.</p>
 
-            <form onSubmit={handleSubmit} noValidate>
-              <label htmlFor="predictedAge" className="final-label">Predicted Age</label>
+      <main className="final-submission-screen">
+        <div className="final-submission-card">
+
+          <div className="final-submission-heading">
+            <h1>Final Submission</h1>
+
+            <p>
+              Submit your team's guess for the hidden profile.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="final-submission-form"
+          >
+
+            {/* AGE */}
+            <div className="final-field">
+              <label htmlFor="predictedAge">
+                Predicted Age
+              </label>
+
               <input
                 id="predictedAge"
                 type="number"
@@ -61,47 +85,73 @@ export default function FinalSubmission() {
                 value={predictedAge}
                 onChange={(e) => setPredictedAge(e.target.value)}
                 placeholder="e.g. 35"
-                className="final-input"
               />
+            </div>
 
-              <label htmlFor="predictedProfession" className="final-label">Predicted Profession</label>
+            {/* PROFESSION */}
+            <div className="final-field">
+              <label htmlFor="predictedProfession">
+                Predicted Profession
+              </label>
+
               <input
                 id="predictedProfession"
                 type="text"
                 value={predictedProfession}
-                onChange={(e) => setPredictedProfession(e.target.value)}
+                onChange={(e) =>
+                  setPredictedProfession(e.target.value)
+                }
                 placeholder="e.g. Doctor"
-                className="final-input"
               />
+            </div>
 
-              <label htmlFor="predictedHobby" className="final-label">Predicted Hobby</label>
+            {/* HOBBY */}
+            <div className="final-field">
+              <label htmlFor="predictedHobby">
+                Predicted Hobby
+              </label>
+
               <input
                 id="predictedHobby"
                 type="text"
                 value={predictedHobby}
-                onChange={(e) => setPredictedHobby(e.target.value)}
+                onChange={(e) =>
+                  setPredictedHobby(e.target.value)
+                }
                 placeholder="e.g. Photography"
-                className="final-input"
               />
+            </div>
 
-              {error ? <p role="alert" className="poll-error" style={{ marginBottom: "16px" }}>{error}</p> : null}
+            {/* ERROR */}
+            {error && (
+              <p className="final-error" role="alert">
+                {error}
+              </p>
+            )}
 
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <button
-                  id="final-submit-btn"
-                  type="submit"
-                  disabled={submitting}
-                  className="btn-glossy final final-guess"
-                >
-                  {submitting ? "Submitting..." : "Submit Final Guess"}
-                </button>
-              </div>
-            </form>
+            {/* BUTTON */}
+            <div className="final-submit-wrapper">
+              <button
+                id="final-submit-btn"
+                type="submit"
+                disabled={submitting}
+              >
+                {submitting
+                  ? "Submitting..."
+                  : "Submit Final Guess"}
+              </button>
+            </div>
 
-            {submitting ? <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}><Loader /></div> : null}
-          </div>
+          </form>
+
+          {submitting && (
+            <div className="final-loader">
+              <Loader />
+            </div>
+          )}
+
         </div>
-      </div>
+      </main>
     </>
   );
 }

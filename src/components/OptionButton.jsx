@@ -1,10 +1,12 @@
 import React from "react";
 
-/**
- * Glossy light-blue option button.
- * Turns teal when selected — no "selected" label shown.
- */
-export default function OptionButton({ optionKey, question, answer, selected, onSelect }) {
+export default function OptionButton({
+  optionKey,
+  question,
+  answer,
+  selected,
+  onSelect,
+}) {
   return (
     <button
       type="button"
@@ -13,9 +15,12 @@ export default function OptionButton({ optionKey, question, answer, selected, on
       aria-pressed={selected}
       className={`option-btn${selected ? " selected" : ""}`}
     >
-      <div style={{ marginBottom: "4px" }}>
-        <span className="option-key">{optionKey}.</span>
-        <span className="option-question">{question}</span>
+      <div className="option-question">
+        {question}
+      </div>
+
+      <div className="option-answer">
+        {answer}
       </div>
     </button>
   );

@@ -27,7 +27,10 @@ const questionStore = {
     if (entries.length > 0) {
       await redisClient.hmset(key, ...entries);
     }
-    await redisClient.rpush(keys.QUESTIONS(roundId), question.id);
+    const existingList = await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
+    if (!existingList.includes(String(question.id))) {
+      await redisClient.rpush(keys.QUESTIONS(roundId), String(question.id));
+    }
   },
 
   async getQuestion(roundId, questionId) {
@@ -57,7 +60,15 @@ const questionStore = {
   },
 
   async getQuestionsOrder(roundId) {
-    return await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
+    const rawList = await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
+    const uniqueList = Array.from(new Set(rawList));
+    if (rawList.length !== uniqueList.length) {
+      await redisClient.del(keys.QUESTIONS(roundId));
+      if (uniqueList.length > 0) {
+        await redisClient.rpush(keys.QUESTIONS(roundId), ...uniqueList);
+      }
+    }
+    return uniqueList;
   },
 
   async setActiveQuestionId(roundId, questionId) {

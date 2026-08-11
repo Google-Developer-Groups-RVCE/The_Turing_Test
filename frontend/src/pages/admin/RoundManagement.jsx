@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   getRounds, createRound, updateRound, deleteRound,
   startRound, pauseRound, resumeRound, restartRound, endRound, clearRoundResponses,
-  extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData, getStage
+  extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData, getStage, reorderRounds
 } from '../../api/roundApi';
 import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
@@ -14,7 +14,7 @@ import ParticipantDeviceSimulation from '../../components/ParticipantDeviceSimul
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
   RefreshCw, X, AlertTriangle, SkipForward, SkipBack, Eye, Trophy, Monitor, CheckCircle,
-  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle, ArrowRightCircle
+  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle, ArrowRightCircle, ChevronUp, ChevronDown
 } from 'lucide-react';
 
 function RoundModal({ round, onClose, onSave }) {
@@ -105,7 +105,7 @@ export default function RoundManagement() {
   const showError = (m) => { setError(m); setTimeout(() => setError(''), 5000); };
 
   const fetchRounds = useCallback(async (isInitial = false) => {
-    if (isInitial) setLoading(true);
+    if (isInitial && rounds.length === 0) setLoading(true);
     try {
       const res = await getRounds();
       const list = res.data.rounds || [];
@@ -139,8 +139,26 @@ export default function RoundManagement() {
         setActiveStage('question');
       }
     } catch { showError('Failed to load rounds'); }
-    finally { if (isInitial) setLoading(false); }
-  }, [getActiveRound]);
+    finally { setLoading(false); }
+  }, [getActiveRound, rounds.length]);
+
+  const handleMoveRound = async (idx, direction) => {
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= rounds.length) return;
+    const newRounds = [...rounds];
+    const temp = newRounds[idx];
+    newRounds[idx] = newRounds[targetIdx];
+    newRounds[targetIdx] = temp;
+    setRounds(newRounds);
+    const newIds = newRounds.map(r => r.id);
+    try {
+      await reorderRounds(newIds);
+      showSuccess('Rounds reordered successfully');
+    } catch {
+      showError('Failed to reorder rounds');
+      fetchRounds();
+    }
+  };
 
   const fetchSettingsState = useCallback(async () => {
     try {
@@ -599,6 +617,24 @@ export default function RoundManagement() {
                 >
                   <RefreshCw size={14} /><span>Reset Responses</span>
                 </button>
+                <div className="flex items-center space-x-1 border-r border-dark-700 pr-1 mr-1">
+                  <button
+                    disabled={idx === 0}
+                    onClick={() => handleMoveRound(idx, 'up')}
+                    className="p-1 rounded hover:bg-dark-700 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+                    title="Move Round Up"
+                  >
+                    <ChevronUp size={15} />
+                  </button>
+                  <button
+                    disabled={idx === rounds.length - 1}
+                    onClick={() => handleMoveRound(idx, 'down')}
+                    className="p-1 rounded hover:bg-dark-700 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+                    title="Move Round Down"
+                  >
+                    <ChevronDown size={15} />
+                  </button>
+                </div>
                 <button onClick={() => setModal(round)} className="p-1.5 rounded hover:bg-dark-700 text-slate-400 hover:text-white transition-colors" title="Edit">
                   <Edit size={15} />
                 </button>

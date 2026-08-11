@@ -39,6 +39,16 @@ const roundStore = {
     return await redisClient.lrange(keys.ROUNDS_ORDER, 0, -1);
   },
 
+  async reorderRounds(orderedIds) {
+    await redisClient.del(keys.ROUNDS_ORDER);
+    if (orderedIds && orderedIds.length > 0) {
+      await redisClient.rpush(keys.ROUNDS_ORDER, ...orderedIds);
+    }
+    for (let i = 0; i < (orderedIds || []).length; i++) {
+      await this.updateRound(orderedIds[i], { order: String(i + 1) });
+    }
+  },
+
   async setCurrentRound(roundId) {
     if (roundId) {
       await redisClient.set(keys.CURRENT_ROUND, roundId);

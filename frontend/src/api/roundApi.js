@@ -4,6 +4,7 @@ export const getRounds = () => axiosClient.get('/rounds');
 export const getCurrentRound = () => axiosClient.get('/rounds/current');
 export const createRound = (data) => axiosClient.post('/rounds', data);
 export const updateRound = (roundId, data) => axiosClient.put(`/rounds/${roundId}`, data);
+export const reorderRounds = (roundIds) => axiosClient.put('/rounds/reorder', { roundIds });
 export const deleteRound = (roundId) => axiosClient.delete(`/rounds/${roundId}`);
 
 export const startRound = (roundId) => axiosClient.post(`/rounds/${roundId}/start`);

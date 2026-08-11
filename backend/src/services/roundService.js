@@ -44,14 +44,45 @@ class RoundService {
     await roundStore.deleteRound(roundId);
   }
 
+  async reorderRounds(orderedIds) {
+    await roundStore.reorderRounds(orderedIds);
+    const io = getIO();
+    if (io && orderedIds && orderedIds.length > 0) {
+      io.emit('round:changed', { roundId: orderedIds[0] });
+    }
+  }
+
   async startRound(roundId, adminUsername) {
-    const round = await roundStore.getRound(roundId);
-    if (!round) throw new Error('Round not found');
+    const targetRound = await roundStore.getRound(roundId);
+    if (!targetRound) throw new Error('Round not found');
+
+    const order = await roundStore.getRoundsOrder();
+    const currentActiveId = await roundStore.getCurrentRound();
+    const currentActiveRound = currentActiveId ? await roundStore.getRound(currentActiveId) : null;
+
+    // Priority Check: If a round with higher priority (lower index in order) is currently active, queue targetRound instead of cutting off higher priority
+    if (currentActiveRound && currentActiveRound.status === 'active' && currentActiveRound.id !== roundId) {
+      const targetIndex = order.indexOf(roundId);
+      const currentIndex = order.indexOf(currentActiveRound.id);
+
+      if (currentIndex < targetIndex) {
+        // Lower priority round started while higher priority round is running -> queue it!
+        await roundStore.updateRound(roundId, { status: 'queued' });
+        await logStore.addLog({
+          action: 'QUEUE_ROUND',
+          adminUsername,
+          timestamp: Date.now().toString(),
+          details: `Queued round ${roundId} to auto-start after ${currentActiveRound.id}`
+        });
+        const io = getIO();
+        if (io) io.emit('round:changed', { roundId: currentActiveRound.id });
+        return { message: `Round queued. ${currentActiveRound.name} is currently running with priority.` };
+      }
+    }
 
     const startedAt = Date.now().toString();
 
-    // Ensure ONLY this round is active in Redis
-    const order = await roundStore.getRoundsOrder();
+    // Set target round to active
     for (const rId of order) {
       if (rId === roundId) {
         await roundStore.updateRound(rId, { status: 'active', startedAt });
@@ -226,29 +257,39 @@ class RoundService {
     const io = getIO();
     if (io) io.emit('round:ended', { roundId });
 
-    // --- Sequential Progression: Auto-advance to the next round in sequence ---
+    // --- Priority Progression: Check if next round is queued or active ---
     const order = await roundStore.getRoundsOrder();
     const currentIndex = order.indexOf(roundId);
 
-    if (currentIndex >= 0 && currentIndex < order.length - 1) {
-      const nextRoundId = order[currentIndex + 1];
-      console.log(`[roundService] Sequential progression: Round ${roundId} ended -> Auto-starting ${nextRoundId}`);
+    let nextToRun = null;
+    if (currentIndex >= 0) {
+      for (let i = currentIndex + 1; i < order.length; i++) {
+        const r = await roundStore.getRound(order[i]);
+        if (r && (r.status === 'queued' || r.status === 'active')) {
+          nextToRun = r;
+          break;
+        }
+      }
+    }
+
+    if (nextToRun) {
+      console.log(`[roundService] Priority progression: Round ${roundId} ended -> Auto-starting ${nextToRun.id}`);
       setTimeout(async () => {
         try {
-          await this.restartRound(nextRoundId, adminUsername || 'system');
+          await this.restartRound(nextToRun.id, adminUsername || 'system');
           await logStore.addLog({
             action: 'AUTO_ADVANCE_ROUND',
             adminUsername,
             timestamp: Date.now().toString(),
-            details: `Sequential auto-advance from ${roundId} to ${nextRoundId}`
+            details: `Priority auto-advance from ${roundId} to ${nextToRun.id}`
           });
         } catch (err) {
-          console.error(`[roundService] Failed to auto-advance to ${nextRoundId}:`, err.message);
+          console.error(`[roundService] Failed to auto-advance to ${nextToRun.id}:`, err.message);
         }
       }, 1500);
     } else {
-      console.log(`[roundService] Final round ${roundId} ended. Ending event.`);
-      await this.endEvent(adminUsername || 'system');
+      console.log(`[roundService] Round ${roundId} ended. No queued round next.`);
+      await roundStore.setEventState('idle', adminUsername);
     }
   }
 

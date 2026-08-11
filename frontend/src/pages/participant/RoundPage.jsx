@@ -103,7 +103,7 @@ export default function RoundPage() {
 
   useEffect(() => {
     fetchQuestion();
-  }, [fetchQuestion]);
+  }, [fetchQuestion, activeStage]);
 
   // Transition to Leaderboard if active stage is explicitly set to leaderboard
   useEffect(() => {
@@ -185,11 +185,16 @@ export default function RoundPage() {
       }, 3000);
     };
 
+    const handleStageChanged = (data) => {
+      fetchQuestion();
+    };
+
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on('question:changed', handleQuestionChanged);
     socket.on('round:time_extended', handleTimeExtended);
     socket.on('poll:revealed', handlePollRevealed);
     socket.on('question:evaluate', handleQuestionEvaluate);
+    socket.on('round:stage_changed', handleStageChanged);
     socket.on('responses:cleared', handleResponsesCleared);
     socket.on('round:ended', handleRoundEnded);
 
@@ -200,6 +205,7 @@ export default function RoundPage() {
       socket.off('round:time_extended', handleTimeExtended);
       socket.off('poll:revealed', handlePollRevealed);
       socket.off('question:evaluate', handleQuestionEvaluate);
+      socket.off('round:stage_changed', handleStageChanged);
       socket.off('responses:cleared', handleResponsesCleared);
       socket.off('round:ended', handleRoundEnded);
     };

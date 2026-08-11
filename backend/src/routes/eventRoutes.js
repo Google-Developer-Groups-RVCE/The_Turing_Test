@@ -16,13 +16,7 @@ router.post('/reset', roundController.resetEvent);
 // POST /api/event/end — End the entire event
 router.post('/end', roundController.endEvent);
 
-// POST /api/event/seed-samples — Create 3 Sample Rounds with 3 Sample Questions each
-router.post('/seed-samples', async (req, res, next) => {
-  try {
-    const result = await seedService.seedSamples(req.user.username);
-    res.status(200).json(result);
-  } catch (err) { next(err); }
-});
+
 
 // DELETE /api/event/clear-data — Wipe all live responses and reset leaderboard
 router.delete('/clear-data', async (req, res, next) => {

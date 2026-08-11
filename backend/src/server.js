@@ -64,10 +64,6 @@ async function autoSeed() {
         logger.info(`[autoSeed] Participant user '${u}' seeded successfully.`);
       }
     }
-
-    const seedService = require('./services/seedService');
-    await seedService.seedSamples('system');
-    logger.info(`[autoSeed] Full Turing Test rounds & questions seeded into Redis.`);
   } catch (err) {
     logger.warn(`[autoSeed] Skipping automatic seeding: ${err.message}`);
   }

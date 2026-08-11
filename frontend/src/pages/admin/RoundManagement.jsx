@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   getRounds, createRound, updateRound, deleteRound,
   startRound, pauseRound, resumeRound, restartRound, endRound, clearRoundResponses,
-  extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData, getStage, reorderRounds
+  extendRoundTime, resetEvent, endEvent, clearAllLiveData, getStage, reorderRounds
 } from '../../api/roundApi';
 import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll, reorderQuestions } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
@@ -304,11 +304,6 @@ export default function RoundManagement() {
       const res = await setActiveQuestion(activeRound.id, qId);
       if (res.data?.question) setActiveQuestionState(res.data.question);
     });
-  };
-
-  const handleSeedSamples = () => {
-    if (!window.confirm('Create 3 sample rounds with 3 sample questions each?')) return;
-    doAction('Seed sample rounds', () => seedSampleData());
   };
 
   const handleClearAllData = () => {
@@ -709,8 +704,8 @@ export default function RoundManagement() {
           <div className="card text-center py-12 text-slate-500">
             <Layers size={40} className="mx-auto mb-3 opacity-30" />
             <p className="mb-3">No rounds created yet.</p>
-            <button onClick={handleSeedSamples} className="btn-primary inline-flex items-center space-x-2 text-sm">
-              <Sparkles size={16} /><span>Seed 3 Sample Rounds & Questions</span>
+            <button onClick={() => setModal({})} className="btn-primary inline-flex items-center space-x-2 text-sm">
+              <Plus size={16} /><span>Create New Round</span>
             </button>
           </div>
         )}

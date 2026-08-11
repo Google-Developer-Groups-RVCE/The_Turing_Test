@@ -4,7 +4,7 @@ import {
   startRound, pauseRound, resumeRound, restartRound, endRound, clearRoundResponses,
   extendRoundTime, resetEvent, endEvent, seedSampleData, clearAllLiveData, getStage, reorderRounds
 } from '../../api/roundApi';
-import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll } from '../../api/questionApi';
+import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll, reorderQuestions } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { getSettings, updateSettings } from '../../api/settingsApi';
 import { useSocket } from '../../hooks/useSocket';
@@ -18,54 +18,54 @@ import {
 } from 'lucide-react';
 
 function RoundModal({ round, onClose, onSave }) {
-  const [form, setForm] = useState({
-    name: round?.name || '',
-    durationSeconds: round?.durationSeconds || 300,
-  });
+  const [name, setName] = useState(round?.name || '');
+  const [durationSeconds, setDurationSeconds] = useState(round?.durationSeconds || 300);
+  const [order, setOrder] = useState(round?.order || 1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!name.trim()) { setError('Round name is required'); return; }
     setSaving(true);
     try {
-      await onSave({
-        ...form,
-        durationSeconds: parseInt(form.durationSeconds) || 60,
-      });
+      await onSave({ name: name.trim(), durationSeconds: parseInt(durationSeconds, 10), order: parseInt(order, 10) });
       onClose();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save round');
-    } finally {
-      setSaving(false);
-    }
+    } catch { setError('Failed to save round'); }
+    finally { setSaving(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="card w-full max-w-sm relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20} /></button>
-        <h2 className="text-lg font-bold text-white mb-5">{round ? 'Edit Round' : 'New Round'}</h2>
-        {error && <div className="mb-4 bg-rose-900/40 border border-rose-500/40 text-rose-300 p-3 rounded-lg text-sm">{error}</div>}
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="card max-w-md w-full">
+        <div className="flex items-center justify-between pb-4 border-b border-dark-700 mb-4">
+          <h3 className="text-lg font-bold text-white">{round ? 'Edit Round' : 'Create New Round'}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={18} /></button>
+        </div>
+        {error && <div className="mb-4 text-xs text-rose-400 bg-rose-900/30 p-2.5 rounded border border-rose-500/30">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Round Name</label>
-            <input required className="input-field" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Round 1 – Aptitude" />
+            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Round Name</label>
+            <input className="input-field" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Round 1 — Aptitude" required />
           </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">Duration (seconds)</label>
-            <input type="number" min="5" max="3600" className="input-field" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: e.target.value === '' ? '' : parseInt(e.target.value) }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Duration (Seconds)</label>
+              <input type="number" min="30" className="input-field" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value)} required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Order Priority</label>
+              <input type="number" min="1" className="input-field" value={order} onChange={e => setOrder(e.target.value)} required />
+            </div>
           </div>
-          <div className="flex space-x-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-dark-600 text-slate-400 hover:text-white">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 btn-primary">{saving ? 'Saving...' : 'Save Round'}</button>
+          <div className="flex justify-end space-x-3 pt-2">
+            <button type="button" onClick={onClose} className="btn-secondary text-sm">Cancel</button>
+            <button type="submit" disabled={saving} className="btn-primary text-sm">{saving ? 'Saving...' : 'Save Round'}</button>
           </div>
         </form>
       </div>
     </div>
   );
-}
-
 const STATUS_COLOR = {
   pending: 'bg-slate-700 text-slate-400 border-slate-600',
   active: 'bg-primary-500/20 text-primary-400 border-primary-500/40',
@@ -75,31 +75,22 @@ const STATUS_COLOR = {
 
 export default function RoundManagement() {
   const socket = useSocket();
-  const { showLeaderboard, setShowLeaderboard } = useContext(EventStateContext);
-  const [rounds, setRounds] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [actionLoading, setActionLoading] = useState('');
-  const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
+  const { setCurrentRound, setEventStatus } = useContext(EventStateContext);
 
-  const [activeQuestion, setActiveQuestionState] = useState(null);
-  const [activeStage, setActiveStage] = useState('question');
+  const [rounds, setRounds] = useState([]);
+  const [activeQuestionState, setActiveQuestionState] = useState(null);
   const [roundQuestions, setRoundQuestions] = useState([]);
   const [responseCount, setResponseCount] = useState(0);
+  const [activeStage, setActiveStage] = useState('question');
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [modal, setModal] = useState(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
 
-  const { currentRound } = useContext(EventStateContext);
-
-  const getActiveRound = useCallback((roundList) => {
-    const cId = currentRound?.id || (typeof currentRound === 'string' ? currentRound : null);
-    const list = Array.isArray(roundList) ? roundList : rounds;
-    if (cId && list.length > 0) {
-      const match = list.find(r => r.id === cId);
-      if (match) return match;
-    }
-    return list.find(r => r.status === 'active') || list[0];
-  }, [currentRound, rounds]);
+  const getActiveRound = useCallback((list) => list.find(r => r.status === 'active') || list.find(r => r.status === 'paused') || null, []);
 
   const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 4000); };
   const showError = (m) => { setError(m); setTimeout(() => setError(''), 5000); };
@@ -156,6 +147,26 @@ export default function RoundManagement() {
       showSuccess('Rounds reordered successfully');
     } catch {
       showError('Failed to reorder rounds');
+      fetchRounds();
+    }
+  };
+
+  const handleMoveQuestionInRound = async (qIdx, direction) => {
+    const activeRound = getActiveRound(rounds);
+    if (!activeRound) return;
+    const targetIdx = direction === 'up' ? qIdx - 1 : qIdx + 1;
+    if (targetIdx < 0 || targetIdx >= roundQuestions.length) return;
+    const newQuestions = [...roundQuestions];
+    const temp = newQuestions[qIdx];
+    newQuestions[qIdx] = newQuestions[targetIdx];
+    newQuestions[targetIdx] = temp;
+    setRoundQuestions(newQuestions);
+    const newIds = newQuestions.map(q => q.id);
+    try {
+      await reorderQuestions(activeRound.id, newIds);
+      showSuccess('Questions reordered successfully');
+    } catch {
+      showError('Failed to reorder questions');
       fetchRounds();
     }
   };
@@ -488,21 +499,53 @@ export default function RoundManagement() {
               </div>
             )}
 
-            {/* Direct Question Selector */}
+            {/* Direct Question Selector & Question Rearrange */}
             {roundQuestions.length > 0 && (
-              <div className="flex items-center space-x-2 pt-1">
-                <span className="text-xs text-slate-500 font-medium">Jump to Question:</span>
-                <select
-                  value={activeQuestion?.id || ''}
-                  onChange={(e) => handleSelectQuestion(e.target.value)}
-                  className="input-field py-1 text-xs bg-dark-800 border-dark-700 text-slate-300 flex-1"
-                >
-                  {roundQuestions.map((q, idx) => (
-                    <option key={q.id} value={q.id}>
-                      Q{idx + 1}: {q.text.length > 35 ? q.text.substring(0, 35) + '...' : q.text}
-                    </option>
-                  ))}
-                </select>
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-slate-500 font-medium">Jump to Question:</span>
+                  <select
+                    value={activeQuestion?.id || ''}
+                    onChange={(e) => handleSelectQuestion(e.target.value)}
+                    className="input-field py-1 text-xs bg-dark-800 border-dark-700 text-slate-300 flex-1"
+                  >
+                    {roundQuestions.map((q, idx) => (
+                      <option key={q.id} value={q.id}>
+                        Q{idx + 1}: {q.text.length > 35 ? q.text.substring(0, 35) + '...' : q.text}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-2 border-t border-dark-700 space-y-2">
+                  <h4 className="text-xs font-bold text-slate-400">Rearrange Active Questions Order:</h4>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {roundQuestions.map((q, idx) => (
+                      <div key={q.id} className={`flex items-center justify-between p-2 rounded-lg border text-xs ${q.id === activeQuestion?.id ? 'bg-primary-500/10 border-primary-500/40 text-primary-300' : 'bg-dark-800 border-dark-700 text-slate-400'}`}>
+                        <span className="font-bold mr-2 shrink-0">Q{idx + 1}.</span>
+                        <span className="truncate flex-1 font-medium">{q.text}</span>
+                        <div className="flex items-center space-x-1 ml-2 shrink-0">
+                          <button
+                            disabled={idx === 0}
+                            onClick={() => handleMoveQuestionInRound(idx, 'up')}
+                            className="p-1 rounded hover:bg-dark-700 text-slate-400 hover:text-white disabled:opacity-30"
+                            title="Move Question Up"
+                          >
+                            <ChevronUp size={14} />
+                          </button>
+                          <button
+                            disabled={idx === roundQuestions.length - 1}
+                            onClick={() => handleMoveQuestionInRound(idx, 'down')}
+                            className="p-1 rounded hover:bg-dark-700 text-slate-400 hover:text-white disabled:opacity-30"
+                            title="Move Question Down"
+                          >
+                            <ChevronDown size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>

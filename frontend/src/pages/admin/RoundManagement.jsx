@@ -66,6 +66,8 @@ function RoundModal({ round, onClose, onSave }) {
       </div>
     </div>
   );
+}
+
 const STATUS_COLOR = {
   pending: 'bg-slate-700 text-slate-400 border-slate-600',
   active: 'bg-primary-500/20 text-primary-400 border-primary-500/40',

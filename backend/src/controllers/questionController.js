@@ -81,10 +81,18 @@ class QuestionController {
       next(err);
     }
   }
+  async reorderQuestions(req, res, next) {
+    try {
+      const { questionIds } = req.body;
+      await questionService.reorderQuestions(req.params.roundId, questionIds);
+      res.status(200).json({ message: 'Questions reordered successfully' });
+    } catch (err) { next(err); }
+  }
+
   async overrideDisplayedOption(req, res, next) {
     try {
-      const { optionId } = req.body;
-      const result = await questionService.overrideDisplayedOption(req.params.roundId, optionId);
+      const { optionId, targetQuestionId } = req.body;
+      const result = await questionService.overrideDisplayedOption(req.params.roundId, optionId, targetQuestionId);
       res.status(200).json({ message: 'Option overridden', question: result });
     } catch (err) {
       next(err);

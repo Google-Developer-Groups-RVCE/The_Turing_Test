@@ -71,6 +71,16 @@ const questionStore = {
     return uniqueList;
   },
 
+  async reorderQuestions(roundId, orderedIds) {
+    await redisClient.del(keys.QUESTIONS(roundId));
+    if (orderedIds && orderedIds.length > 0) {
+      await redisClient.rpush(keys.QUESTIONS(roundId), ...orderedIds);
+    }
+    for (let i = 0; i < (orderedIds || []).length; i++) {
+      await this.updateQuestion(roundId, orderedIds[i], { order: String(i + 1) });
+    }
+  },
+
   async setActiveQuestionId(roundId, questionId) {
     await redisClient.set(`round:${roundId}:active_question`, String(questionId));
   },

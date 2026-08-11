@@ -450,25 +450,41 @@ export default function RoundManagement() {
               Current Stage: <span className="text-white capitalize">{activeStage}</span>
             </div>
             
-            {activeQuestion?.type === 'guess-author' && (
+            {activeRound && (String(activeRound.id).includes('round_1') || activeRound.name?.toLowerCase().includes('round 1')) && (
               <div className="pt-3 space-y-2 border-t border-dark-700 mt-2">
-                <h4 className="text-xs font-bold text-slate-400">Force Display Option:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {roundQuestions.find(q => q.id === activeQuestion.id)?.options?.map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => doAction(`Force ${opt.author}`, () => {
-                         const overrideId = opt.id || (opt.author ? opt.author.toLowerCase() + '-opt' : null);
-                         if (!overrideId) return Promise.reject(new Error('Invalid option ID'));
-                         return overrideOption(activeRound.id, overrideId);
-                      })}
-                      disabled={!!actionLoading}
-                      className={`flex-1 py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${activeQuestion.displayedOptionId === opt.id ? 'bg-primary-500/20 border-primary-500/50 text-primary-300' : 'bg-dark-800 border-dark-600 text-slate-400 hover:bg-dark-700'}`}
-                    >
-                      {opt.author || `Option ${opt.id}`}
-                    </button>
-                  ))}
-                </div>
+                {(() => {
+                  const currentIdx = roundQuestions.findIndex(q => q.id === activeQuestion?.id);
+                  const nextQ = currentIdx >= 0 && currentIdx < roundQuestions.length - 1 ? roundQuestions[currentIdx + 1] : null;
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-400">Force Display Option for NEXT Question {nextQ ? `(Q${currentIdx + 2})` : ''}:</h4>
+                        {nextQ?.displayedOptionId && (
+                          <span className="text-[10px] text-primary-400 font-semibold uppercase">Set to: {nextQ.displayedOptionId.includes('human') ? 'Human' : 'Gemini'}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {['Human', 'Gemini'].map(author => {
+                          const overrideId = author.toLowerCase() + '-opt';
+                          const isSelected = nextQ?.displayedOptionId === overrideId;
+                          return (
+                            <button
+                              key={author}
+                              onClick={() => doAction(`Force ${author} for Next Q`, () => {
+                                 if (!nextQ) return Promise.reject(new Error('No next question available in this round'));
+                                 return overrideOption(activeRound.id, overrideId, nextQ.id);
+                              })}
+                              disabled={!!actionLoading || !nextQ}
+                              className={`flex-1 py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${isSelected ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'bg-dark-800 border-dark-600 text-slate-400 hover:bg-dark-700 disabled:opacity-40'}`}
+                            >
+                              Force {author} (Next Q)
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
 

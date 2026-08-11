@@ -373,16 +373,31 @@ class QuestionService {
     return await this.setActiveQuestion(roundId, order[prevIndex]);
   }
 
-  async overrideDisplayedOption(roundId, optionId) {
-    const activeId = await questionStore.getActiveQuestionId(roundId);
-    if (!activeId) throw new Error('No active question to override');
-    const question = await questionStore.getQuestion(roundId, activeId);
-    if (!question || question.type !== 'guess-author') throw new Error('Question is not guess-author type');
-    await questionStore.updateQuestion(roundId, activeId, { displayedOptionId: optionId });
-    const updatedQuestion = await this.getActiveQuestion(roundId);
+  async reorderQuestions(roundId, orderedIds) {
+    await questionStore.reorderQuestions(roundId, orderedIds);
     const io = getIO();
-    if (io) io.emit('question:changed', { roundId, activeQuestionId: activeId, question: updatedQuestion });
-    return updatedQuestion;
+    if (io) {
+      const activeId = await questionStore.getActiveQuestionId(roundId);
+      const question = await this.getActiveQuestion(roundId);
+      io.emit('question:changed', { roundId, activeQuestionId: activeId, question });
+    }
+  }
+
+  async overrideDisplayedOption(roundId, optionId, targetQuestionId = null) {
+    const activeId = await questionStore.getActiveQuestionId(roundId);
+    const qId = targetQuestionId || activeId;
+    if (!qId) throw new Error('No question target to override');
+    const question = await questionStore.getQuestion(roundId, qId);
+    if (!question || question.type !== 'guess-author') throw new Error('Question is not guess-author type');
+    await questionStore.updateQuestion(roundId, qId, { displayedOptionId: optionId });
+    
+    if (qId === activeId) {
+      const updatedQuestion = await this.getActiveQuestion(roundId);
+      const io = getIO();
+      if (io) io.emit('question:changed', { roundId, activeQuestionId: activeId, question: updatedQuestion });
+      return updatedQuestion;
+    }
+    return { message: `Updated displayed option for question ${qId}` };
   }
 
   async evaluateQuestion(roundId) {

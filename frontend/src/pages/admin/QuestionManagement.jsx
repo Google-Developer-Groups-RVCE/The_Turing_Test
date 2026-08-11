@@ -60,6 +60,10 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
     imageUrl: question?.imageUrl || '',
     imageWidth: question?.imageProps?.width || '',
     imageHeight: question?.imageProps?.height || '',
+    title: question?.title || '',
+    aiResponse: question?.aiResponse || '',
+    explanation: question?.explanation || '',
+    sourceImageUrl: question?.sourceImageUrl || '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -113,6 +117,10 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
         order: parseInt(form.order) || 1,
         showEvaluation: form.showEvaluation,
         options: validOptions,
+        title: form.title,
+        aiResponse: form.aiResponse,
+        explanation: form.explanation,
+        sourceImageUrl: form.sourceImageUrl,
       };
       if (form.imageUrl) {
         payload.imageUrl = form.imageUrl;
@@ -138,6 +146,26 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
             <label className="block text-sm text-slate-400 mb-1">Question Text</label>
             <textarea required rows={3} className="input-field resize-none" value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="Enter your question here..." />
           </div>
+          {form.type === 'hallucination' && (
+            <>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Display Title</label>
+                <input className="input-field" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Round 2 - Hidden Hallucination" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">AI Response</label>
+                <textarea rows={5} className="input-field resize-y" value={form.aiResponse} onChange={e => setForm(f => ({ ...f, aiResponse: e.target.value }))} placeholder="The response participants should evaluate" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Explanation shown on reveal</label>
+                <textarea rows={4} className="input-field resize-y" value={form.explanation} onChange={e => setForm(f => ({ ...f, explanation: e.target.value }))} placeholder="Why the response is misleading" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">AI Response Screenshot (optional)</label>
+                <input className="input-field" value={form.sourceImageUrl} onChange={e => setForm(f => ({ ...f, sourceImageUrl: e.target.value }))} placeholder="/reference/wood-physics-ai-response.png" />
+              </div>
+            </>
+          )}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Type</label>
@@ -147,6 +175,7 @@ function QuestionModal({ question, roundId, onClose, onSave }) {
                 <option value="poll">Live Poll</option>
                 <option value="guess-author">Guess the Author (Round 1)</option>
                 <option value="profile-guess">Decode Profile (Round 3 Final)</option>
+                <option value="hallucination">Spot the Hallucination (physical response)</option>
               </select>
             </div>
             <div>

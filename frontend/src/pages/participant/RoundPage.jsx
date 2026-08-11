@@ -14,6 +14,7 @@ import round2Data from '../../data/round2Data';
 import pollsData from '../../data/pollsData';
 import ChallengeCard from '../../components/ChallengeCard';
 import PollCard from '../../components/PollCard';
+import HallucinationCard from '../../components/HallucinationCard';
 
 const allRichData = [...round1Data, ...round2Data, ...pollsData];
 
@@ -365,7 +366,7 @@ export default function RoundPage() {
             {currentRound?.name || 'Current Round'}
           </span>
           <h2 className="text-lg font-bold text-white mt-0.5">
-            {question.type === 'mcq' ? 'Multiple Choice Question' : question.type === 'poll' ? 'Live Poll' : question.type === 'guess-author' ? 'Guess the Author' : 'Short Answer Question'}
+            {question.type === 'hallucination' ? 'Spot the Hallucination' : question.type === 'mcq' ? 'Multiple Choice Question' : question.type === 'poll' ? 'Live Poll' : question.type === 'guess-author' ? 'Guess the Author' : 'Short Answer Question'}
           </h2>
         </div>
         {timeLeft !== null && (
@@ -396,7 +397,7 @@ export default function RoundPage() {
       )}
 
       {/* Evaluation View */}
-      {evaluationData && (
+      {evaluationData && question.type !== 'hallucination' && (
         <div className="w-full bg-dark-900/80 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center text-center">
           {(() => {
             const isCorrect = myResponse && String(myResponse.answer).toLowerCase() === String(evaluationData.correctAnswer).toLowerCase();
@@ -480,6 +481,9 @@ export default function RoundPage() {
 
       {/* Question Card & Answer Section */}
       {!evaluationData && !pollResult && (() => {
+        if (question.type === 'hallucination') {
+          return <HallucinationCard question={question} evaluationData={null} />;
+        }
         if (question.type === 'profile-guess' || question.id === 'poll6') {
           const handleProfileChange = (field, val) => {
             const next = { ...profileGuess, [field]: val };
@@ -687,7 +691,7 @@ export default function RoundPage() {
         );
       })()}
 
-      {!evaluationData && !pollResult && (
+      {!evaluationData && !pollResult && question.type !== 'hallucination' && (
         <div className="poll-actions mt-2">
           {error && <p role="alert" className="poll-error text-center">{error}</p>}
 
@@ -719,6 +723,10 @@ export default function RoundPage() {
             </div>
           )}
         </div>
+      )}
+
+      {evaluationData && question.type === 'hallucination' && (
+        <HallucinationCard question={question} evaluationData={evaluationData} />
       )}
     </div>
   );

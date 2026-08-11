@@ -18,6 +18,9 @@ async function seed() {
   }
   await client.del(keys.ROUNDS_ORDER);
   await client.del(keys.CURRENT_ROUND);
+  await client.del(keys.QUESTIONS('round_1_aptitude'));
+  await client.del(keys.QUESTIONS('round_2_coding'));
+  await client.del(keys.QUESTIONS('round_3_decode'));
 
   const rounds = [
     { id: 'round_1_aptitude',  name: 'Round 1 — Live Conversations',         status: 'pending', durationSeconds: '300', order: '1' },
@@ -39,26 +42,18 @@ async function seed() {
   const addQuestion = async (roundId, q) => {
     const key = keys.QUESTION(roundId, q.id);
     const entries = Object.entries({
-      id: q.id,
-      text: q.text,
-      type: q.type || 'mcq',
-      options: JSON.stringify(q.options || []),
-      correctAnswer: q.correctAnswer,
-      points: String(q.points || 10),
-      order: String(q.order || 1),
-      showEvaluation: q.showEvaluation !== undefined ? String(q.showEvaluation) : 'true',
-      imageUrl: q.imageUrl,
-      imageProps: q.imageProps ? JSON.stringify(q.imageProps) : null,
-      targetAge: q.targetAge,
-      targetProfession: q.targetProfession,
-      targetHobby: q.targetHobby,
-      durationSeconds: q.durationSeconds ? String(q.durationSeconds) : null
-    }).filter(([_, v]) => v !== undefined && v !== null).map(([k, v]) => [k, String(v)]).flat();
-    
-    if (entries.length > 0) {
-      await client.hmset(key, ...entries);
+      id: q.id, text: q.text, prompt: q.prompt || q.text, type: q.type || 'mcq', options: JSON.stringify(q.options || []),
+      correctAnswer: q.correctAnswer || '', points: String(q.points || 10), order: String(q.order || 1),
+      imageUrl: q.imageUrl || '', imageProps: q.imageProps ? JSON.stringify(q.imageProps) : '',
+      targetAge: q.targetAge || '', targetProfession: q.targetProfession || '', targetHobby: q.targetHobby || '',
+      durationSeconds: String(q.durationSeconds || 60)
+    }).filter(([_, v]) => v !== undefined && v !== null && v !== 'null').map(([k, v]) => [k, String(v)]).flat();
+
+    await client.hmset(key, ...entries);
+    const existing = await client.lrange(keys.QUESTIONS(roundId), 0, -1);
+    if (!existing.includes(String(q.id))) {
+      await client.rpush(keys.QUESTIONS(roundId), String(q.id));
     }
-    await client.rpush(keys.QUESTIONS(roundId), q.id);
   };
 
   const r1Questions = [

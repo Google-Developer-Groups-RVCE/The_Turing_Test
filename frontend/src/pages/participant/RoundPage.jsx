@@ -41,7 +41,6 @@ export default function RoundPage() {
   }, [currentRound]);
 
   const fetchQuestion = useCallback(async () => {
-    if (!question) setLoading(true);
     try {
       const rRes = await getCurrentRound().catch(() => null);
       const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRoundRef.current);
@@ -315,12 +314,12 @@ export default function RoundPage() {
       const rId = String(currentRound?.id || '').toLowerCase();
 
       let dataset = [];
-      if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
-        dataset = round1Data;
-      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
-        dataset = round2Data;
-      } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+      if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('speedrun') || rName.includes('decode')) {
         dataset = pollsData;
+      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image')) {
+        dataset = round2Data;
+      } else if (rId.includes('r1') || rName.includes('round 1') || rName.includes('conversation') || rName.includes('aptitude')) {
+        dataset = round1Data;
       } else {
         dataset = allRichData;
       }
@@ -587,12 +586,12 @@ export default function RoundPage() {
           const rId = String(currentRound?.id || '').toLowerCase();
 
           let dataset = [];
-          if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
-            dataset = round1Data;
-          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
-            dataset = round2Data;
-          } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+          if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('speedrun') || rName.includes('decode')) {
             dataset = pollsData;
+          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image')) {
+            dataset = round2Data;
+          } else if (rId.includes('r1') || rName.includes('round 1') || rName.includes('conversation') || rName.includes('aptitude')) {
+            dataset = round1Data;
           } else {
             dataset = allRichData;
           }

@@ -92,7 +92,7 @@ export default function RoundManagement() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
 
-  const getActiveRound = useCallback((list) => list.find(r => r.status === 'active') || list.find(r => r.status === 'paused') || null, []);
+  const getActiveRound = (list) => (list || rounds).find(r => r.status === 'active') || (list || rounds).find(r => r.status === 'paused') || null;
 
   const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 4000); };
   const showError = (m) => { setError(m); setTimeout(() => setError(''), 5000); };
@@ -133,7 +133,8 @@ export default function RoundManagement() {
       }
     } catch { showError('Failed to load rounds'); }
     finally { setLoading(false); }
-  }, [getActiveRound, rounds.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMoveRound = async (idx, direction) => {
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
@@ -173,19 +174,20 @@ export default function RoundManagement() {
     }
   };
 
-  const fetchSettingsState = useCallback(async () => {
+  const fetchSettingsState = async () => {
     try {
       const res = await getSettings();
       if (res.data?.showLeaderboard !== undefined) {
         setShowLeaderboard(String(res.data.showLeaderboard) === 'true');
       }
     } catch { /* silent */ }
-  }, [setShowLeaderboard]);
+  };
 
   useEffect(() => {
     fetchRounds(true);
     fetchSettingsState();
-  }, [fetchRounds, fetchSettingsState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Socket live updates
   useEffect(() => {

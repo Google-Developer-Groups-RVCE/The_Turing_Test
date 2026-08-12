@@ -17,6 +17,14 @@ class RoundController {
     } catch (err) { next(err); }
   }
 
+  async reorderRounds(req, res, next) {
+    try {
+      const { roundIds } = req.body;
+      await roundService.reorderRounds(roundIds);
+      res.status(200).json({ message: 'Rounds reordered successfully' });
+    } catch (err) { next(err); }
+  }
+
   async createRound(req, res, next) {
     try {
       if (!req.body.name) return res.status(400).json({ message: 'Round name is required' });

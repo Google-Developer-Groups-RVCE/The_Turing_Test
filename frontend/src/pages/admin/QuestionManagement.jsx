@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getRounds } from '../../api/roundApi';
-import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from '../../api/questionApi';
+import { getQuestions, createQuestion, updateQuestion, deleteQuestion, reorderQuestions } from '../../api/questionApi';
 import { HelpCircle, Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Image } from 'lucide-react';
 
 function normalizeOptions(options, type) {
@@ -345,6 +345,24 @@ export default function QuestionManagement() {
     fetchQuestions();
   };
 
+  const handleMoveQuestion = async (idx, direction) => {
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= questions.length) return;
+    const newQuestions = [...questions];
+    const temp = newQuestions[idx];
+    newQuestions[idx] = newQuestions[targetIdx];
+    newQuestions[targetIdx] = temp;
+    setQuestions(newQuestions);
+    const newIds = newQuestions.map(q => q.id);
+    try {
+      await reorderQuestions(selectedRound, newIds);
+      showSuccess('Questions reordered successfully');
+    } catch {
+      setError('Failed to reorder questions');
+      fetchQuestions();
+    }
+  };
+
   const handleDelete = async (q) => {
     if (!window.confirm('Delete this question?')) return;
     try {
@@ -451,9 +469,27 @@ export default function QuestionManagement() {
                   <p className="text-xs text-slate-500 mt-1">Answer: <span className="text-primary-400">{q.correctAnswer}</span></p>
                 )}
               </div>
-              <div className="flex space-x-1 flex-shrink-0">
-                <button onClick={() => setModal(q)} className="p-1.5 rounded hover:bg-dark-700 text-slate-400 hover:text-white"><Edit size={15} /></button>
-                <button onClick={() => handleDelete(q)} className="p-1.5 rounded hover:bg-rose-900/30 text-rose-400 hover:text-rose-300"><Trash2 size={15} /></button>
+              <div className="flex items-center space-x-1 flex-shrink-0">
+                <div className="flex items-center space-x-1 border-r border-dark-700 pr-1 mr-1">
+                  <button
+                    disabled={idx === 0}
+                    onClick={() => handleMoveQuestion(idx, 'up')}
+                    className="p-1 rounded hover:bg-dark-700 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+                    title="Move Question Up"
+                  >
+                    <ChevronUp size={15} />
+                  </button>
+                  <button
+                    disabled={idx === questions.length - 1}
+                    onClick={() => handleMoveQuestion(idx, 'down')}
+                    className="p-1 rounded hover:bg-dark-700 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+                    title="Move Question Down"
+                  >
+                    <ChevronDown size={15} />
+                  </button>
+                </div>
+                <button onClick={() => setModal(q)} className="p-1.5 rounded hover:bg-dark-700 text-slate-400 hover:text-white" title="Edit"><Edit size={15} /></button>
+                <button onClick={() => handleDelete(q)} className="p-1.5 rounded hover:bg-rose-900/30 text-rose-400 hover:text-rose-300" title="Delete"><Trash2 size={15} /></button>
               </div>
             </div>
           </div>

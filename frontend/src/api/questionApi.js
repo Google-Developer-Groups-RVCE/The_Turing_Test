@@ -11,4 +11,5 @@ export const previousQuestion = (roundId) => axiosClient.post(`/questions/${roun
 export const setActiveQuestion = (roundId, questionId) => axiosClient.post(`/questions/${roundId}/activate/${questionId}`);
 export const revealPoll = (roundId) => axiosClient.post(`/questions/${roundId}/reveal-poll`);
 export const evaluateQuestion = (roundId) => axiosClient.post(`/questions/${roundId}/evaluate`);
-export const overrideOption = (roundId, optionId) => axiosClient.post(`/questions/${roundId}/override-option`, { optionId });
+export const reorderQuestions = (roundId, questionIds) => axiosClient.put(`/questions/${roundId}/reorder`, { questionIds });
+export const overrideOption = (roundId, optionId, targetQuestionId = null) => axiosClient.post(`/questions/${roundId}/override-option`, { optionId, targetQuestionId });

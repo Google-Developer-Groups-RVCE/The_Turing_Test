@@ -45,12 +45,12 @@ RUN mkdir -p uploads && chown -R nodeusr:nodegrp /app
 
 USER nodeusr
 
-EXPOSE 3000
+EXPOSE 5000
 
 # Kubernetes uses GET /health for liveness/readiness, so a Docker
 # HEALTHCHECK is optional but useful for local `docker run` / compose.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  CMD node -e "require('http').get('http://127.0.0.1:5000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "src/server.js"]

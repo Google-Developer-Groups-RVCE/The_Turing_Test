@@ -98,19 +98,26 @@ export default function LogsPage() {
             <thead>
               <tr className="border-b border-dark-700 bg-dark-900/50">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-40">Timestamp</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-28">Admin</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Action</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-28">User / Admin</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-36">Action</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Pin-to-Pin Details</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-20">Level</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-700/50 font-mono text-xs">
-              {loading && <tr><td colSpan={4} className="text-center py-10 text-slate-500">Loading logs...</td></tr>}
-              {!loading && logs.length === 0 && <tr><td colSpan={4} className="text-center py-10 text-slate-500">No logs found.</td></tr>}
+              {loading && <tr><td colSpan={5} className="text-center py-10 text-slate-500">Loading logs...</td></tr>}
+              {!loading && logs.length === 0 && <tr><td colSpan={5} className="text-center py-10 text-slate-500">No logs found.</td></tr>}
               {!loading && logs.map((log, i) => (
                 <tr key={i} className="hover:bg-dark-800/40 transition-colors">
                   <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">{formatTime(log.timestamp)}</td>
-                  <td className="px-4 py-2.5 text-primary-400">{log.admin || '—'}</td>
-                  <td className="px-4 py-2.5 text-slate-300">{log.action}{log.target ? ` → ${log.target}` : ''}</td>
+                  <td className="px-4 py-2.5 text-primary-400 font-bold">{log.admin || 'system'}</td>
+                  <td className="px-4 py-2.5 font-bold text-white uppercase tracking-wide text-[11px]">{log.action}</td>
+                  <td className="px-4 py-2.5 text-slate-300">
+                    <div className="font-semibold text-slate-200">{log.target}</div>
+                    {log.details && log.details !== log.target && (
+                      <div className="text-[11px] text-slate-400 font-sans mt-0.5">{log.details}</div>
+                    )}
+                  </td>
                   <td className="px-4 py-2.5">
                     <span className={`px-2 py-0.5 rounded border text-xs font-sans ${LEVEL_COLOR[log.level] || LEVEL_COLOR.info}`}>
                       {log.level || 'info'}

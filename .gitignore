@@ -34,3 +34,7 @@ coverage/
 
 # Docker build artifacts
 *.tar
+
+# Build outputs
+frontend/dist/
+

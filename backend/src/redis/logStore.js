@@ -15,15 +15,24 @@ const logStore = {
    * @param {{ admin, action, target, level, timestamp }} entry
    */
   async addLog(entry) {
-    const logString = JSON.stringify({
+    const detailsObj = entry.details || entry.target || '';
+    const detailsStr = typeof detailsObj === 'string' ? detailsObj : JSON.stringify(detailsObj);
+    const logObj = {
       admin: entry.admin || entry.adminUsername || 'system',
       action: entry.action || '',
-      target: entry.target || '',
+      target: entry.target || detailsStr,
+      details: detailsStr,
       level: entry.level || 'info',
       timestamp: entry.timestamp || Date.now(),
-    });
+    };
+    const logString = JSON.stringify(logObj);
     await redisClient.lpush(keys.LOGS, logString);
     await redisClient.ltrim(keys.LOGS, 0, 1999); // keep last 2000
+
+    try {
+      const io = require('../sockets/socketServer').getIO();
+      if (io) io.emit('log:new', { logEntry: logObj });
+    } catch (e) {}
   },
 
   /**
@@ -44,7 +53,8 @@ const logStore = {
         (l) =>
           (l.action || '').toLowerCase().includes(q) ||
           (l.admin || '').toLowerCase().includes(q) ||
-          (l.target || '').toLowerCase().includes(q)
+          (l.target || '').toLowerCase().includes(q) ||
+          (l.details || '').toLowerCase().includes(q)
       );
     }
 

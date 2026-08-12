@@ -41,7 +41,6 @@ export default function RoundPage() {
   }, [currentRound]);
 
   const fetchQuestion = useCallback(async () => {
-    if (!question) setLoading(true);
     try {
       const rRes = await getCurrentRound().catch(() => null);
       const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRoundRef.current);
@@ -103,7 +102,7 @@ export default function RoundPage() {
 
   useEffect(() => {
     fetchQuestion();
-  }, [fetchQuestion]);
+  }, [fetchQuestion, activeStage]);
 
   // Transition to Leaderboard if active stage is explicitly set to leaderboard
   useEffect(() => {
@@ -185,11 +184,16 @@ export default function RoundPage() {
       }, 3000);
     };
 
+    const handleStageChanged = (data) => {
+      fetchQuestion();
+    };
+
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on('question:changed', handleQuestionChanged);
     socket.on('round:time_extended', handleTimeExtended);
     socket.on('poll:revealed', handlePollRevealed);
     socket.on('question:evaluate', handleQuestionEvaluate);
+    socket.on('round:stage_changed', handleStageChanged);
     socket.on('responses:cleared', handleResponsesCleared);
     socket.on('round:ended', handleRoundEnded);
 
@@ -200,6 +204,7 @@ export default function RoundPage() {
       socket.off('round:time_extended', handleTimeExtended);
       socket.off('poll:revealed', handlePollRevealed);
       socket.off('question:evaluate', handleQuestionEvaluate);
+      socket.off('round:stage_changed', handleStageChanged);
       socket.off('responses:cleared', handleResponsesCleared);
       socket.off('round:ended', handleRoundEnded);
     };
@@ -309,12 +314,12 @@ export default function RoundPage() {
       const rId = String(currentRound?.id || '').toLowerCase();
 
       let dataset = [];
-      if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
-        dataset = round1Data;
-      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
-        dataset = round2Data;
-      } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+      if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('speedrun') || rName.includes('decode')) {
         dataset = pollsData;
+      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image')) {
+        dataset = round2Data;
+      } else if (rId.includes('r1') || rName.includes('round 1') || rName.includes('conversation') || rName.includes('aptitude')) {
+        dataset = round1Data;
       } else {
         dataset = allRichData;
       }
@@ -581,12 +586,12 @@ export default function RoundPage() {
           const rId = String(currentRound?.id || '').toLowerCase();
 
           let dataset = [];
-          if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
-            dataset = round1Data;
-          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
-            dataset = round2Data;
-          } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+          if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('speedrun') || rName.includes('decode')) {
             dataset = pollsData;
+          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image')) {
+            dataset = round2Data;
+          } else if (rId.includes('r1') || rName.includes('round 1') || rName.includes('conversation') || rName.includes('aptitude')) {
+            dataset = round1Data;
           } else {
             dataset = allRichData;
           }

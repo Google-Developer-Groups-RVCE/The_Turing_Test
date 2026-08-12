@@ -9,6 +9,7 @@ const questionStore = {
     const entries = Object.entries({
       id: question.id,
       text: question.text,
+      prompt: question.prompt || question.text,
       type: question.type || 'mcq',
       options: JSON.stringify(question.options || []),
       correctAnswer: question.correctAnswer,
@@ -26,7 +27,10 @@ const questionStore = {
     if (entries.length > 0) {
       await redisClient.hmset(key, ...entries);
     }
-    await redisClient.rpush(keys.QUESTIONS(roundId), question.id);
+    const existingList = await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
+    if (!existingList.includes(String(question.id))) {
+      await redisClient.rpush(keys.QUESTIONS(roundId), String(question.id));
+    }
   },
 
   async getQuestion(roundId, questionId) {
@@ -56,7 +60,25 @@ const questionStore = {
   },
 
   async getQuestionsOrder(roundId) {
-    return await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
+    const rawList = await redisClient.lrange(keys.QUESTIONS(roundId), 0, -1);
+    const uniqueList = Array.from(new Set(rawList));
+    if (rawList.length !== uniqueList.length) {
+      await redisClient.del(keys.QUESTIONS(roundId));
+      if (uniqueList.length > 0) {
+        await redisClient.rpush(keys.QUESTIONS(roundId), ...uniqueList);
+      }
+    }
+    return uniqueList;
+  },
+
+  async reorderQuestions(roundId, orderedIds) {
+    await redisClient.del(keys.QUESTIONS(roundId));
+    if (orderedIds && orderedIds.length > 0) {
+      await redisClient.rpush(keys.QUESTIONS(roundId), ...orderedIds);
+    }
+    for (let i = 0; i < (orderedIds || []).length; i++) {
+      await this.updateQuestion(roundId, orderedIds[i], { order: String(i + 1) });
+    }
   },
 
   async setActiveQuestionId(roundId, questionId) {

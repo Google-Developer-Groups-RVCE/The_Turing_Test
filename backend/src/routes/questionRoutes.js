@@ -19,6 +19,7 @@ router.delete('/:roundId/:questionId', questionController.deleteQuestion);
 router.post('/:roundId/next', questionController.nextQuestion);
 router.post('/:roundId/previous', questionController.previousQuestion);
 router.post('/:roundId/activate/:questionId', questionController.setActiveQuestion);
+router.put('/:roundId/reorder', questionController.reorderQuestions);
 router.post('/:roundId/reveal-poll', questionController.revealPoll);
 router.post('/:roundId/override-option', questionController.overrideDisplayedOption);
 router.post('/:roundId/evaluate', questionController.evaluateQuestion);

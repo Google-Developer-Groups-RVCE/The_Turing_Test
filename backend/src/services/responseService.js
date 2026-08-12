@@ -107,6 +107,17 @@ class ResponseService {
       await leaderboardService.updateScore(username, roundId, pointsAwarded);
     }
 
+    try {
+      const logStore = require('../redis/logStore');
+      await logStore.addLog({
+        adminUsername: username,
+        action: 'SUBMIT_RESPONSE',
+        target: `${username} answered ${activeId}`,
+        details: `Round: ${roundId} | Question: ${activeId} | Answer: "${answer}" | Points: +${pointsAwarded}`,
+        timestamp: String(submittedAt)
+      });
+    } catch (e) {}
+
     const io = getIO();
     if (io) {
       io.emit('response:received', {

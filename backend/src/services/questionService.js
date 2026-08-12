@@ -234,7 +234,7 @@ class QuestionService {
     let question = await questionStore.getQuestion(roundId, questionId);
     if (question && question.type === 'guess-author') {
       const options = question.options || [];
-      if (options.length > 0) {
+      if (options.length > 0 && !question.displayedOptionId) {
         const randomOption = options[Math.floor(Math.random() * options.length)];
         await questionStore.updateQuestion(roundId, questionId, { displayedOptionId: randomOption.id });
       }
@@ -307,14 +307,15 @@ class QuestionService {
 
         if (!order || order.length === 0) return { stage: 'question', question: null };
 
-        const currentIndex = order.indexOf(activeId);
-        // If there IS a next question in order, go to it
+        const currentIndex = order.indexOf(String(activeId));
         if (currentIndex >= 0 && currentIndex < order.length - 1) {
           const nextQuestionId = order[currentIndex + 1];
           const newQuestion = await this.setActiveQuestion(roundId, nextQuestionId);
           return { stage: 'question', question: newQuestion };
+        } else if (currentIndex === -1 && order.length > 0) {
+          const newQuestion = await this.setActiveQuestion(roundId, order[0]);
+          return { stage: 'question', question: newQuestion };
         } else {
-          // Last question in poll round — end round and advance to next round in sequence
           const roundService = require('./roundService');
           await roundService.endRound(roundId, 'system');
           return { stage: 'ended', question: null };
@@ -346,7 +347,7 @@ class QuestionService {
       return { stage: 'question', question: null };
     }
 
-    const currentIndex = order.indexOf(activeId);
+    const currentIndex = order.indexOf(String(activeId));
     if (currentIndex >= 0 && currentIndex < order.length - 1) {
       const nextQuestionId = order[currentIndex + 1];
       const newQuestion = await this.setActiveQuestion(roundId, nextQuestionId);
@@ -355,8 +356,12 @@ class QuestionService {
       if (io) io.emit('round:stage_changed', { roundId, activeStage: 'question' });
 
       return { stage: 'question', question: newQuestion };
+    } else if (currentIndex === -1 && order.length > 0) {
+      const newQuestion = await this.setActiveQuestion(roundId, order[0]);
+      const io = getIO();
+      if (io) io.emit('round:stage_changed', { roundId, activeStage: 'question' });
+      return { stage: 'question', question: newQuestion };
     } else {
-      // Last question in non-poll round — end round and auto-advance to next round in sequence!
       const roundService = require('./roundService');
       await roundService.endRound(roundId, 'system');
       return { stage: 'ended', question: null };
@@ -373,16 +378,50 @@ class QuestionService {
     return await this.setActiveQuestion(roundId, order[prevIndex]);
   }
 
-  async overrideDisplayedOption(roundId, optionId) {
-    const activeId = await questionStore.getActiveQuestionId(roundId);
-    if (!activeId) throw new Error('No active question to override');
-    const question = await questionStore.getQuestion(roundId, activeId);
-    if (!question || question.type !== 'guess-author') throw new Error('Question is not guess-author type');
-    await questionStore.updateQuestion(roundId, activeId, { displayedOptionId: optionId });
-    const updatedQuestion = await this.getActiveQuestion(roundId);
+  async reorderQuestions(roundId, orderedIds) {
+    await questionStore.reorderQuestions(roundId, orderedIds);
+    try {
+      const logStore = require('../redis/logStore');
+      await logStore.addLog({
+        adminUsername: 'admin',
+        action: 'REORDER_QUESTIONS',
+        target: `Reordered questions for ${roundId}`,
+        details: `New Order: ${orderedIds.join(', ')}`
+      });
+    } catch (e) {}
     const io = getIO();
-    if (io) io.emit('question:changed', { roundId, activeQuestionId: activeId, question: updatedQuestion });
-    return updatedQuestion;
+    if (io) {
+      const activeId = await questionStore.getActiveQuestionId(roundId);
+      const question = await this.getActiveQuestion(roundId);
+      io.emit('question:changed', { roundId, activeQuestionId: activeId, question });
+    }
+  }
+
+  async overrideDisplayedOption(roundId, optionId, targetQuestionId = null) {
+    const activeId = await questionStore.getActiveQuestionId(roundId);
+    const qId = targetQuestionId || activeId;
+    if (!qId) throw new Error('No question target to override');
+    const question = await questionStore.getQuestion(roundId, qId);
+    if (!question || question.type !== 'guess-author') throw new Error('Question is not guess-author type');
+    await questionStore.updateQuestion(roundId, qId, { displayedOptionId: optionId });
+    
+    try {
+      const logStore = require('../redis/logStore');
+      await logStore.addLog({
+        adminUsername: 'admin',
+        action: 'FORCE_OPTION',
+        target: `Forced option ${optionId} on question ${qId} in ${roundId}`,
+        details: `Target Question: ${qId} | Forced Option: ${optionId}`
+      });
+    } catch (e) {}
+
+    if (qId === activeId) {
+      const updatedQuestion = await this.getActiveQuestion(roundId);
+      const io = getIO();
+      if (io) io.emit('question:changed', { roundId, activeQuestionId: activeId, question: updatedQuestion });
+      return updatedQuestion;
+    }
+    return { message: `Updated displayed option for question ${qId}` };
   }
 
   async evaluateQuestion(roundId) {

@@ -3,12 +3,6 @@ import axiosClient from './axiosClient';
 export const submitResponse = (roundId, answer) =>
   axiosClient.post(`/responses/${roundId}`, { answer });
 
-export const submitSimulatedResponse = (roundId, answer) =>
-  axiosClient.post(`/responses/${roundId}/simulated`, { answer });
-
-export const getSimulatedResponse = (roundId, questionId) =>
-  axiosClient.get(`/responses/${roundId}/simulated`, { params: { questionId } });
-
 export const getResponses = (roundId, params) =>
   axiosClient.get(`/responses/${roundId}`, { params });
 

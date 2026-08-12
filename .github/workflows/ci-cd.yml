@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
     branches:
       - main
+      - dev
 
 permissions:
   contents: write
@@ -43,10 +45,7 @@ jobs:
   docker-build-push-gitops:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-      packages: write
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,6 +74,8 @@ jobs:
           tags: |
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:latest
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:latest
 
       - name: Build and Push Frontend Image
         uses: docker/build-push-action@v6
@@ -86,26 +87,32 @@ jobs:
           tags: |
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}
             ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:latest
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:latest
 
       - name: Update Kubernetes Manifests (GitOps trigger for ArgoCD)
         run: |
-          sed -i 's|image: .*tt-sip-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
-          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
-          sed -i 's|image: .*tt-sip-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
-          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
-          sed -i 's|image: .*tt-sip-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
-          sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
-          sed -i 's|image: .*tt-sip-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
-          sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
+          if [ "${{ github.ref_name }}" = "dev" ]; then
+            sed -i 's|image: .*tt-sip-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-backend:${{ github.sha }}|g' k8s-tt/backend.yaml
+            sed -i 's|image: .*tt-sip-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/tt-sip-frontend:${{ github.sha }}|g' k8s-tt/frontend.yaml
+          else
+            sed -i 's|image: .*turing-test-backend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-backend:${{ github.sha }}|g' k8s/backend/deployment.yaml
+            sed -i 's|image: .*turing-test-frontend.*|image: ghcr.io/${{ steps.repo_owner.outputs.owner }}/turing-test-frontend:${{ github.sha }}|g' k8s/frontend/deployment.yaml
+          fi
 
       - name: Commit and Push Updated Manifests
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml k8s-tt/backend.yaml k8s-tt/frontend.yaml
+          if [ "${{ github.ref_name }}" = "dev" ]; then
+            git add k8s-tt/backend.yaml k8s-tt/frontend.yaml
+          else
+            git add k8s/backend/deployment.yaml k8s/frontend/deployment.yaml
+          fi
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "chore(gitops): update image tags to ${{ github.sha }} [skip ci]"
-            git push origin main
+            git push origin ${{ github.ref_name }}
           fi
+

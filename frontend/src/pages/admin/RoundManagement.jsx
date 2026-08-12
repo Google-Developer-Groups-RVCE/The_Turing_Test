@@ -366,6 +366,7 @@ export default function RoundManagement() {
   };
 
   const activeRound = getActiveRound();
+  const activeQuestion = activeQuestionState; // alias used throughout JSX
 
   return (
     <div className="space-y-6">

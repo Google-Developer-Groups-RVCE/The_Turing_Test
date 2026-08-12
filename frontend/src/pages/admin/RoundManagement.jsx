@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   getRounds, createRound, updateRound, deleteRound,
   startRound, pauseRound, resumeRound, restartRound, endRound, clearRoundResponses,
-  extendRoundTime, resetEvent, endEvent, clearAllLiveData, getStage, reorderRounds
+  extendRoundTime, resetEvent, endEvent, clearAllLiveData, getStage, reorderRounds, injectPresetRound
 } from '../../api/roundApi';
 import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll, reorderQuestions } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
@@ -308,6 +308,17 @@ export default function RoundManagement() {
     });
   };
 
+  const handleInjectPresetRound = (roundNumber) => {
+    const label = roundNumber === 'all'
+      ? 'Inject All Preset Rounds (1, 2, 3)'
+      : `Add Preset Round ${roundNumber}`;
+
+    doAction(label, async () => {
+      const res = await injectPresetRound(roundNumber);
+      showSuccess(res.data?.message || `${label} completed successfully`);
+    });
+  };
+
   const handleClearAllData = () => {
     if (!window.confirm('Wipe all live responses and reset the leaderboard?')) return;
     doAction('Clear all live data', () => clearAllLiveData());
@@ -369,15 +380,49 @@ export default function RoundManagement() {
           <Layers size={24} className="text-primary-400" />
           <span>Stage Master Control & Round Manager</span>
         </h1>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={handleSeedSamples} className="btn-secondary flex items-center space-x-1.5 text-xs font-semibold">
-            <Sparkles size={14} className="text-yellow-400" />
-            <span>Seed 3 Sample Rounds</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Preset Rounds Injector Bar */}
+          <div className="flex items-center space-x-1 bg-dark-800 p-1 rounded-xl border border-dark-700">
+            <button
+              onClick={() => handleInjectPresetRound('all')}
+              disabled={!!actionLoading}
+              className="btn-secondary py-1.5 px-3 flex items-center space-x-1.5 text-xs font-semibold hover:bg-dark-700"
+              title="Add all preset rounds (Rounds 1, 2 & 3) without modifying existing rounds"
+            >
+              <Sparkles size={14} className="text-yellow-400" />
+              <span>+ Add All Presets</span>
+            </button>
+            <div className="h-4 w-px bg-dark-600 my-auto mx-0.5" />
+            <button
+              onClick={() => handleInjectPresetRound(1)}
+              disabled={!!actionLoading}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
+              title="Add Preset Round 1 (Live Conversations) individually"
+            >
+              + R1
+            </button>
+            <button
+              onClick={() => handleInjectPresetRound(2)}
+              disabled={!!actionLoading}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
+              title="Add Preset Round 2 (Image Challenge) individually"
+            >
+              + R2
+            </button>
+            <button
+              onClick={() => handleInjectPresetRound(3)}
+              disabled={!!actionLoading}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
+              title="Add Preset Round 3 (Turing Test Speedrun / Polls) individually"
+            >
+              + R3
+            </button>
+          </div>
+
           <button onClick={() => setModal('create')} className="btn-primary flex items-center space-x-2 text-sm">
             <Plus size={16} /><span>New Round</span>
           </button>
-          <button onClick={fetchRounds} className="p-2 rounded-lg border border-dark-600 text-slate-400 hover:text-white transition-colors">
+          <button onClick={fetchRounds} className="p-2 rounded-lg border border-dark-600 text-slate-400 hover:text-white transition-colors" title="Sync Rounds">
             <RefreshCw size={16} />
           </button>
         </div>

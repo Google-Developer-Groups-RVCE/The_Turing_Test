@@ -18,6 +18,15 @@ router.post('/end', roundController.endEvent);
 
 
 
+// POST /api/event/inject-preset — Inject preset round 1, 2, 3 or all individually without editing existing rounds
+router.post('/inject-preset', async (req, res, next) => {
+  try {
+    const { roundNumber } = req.body;
+    const result = await seedService.injectPresetRound(roundNumber, req.user?.username);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+});
+
 // DELETE /api/event/clear-data — Wipe all live responses and reset leaderboard
 router.delete('/clear-data', async (req, res, next) => {
   try {

@@ -17,5 +17,6 @@ export const extendRoundTime = (roundId, extraSeconds) => axiosClient.post(`/rou
 
 export const resetEvent = () => axiosClient.post('/event/reset');
 export const endEvent = () => axiosClient.post('/event/end');
+export const injectPresetRound = (roundNumber) => axiosClient.post('/event/inject-preset', { roundNumber });
 export const clearAllLiveData = () => axiosClient.delete('/event/clear-data');
 export const getStage = (roundId) => axiosClient.get(`/rounds/${roundId}/stage`);

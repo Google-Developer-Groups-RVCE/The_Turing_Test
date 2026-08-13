@@ -163,10 +163,9 @@ function createApp() {
   app.use('/api/leaderboard', require('./routes/leaderboardRoutes'));
   app.use('/api/settings', require('./routes/settingsRoutes'));
   app.use('/api/k8s', require('./routes/k8sRoutes'));
-  app.use('/api/admin', require('./routes/adminRoutes'));
+  app.use('/api/logs', require('./routes/logRoutes'));
   app.use('/api/ngrok', require('./routes/ngrokRoutes'));
   app.use('/api/r5', require('./routes/r5Routes'));
-  app.use('/api/logs', require('./routes/logRoutes'));
   app.use('/api', require('./routes/opsRoutes'));
   // --------------------------------------------------------------
 

@@ -295,6 +295,25 @@ class SeedService {
             id: 'poll6', order: '6', type: 'profile-guess', text: 'Final Submission', prompt: 'Decode the Hidden Profile', correctAnswer: 'Age: 47 | Profession: Lawyer | Hobby: Photography', points: '30', showEvaluation: true, durationSeconds: '240', targetAge: '47', targetProfession: 'Lawyer', targetHobby: 'Photography', options: []
           }
         ]
+      },
+      {
+        baseId: 'round_5_reverse',
+        baseName: 'Round 5 — Reverse Turing Test',
+        orderNum: '5',
+        questions: [
+          {
+            id: 'r5_q1',
+            text: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
+            prompt: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
+            type: 'reverse-turing',
+            options: [],
+            correctAnswer: '',
+            points: '0',
+            order: '1',
+            durationSeconds: '600',
+            showEvaluation: false
+          }
+        ]
       }
     ];
 
@@ -350,6 +369,19 @@ class SeedService {
 
       if (preset.questions.length > 0) {
         await questionStore.setActiveQuestionId(finalId, preset.questions[0].id);
+      }
+
+      // Special initialization for Round 5
+      if (preset.baseId === 'round_5_reverse') {
+        const r5Store = require('../redis/r5Store');
+        const currentGemini = await r5Store.getGeminiResponse();
+        if (!currentGemini) {
+          await r5Store.setGeminiResponse("The quiet hours when the world is asleep are where your future self is built step by step. Every page you read tonight is bringing you closer to the moment you walk out of that exam knowing you gave it everything.");
+        }
+        const currentPhase = await r5Store.getPhase();
+        if (!currentPhase) {
+          await r5Store.setPhase('prompt');
+        }
       }
 
       addedRounds.push(finalName);

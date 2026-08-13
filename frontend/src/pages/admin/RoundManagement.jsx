@@ -7,6 +7,7 @@ import {
 import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll, reorderQuestions } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { getSettings, updateSettings } from '../../api/settingsApi';
+import { openR5Voting, showR5Results, resetR5 } from '../../api/r5Api';
 import { useSocket } from '../../hooks/useSocket';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import { SOCKET_EVENTS } from '../../utils/constants';
@@ -420,6 +421,14 @@ export default function RoundManagement() {
             >
               + R3
             </button>
+            <button
+              onClick={() => handleInjectPresetRound(4)}
+              disabled={!!actionLoading}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
+              title="Add Preset Round 5 (Reverse Turing Test) individually"
+            >
+              + R5
+            </button>
           </div>
 
           <button onClick={() => setModal('create')} className="btn-primary flex items-center space-x-2 text-sm">
@@ -630,6 +639,38 @@ export default function RoundManagement() {
               <span>Advance to Next Round</span>
             </button>
           </div>
+
+          {/* Round 5 Master Controls */}
+          {activeRound && (String(activeRound.id).includes('round_5') || activeRound.name?.toLowerCase().includes('round 5')) && (
+            <div className="p-4 rounded-xl bg-violet-900/20 border border-violet-500/30 space-y-3 mt-4">
+              <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center space-x-2">
+                <Sparkles size={14} /><span>Round 5 (Reverse Turing Test) Controls</span>
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => doAction('Open Voting', openR5Voting)}
+                  disabled={!!actionLoading}
+                  className="flex-1 btn-primary bg-violet-600 hover:bg-violet-500 border-none py-2 text-sm"
+                >
+                  Open Voting
+                </button>
+                <button
+                  onClick={() => doAction('Show Results', showR5Results)}
+                  disabled={!!actionLoading}
+                  className="flex-1 btn-primary bg-purple-600 hover:bg-purple-500 border-none py-2 text-sm"
+                >
+                  Show Results
+                </button>
+                <button
+                  onClick={() => doAction('Reset R5', resetR5)}
+                  disabled={!!actionLoading}
+                  className="flex-1 py-2 px-3 rounded-lg border border-dark-600 bg-dark-800 hover:bg-dark-700 text-slate-300 text-sm font-bold transition-colors disabled:opacity-40"
+                >
+                  Reset R5
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Maintenance & Data Cleanup */}
           <div className="flex flex-wrap gap-2 pt-2 border-t border-dark-700">

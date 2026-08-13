@@ -12,6 +12,8 @@ import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock,
 import round1Data from '../../data/round1Data';
 import round2Data from '../../data/round2Data';
 import pollsData from '../../data/pollsData';
+import round5Data from '../../data/round5Data';
+import { submitR5Response, getMyR5Response, getR5Status, getR5Options, submitR5Vote, getMyR5Vote, getR5VotingStatus, getR5Results } from '../../api/r5Api';
 import ChallengeCard from '../../components/ChallengeCard';
 import PollCard from '../../components/PollCard';
 
@@ -34,6 +36,17 @@ export default function RoundPage() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [pollResult, setPollResult] = useState(null);
   const [evaluationData, setEvaluationData] = useState(null);
+
+  // Round 5 state
+  const [r5Phase, setR5Phase] = useState('prompt');
+  const [r5Response, setR5Response] = useState('');
+  const [r5Submitted, setR5Submitted] = useState(false);
+  const [r5Options, setR5Options] = useState([]);
+  const [r5SelectedVote, setR5SelectedVote] = useState(null);
+  const [r5Voted, setR5Voted] = useState(false);
+  const [r5Results, setR5Results] = useState(null);
+  const [r5Status, setR5Status] = useState(null);
+  const [r5Submitting, setR5Submitting] = useState(false);
 
   const currentRoundRef = React.useRef(currentRound);
   useEffect(() => {
@@ -112,6 +125,81 @@ export default function RoundPage() {
       navigate(`${basePath}/leaderboard`, { replace: true });
     }
   }, [activeStage, navigate]);
+
+  // Round 5 detection and socket listeners
+  const isRound5 = question?.type === 'reverse-turing';
+
+  useEffect(() => {
+    if (!isRound5) return;
+    const fetchR5State = async () => {
+      try {
+        const [statusRes, myRespRes, myVoteRes] = await Promise.allSettled([
+          getR5Status(), getMyR5Response(), getMyR5Vote()
+        ]);
+        if (statusRes.status === 'fulfilled') setR5Status(statusRes.value.data);
+        if (myRespRes.status === 'fulfilled' && myRespRes.value.data?.text) {
+          setR5Response(myRespRes.value.data.text);
+          setR5Submitted(true);
+        }
+        if (myVoteRes.status === 'fulfilled' && myVoteRes.value.data?.optionIndex !== undefined) {
+          setR5SelectedVote(myVoteRes.value.data.optionIndex);
+          setR5Voted(true);
+        }
+      } catch {}
+      try {
+        const statusRes = await getR5Status();
+        if (statusRes.data?.phase) setR5Phase(statusRes.data.phase);
+      } catch {}
+      try {
+        const optRes = await getR5Options();
+        if (optRes.data?.options) setR5Options(optRes.data.options);
+      } catch {}
+      try {
+        const resRes = await getR5Results();
+        if (resRes.data?.results) setR5Results(resRes.data.results);
+      } catch {}
+    };
+    fetchR5State();
+  }, [isRound5]);
+
+  useEffect(() => {
+    if (!socket || !isRound5) return;
+    const handlePhaseChanged = (data) => {
+      if (data?.phase) setR5Phase(data.phase);
+    };
+    const handleVotingOpened = async (data) => {
+      setR5Phase('voting');
+      if (data?.options) setR5Options(data.options);
+    };
+    const handleResults = (data) => {
+      setR5Phase('results');
+      if (data?.results) setR5Results(data.results);
+    };
+    const handleR5ResponseReceived = async () => {
+      try {
+        const statusRes = await getR5Status();
+        if (statusRes.data) setR5Status(statusRes.data);
+      } catch {}
+    };
+    const handleR5VoteReceived = async () => {
+      try {
+        const statusRes = await getR5VotingStatus();
+        if (statusRes.data) setR5Status(prev => ({ ...prev, ...statusRes.data }));
+      } catch {}
+    };
+    socket.on('r5:phase_changed', handlePhaseChanged);
+    socket.on('r5:voting_opened', handleVotingOpened);
+    socket.on('r5:results', handleResults);
+    socket.on('r5:response_received', handleR5ResponseReceived);
+    socket.on('r5:vote_received', handleR5VoteReceived);
+    return () => {
+      socket.off('r5:phase_changed', handlePhaseChanged);
+      socket.off('r5:voting_opened', handleVotingOpened);
+      socket.off('r5:results', handleResults);
+      socket.off('r5:response_received', handleR5ResponseReceived);
+      socket.off('r5:vote_received', handleR5VoteReceived);
+    };
+  }, [socket, isRound5]);
 
   // Socket: round changed & question changed — update question live
   useEffect(() => {
@@ -246,6 +334,34 @@ export default function RoundPage() {
     }
   };
 
+  const handleR5Submit = async () => {
+    if (r5Submitted || r5Submitting || !r5Response.trim()) return;
+    setR5Submitting(true);
+    try {
+      await submitR5Response(r5Response.trim());
+      setR5Submitted(true);
+      const statusRes = await getR5Status();
+      if (statusRes.data) setR5Status(statusRes.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit response');
+    } finally {
+      setR5Submitting(false);
+    }
+  };
+
+  const handleR5Vote = async () => {
+    if (r5Voted || r5Submitting || r5SelectedVote === null) return;
+    setR5Submitting(true);
+    try {
+      await submitR5Vote(r5SelectedVote);
+      setR5Voted(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit vote');
+    } finally {
+      setR5Submitting(false);
+    }
+  };
+
   const formatTime = (secs) => {
     if (secs === null) return null;
     const m = Math.floor(secs / 60);
@@ -305,6 +421,147 @@ export default function RoundPage() {
         </button>
       </div>
     );
+  }
+
+  if (isRound5) {
+    if (r5Phase === 'prompt') {
+      return (
+        <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full animate-fade-in">
+          <div className="w-full bg-gradient-to-br from-violet-900/30 via-dark-900/90 to-purple-950/30 border-2 border-violet-500/40 rounded-3xl p-8 shadow-[0_0_50px_rgba(139,92,246,0.25)] backdrop-blur-md">
+            <div className="inline-flex items-center space-x-2 bg-violet-500/20 border border-violet-400/30 px-4 py-1.5 rounded-full mb-6">
+              <span className="text-violet-300 text-xs font-extrabold uppercase tracking-widest">★ Round 5</span>
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-2">{round5Data[0].title}</h2>
+            <h3 className="text-xl text-violet-300 font-medium italic mb-6">{round5Data[0].subtitle}</h3>
+            <p className="text-slate-300 leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5 mb-8">
+              {round5Data[0].description}
+            </p>
+            <div className="p-6 rounded-2xl bg-violet-950/40 border border-violet-500/30 text-left">
+              <span className="text-xs font-extrabold text-violet-400 block uppercase tracking-wider mb-2">Prompt:</span>
+              <p className="text-white text-lg font-medium">"{round5Data[0].prompt}"</p>
+            </div>
+          </div>
+          
+          <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md">
+            <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
+              {r5Submitted ? 'Your Submitted Response' : 'Write your response'}
+            </h3>
+            <textarea
+              disabled={r5Submitted || r5Submitting}
+              className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-all min-h-[120px]"
+              placeholder="Sound like an AI..."
+              value={r5Response}
+              onChange={(e) => setR5Response(e.target.value)}
+              maxLength={500}
+            />
+            {!r5Submitted ? (
+              <button
+                onClick={handleR5Submit}
+                disabled={r5Submitting || !r5Response.trim()}
+                className="mt-4 w-full py-3 px-6 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold tracking-wide transition-all disabled:opacity-50"
+              >
+                {r5Submitting ? 'Submitting...' : 'Submit Response'}
+              </button>
+            ) : (
+              <div className="mt-4 p-4 bg-violet-900/30 border border-violet-500/30 rounded-xl text-center flex items-center justify-center space-x-2">
+                <CheckCircle size={18} className="text-violet-400" />
+                <span className="text-violet-200 font-medium">Submitted! Waiting for others... ({r5Status?.totalSubmitted || 1}/{r5Status?.totalExpected || '?'})</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (r5Phase === 'voting') {
+      return (
+        <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full animate-fade-in">
+          <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-violet-400">Round 5 Voting</span>
+              <h2 className="text-lg font-bold text-white mt-1">Which one is the real Gemini?</h2>
+            </div>
+            {r5Voted && <div className="px-3 py-1 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-300 text-xs font-bold">Vote Locked</div>}
+          </div>
+          
+          <div className="grid grid-cols-1 gap-4">
+            {r5Options.map((opt) => {
+              const isSelected = r5SelectedVote === opt.index;
+              return (
+                <button
+                  key={opt.index}
+                  disabled={r5Voted || r5Submitting}
+                  onClick={() => setR5SelectedVote(opt.index)}
+                  className={`relative text-left p-5 rounded-2xl border-2 transition-all duration-200 shadow-md ${isSelected ? 'border-violet-500 bg-violet-900/30 shadow-[0_0_20px_rgba(139,92,246,0.3)]' : 'border-white/10 bg-black/40 hover:border-violet-500/50 hover:bg-black/60'} ${r5Voted ? 'cursor-not-allowed opacity-90' : ''}`}
+                >
+                  <p className={`text-lg leading-relaxed ${isSelected ? 'text-white' : 'text-slate-300'}`}>"{opt.text}"</p>
+                  {isSelected && r5Voted && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <Lock size={18} className="text-violet-400" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {!r5Voted ? (
+            <button
+              onClick={handleR5Vote}
+              disabled={r5Submitting || r5SelectedVote === null}
+              className="w-full py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold tracking-wide transition-all disabled:opacity-50 shadow-lg text-lg"
+            >
+              {r5Submitting ? 'Casting Vote...' : 'Lock In Vote'}
+            </button>
+          ) : (
+            <div className="w-full text-center p-4 text-violet-300 font-medium">
+              Waiting for voting to conclude...
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (r5Phase === 'results') {
+      const geminiOption = r5Results?.find(r => r.author === '__gemini__');
+      return (
+        <div className="flex-1 flex flex-col py-8 px-4 w-full max-w-4xl mx-auto animate-fade-in">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-400 mb-2 tracking-wide">
+              Results Revealed
+            </h2>
+            <p className="text-slate-400 text-lg">Let's see who fooled who!</p>
+          </div>
+
+          <div className="w-full p-6 rounded-2xl bg-violet-900/20 border border-violet-500/40 mb-10 shadow-[0_0_40px_rgba(139,92,246,0.15)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-purple-500"></div>
+            <h3 className="text-xs font-bold text-violet-300 uppercase tracking-widest mb-4">The Real Gemini Response</h3>
+            <p className="text-2xl text-white font-medium italic leading-relaxed">"{geminiOption?.text}"</p>
+            <div className="mt-4 flex items-center space-x-2">
+              <span className="text-violet-200 font-bold bg-violet-500/20 px-3 py-1 rounded-lg">
+                Fooled {geminiOption?.percent || 0}% of players
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Participant Responses</h3>
+            {r5Results?.filter(r => r.author !== '__gemini__').sort((a,b) => b.votes - a.votes).map(res => (
+              <div key={res.index} className="flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-white/20 transition-colors">
+                <div className="flex-1 mb-4 md:mb-0 md:pr-6">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Author: <span className="text-sky-400">{res.author}</span></span>
+                  <p className="text-slate-200 text-lg leading-relaxed">"{res.text}"</p>
+                </div>
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center border-t border-white/5 md:border-t-0 md:border-l md:pl-6 pt-4 md:pt-0 shrink-0">
+                  <div className="text-3xl font-extrabold text-white">{res.percent}%</div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">{res.votes} {res.votes === 1 ? 'Vote' : 'Votes'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
   }
 
   if (pollResult) {

@@ -539,7 +539,7 @@ export default function RoundPage() {
             <p className="text-2xl text-white font-medium italic leading-relaxed">"{geminiOption?.text}"</p>
             <div className="mt-4 flex items-center space-x-2">
               <span className="text-violet-200 font-bold bg-violet-500/20 px-3 py-1 rounded-lg">
-                Fooled {geminiOption?.percent || 0}% of players
+                Identified correctly by {geminiOption?.percent || 0}% of players ({geminiOption?.votes || 0} Votes)
               </span>
             </div>
           </div>

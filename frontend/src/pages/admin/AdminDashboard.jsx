@@ -7,7 +7,7 @@ import { getLeaderboard } from '../../api/leaderboardApi';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import {
   Activity, Server, Wifi, Database, Users, Trophy,
-  CheckCircle, XCircle, Clock, Cpu, HardDrive, BarChart2, Globe, Play, Square, ExternalLink
+  CheckCircle, XCircle, Clock, Cpu, HardDrive, BarChart2, Globe, Play, Square, ExternalLink, RefreshCw
 } from 'lucide-react';
 import { getNgrokStatus, startNgrok, stopNgrok } from '../../api/ngrokApi';
 

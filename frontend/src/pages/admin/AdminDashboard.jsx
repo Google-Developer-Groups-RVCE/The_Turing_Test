@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useSocket } from '../../hooks/useSocket';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { getHealth } from '../../api/settingsApi';
-import { getRounds, startRound } from '../../api/roundApi';
+import { getRounds, seedRound2Data, startRound } from '../../api/roundApi';
 import { getLeaderboard } from '../../api/leaderboardApi';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import {
@@ -61,6 +61,8 @@ export default function AdminDashboard() {
 
   const [isStartingRound, setIsStartingRound] = useState(false);
   const [roundStartError, setRoundStartError] = useState(null);
+  const [isSeedingRound2, setIsSeedingRound2] = useState(false);
+  const [round2SeedMessage, setRound2SeedMessage] = useState(null);
 
   const handleQuickStartRound = async (roundId) => {
     setIsStartingRound(true);
@@ -72,6 +74,21 @@ export default function AdminDashboard() {
       setRoundStartError(err.response?.data?.message || err.message);
     } finally {
       setIsStartingRound(false);
+    }
+  };
+
+  const handleSeedRound2 = async () => {
+    setIsSeedingRound2(true);
+    setRound2SeedMessage(null);
+    try {
+      const round2 = rounds.find((round) => round.id === 'round_2_coding');
+      const response = await seedRound2Data(round2?.id);
+      setRound2SeedMessage(response.data?.message || 'Round 2 questions seeded.');
+      await fetchData();
+    } catch (err) {
+      setRound2SeedMessage(err.response?.data?.message || err.message || 'Could not seed Round 2.');
+    } finally {
+      setIsSeedingRound2(false);
     }
   };
 
@@ -373,6 +390,26 @@ export default function AdminDashboard() {
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="card mt-4 border-dark-700">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white">Round 2 Question Seed</p>
+              <p className="text-xs text-slate-500 mt-1">Load the approved image challenge questions with direct scoring.</p>
+            </div>
+            <button
+              onClick={handleSeedRound2}
+              disabled={isSeedingRound2}
+              className="bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white py-2 px-4 rounded font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
+            >
+              <RefreshCw size={16} className={isSeedingRound2 ? 'animate-spin' : ''} />
+              <span>{isSeedingRound2 ? 'Seeding...' : 'Seed Round 2'}</span>
+            </button>
+          </div>
+          {round2SeedMessage && (
+            <p className="text-xs text-slate-400 mt-3">{round2SeedMessage}</p>
+          )}
         </div>
       </section>
 

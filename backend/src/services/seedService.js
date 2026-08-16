@@ -31,16 +31,8 @@ class SeedService {
     for (const q of r1Questions) if (!existingR1.includes(q.id)) await questionStore.addQuestion('round_1_aptitude', q);
     await questionStore.setActiveQuestionId('round_1_aptitude', 'q1_1');
 
-    // 3. Questions for Round 2 (Algorithms, AI vs Real & Image Challenges)
-    const r2Questions = [
-      { id: 'q2_1', text: 'Round 2 — Server Room: Which image is AI-generated?', type: 'mcq', options: ['Image 1 (AI)', 'Image 2 (Real)'], correctAnswer: 'Image 1 (AI)', points: '10', order: '1', durationSeconds: '60', imageUrl: '/reference/r2/image1.webp' },
-      { id: 'q2_2', text: 'Round 2 — Wildlife Photography: Which part of the image was AI-edited?', type: 'mcq', options: ['The head / face', 'The stripes on the abdomen', 'The legs', 'The background'], correctAnswer: 'The background', points: '10', order: '2', durationSeconds: '60', imageUrl: '/reference/r2/image3.webp' },
-      { id: 'q2_3', text: 'Round 2 — Street Photography: Write a prompt that recreates this image as closely as possible.', type: 'text', options: [], correctAnswer: '', points: '10', order: '3', durationSeconds: '60', imageUrl: '/reference/r2/image4.webp' },
-      { id: 'q2_4', text: 'Round 2 — Bird Photography: Is this image real or AI-generated?', type: 'mcq', options: ['Real', 'AI-generated'], correctAnswer: 'AI-generated', points: '10', order: '4', durationSeconds: '60', imageUrl: '/reference/r2/image5.webp' },
-    ];
-    const existingR2 = await questionStore.getQuestionsOrder('round_2_coding');
-    for (const q of r2Questions) if (!existingR2.includes(q.id)) await questionStore.addQuestion('round_2_coding', q);
-    await questionStore.setActiveQuestionId('round_2_coding', 'q2_1');
+    // 3. Round 2: fixed-answer image challenges with direct point allocation.
+    await this.seedRound2Questions('round_2_coding');
 
     // 4. Questions for Round 3 (5 polls + 1 profile-guess)
     await this.seedRound3Questions('round_3_decode');
@@ -107,6 +99,27 @@ class SeedService {
       if (!existing.includes(id)) await questionStore.addQuestion(roundId, { id, title, text, type: 'hallucination', aiResponse, correctAnswer, explanation, sourceImageUrl, options: [], points: 0, durationSeconds: 300, order: order + 1, showEvaluation: true });
     }
     if (!await questionStore.getActiveQuestionId(roundId)) await questionStore.setActiveQuestionId(roundId, 'h1');
+  }
+
+  /** Replace only Round 2's questions; all other rounds stay intact. */
+  async seedRound2Questions(roundId, resetResponses = false, adminUsername = 'system') {
+    const questions = [
+      { id: 'q2_1', order: '1', type: 'mcq', points: '10', durationSeconds: '60', text: 'Identify the option that correctly fills in the missing parts of the prompt.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/cyclist-night-street.png' },
+      { id: 'q2_2', order: '2', type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/tiger-edited.png' },
+      { id: 'q2_3', order: '3', type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', imageUrl: '/reference/r2/dog-reflection.png' },
+      { id: 'q2_4', order: '4', type: 'mcq', points: '10', durationSeconds: '60', text: 'Choose the prompt that is most appropriate for this living-room image.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'C', imageUrl: '/reference/r2/living-room.png' }
+    ];
+    if (resetResponses) {
+      await responseStore.clearRoundResponses(roundId);
+      await leaderboardService.recalculateLeaderboard(adminUsername);
+    }
+    const existing = await questionStore.getQuestionsOrder(roundId);
+    for (const question of questions) {
+      if (existing.includes(question.id)) await questionStore.updateQuestion(roundId, question.id, question);
+      else await questionStore.addQuestion(roundId, question);
+    }
+    await questionStore.setActiveQuestionId(roundId, 'q2_1');
+    return { message: `Round 2 questions seeded for ${roundId}` };
   }
 
   /**

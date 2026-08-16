@@ -53,8 +53,8 @@ export default function ChallengeCard({ challenge, selectedOption, textValue, on
                 aria-pressed={isSelected}
               >
                 <span className={`font-['Cutepunch'] text-lg mr-2 transition-colors ${isSelected ? "text-teal-200" : "text-sky-300"}`}>{option.key}.</span>
-                <span className="text-sm text-slate-400 mb-1 italic">{option.label}</span>
-                <div className="text-base text-slate-200 leading-relaxed">{option.answer}</div>
+                {option.answer && <span className="text-sm text-slate-400 mb-1 italic">{option.label}</span>}
+                <div className="text-base text-slate-200 leading-relaxed">{option.answer || option.label}</div>
               </button>
             );
           })}

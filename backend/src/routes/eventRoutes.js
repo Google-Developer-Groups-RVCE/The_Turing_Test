@@ -24,6 +24,13 @@ router.post('/seed-samples', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.post('/seed-round2/:roundId?', async (req, res, next) => {
+  try {
+    const result = await seedService.seedRound2Questions(req.params.roundId || 'round_2_coding', true, req.user.username);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+});
+
 // DELETE /api/event/clear-data — Wipe all live responses and reset leaderboard
 router.delete('/clear-data', async (req, res, next) => {
   try {

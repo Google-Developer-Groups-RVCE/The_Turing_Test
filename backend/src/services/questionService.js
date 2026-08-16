@@ -156,7 +156,11 @@ class QuestionService {
       correctAnswer: questionData.correctAnswer,
       points: questionData.points || 10,
       durationSeconds: questionData.durationSeconds || 300,
-      order: questionData.order || Date.now().toString()
+      order: questionData.order || Date.now().toString(),
+      title: questionData.title,
+      aiResponse: questionData.aiResponse,
+      explanation: questionData.explanation,
+      sourceImageUrl: questionData.sourceImageUrl
     };
     if (questionData.imageUrl) question.imageUrl = questionData.imageUrl;
     if (questionData.imageProps) question.imageProps = questionData.imageProps;

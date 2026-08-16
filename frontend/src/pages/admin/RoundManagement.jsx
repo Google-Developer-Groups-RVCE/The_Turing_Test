@@ -278,8 +278,8 @@ export default function RoundManagement() {
   };
 
   const handleSeedSamples = () => {
-    if (!window.confirm('Create 3 sample rounds with 3 sample questions each?')) return;
-    doAction('Seed sample rounds', () => seedSampleData());
+    if (!window.confirm('Seed all five event rounds and their configured questions?')) return;
+    doAction('Seed all event rounds', () => seedSampleData());
   };
 
   const handleClearAllData = () => {
@@ -615,7 +615,7 @@ export default function RoundManagement() {
             <Layers size={40} className="mx-auto mb-3 opacity-30" />
             <p className="mb-3">No rounds created yet.</p>
             <button onClick={handleSeedSamples} className="btn-primary inline-flex items-center space-x-2 text-sm">
-              <Sparkles size={16} /><span>Seed 3 Sample Rounds & Questions</span>
+              <Sparkles size={16} /><span>Seed All 5 Event Rounds</span>
             </button>
           </div>
         )}

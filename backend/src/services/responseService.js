@@ -37,7 +37,7 @@ class ResponseService {
       const q = await questionStore.getQuestion(roundId, activeId);
       if (q) {
         if (q.type === 'guess-author') {
-          const displayedId = q.displayedOptionId || 'A';
+          const displayedId = q.displayedOptionId || 'human-opt';
           const displayedOption = (q.options || []).find(o => o.id === displayedId);
           if (displayedOption && displayedOption.author) {
              isCorrect = displayedOption.author.trim().toLowerCase() === answer.trim().toLowerCase();

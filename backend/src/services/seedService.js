@@ -20,10 +20,28 @@ class SeedService {
 
     // 1. Create 3 Rounds
     const rounds = [
-      { id: 'round_1_aptitude',  name: 'Round 1 — Live Conversations',         status: 'pending', durationSeconds: '300', order: '1' },
-      { id: 'round_2_coding',    name: 'Round 2 — Image Challenge',       status: 'pending', durationSeconds: '300', order: '2' },
-      { id: 'round_3_decode',    name: 'Round 3 — Turing Test Speedrun',        status: 'pending', durationSeconds: '300', order: '3' },
-    ];
+  {
+    id: 'round_1_aptitude',
+    name: 'Round 1 — Live Conversations',
+    status: 'pending',
+    durationSeconds: '300',
+    order: '1'
+  },
+  {
+    id: 'round_2_coding',
+    name: 'Round 2 — Image Challenge',
+    status: 'pending',
+    durationSeconds: '300',
+    order: '2'
+  },
+  {
+    id: 'round_3_decode',
+    name: 'Round 3 — Turing Test Speedrun',
+    status: 'pending',
+    durationSeconds: '300',
+    order: '3'
+  },
+];
     for (const r of rounds) await roundStore.createRound(r);
 
     // 2. Questions for Round 1

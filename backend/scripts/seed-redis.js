@@ -103,10 +103,28 @@ async function runSeed() {
     // 2. Seed Rounds
     console.log('\n🎯 Seeding Rounds...');
     const rounds = [
-      { id: 'round_1_aptitude', name: 'Round 1 – Aptitude & Logic', status: 'pending', durationSeconds: '300', order: '1' },
-      { id: 'round_2_coding', name: 'Round 2 – Algorithms & Coding', status: 'pending', durationSeconds: '300', order: '2' },
-      { id: 'round_3_decode', name: 'Round 3 – Decode the Context', status: 'pending', durationSeconds: '300', order: '3' },
-    ];
+  {
+    id: 'round_1_aptitude',
+    name: 'Round 1 — Live Conversations',
+    status: 'pending',
+    durationSeconds: '300',
+    order: '1'
+  },
+  {
+    id: 'round_2_coding',
+    name: 'Round 2 — Image Challenge',
+    status: 'pending',
+    durationSeconds: '300',
+    order: '2'
+  },
+  {
+    id: 'round_3_decode',
+    name: 'Round 3 — Turing Test Speedrun',
+    status: 'pending',
+    durationSeconds: '300',
+    order: '3'
+  },
+];
 
     await redis.del('rounds:order');
     for (const r of rounds) {

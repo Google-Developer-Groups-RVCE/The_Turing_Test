@@ -8,4 +8,4 @@ data:
   PORT: "3000"
   REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
-  CORS_ORIGIN: "http://localhost,http://127.0.0.1,https://turing-test.local,http://turing-test.local,https://nondefensible-helminthological-tennie.ngrok-free.dev"
+  CORS_ORIGIN: "http://localhost,http://127.0.0.1,http://tt.local,https://tt.local,https://turing-test.local,http://turing-test.local,https://nondefensible-helminthological-tennie.ngrok-free.dev"

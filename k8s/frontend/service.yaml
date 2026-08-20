@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frontend-service
-  namespace: turing-test
+  namespace: tt
 spec:
   type: ClusterIP
   ports:

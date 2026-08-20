@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: turing-test
+  name: tt
   namespace: argocd
 spec:
   project: default
@@ -13,12 +13,12 @@ spec:
       recurse: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: turing-test
+    namespace: tt
   ignoreDifferences:
     - group: apps
       kind: Deployment
       name: backend
-      namespace: turing-test
+      namespace: tt
       jsonPointers:
         - /spec/replicas
   syncPolicy:

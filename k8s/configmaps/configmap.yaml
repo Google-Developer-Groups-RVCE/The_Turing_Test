@@ -2,10 +2,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: turing-config
-  namespace: turing-test
+  namespace: tt
 data:
   NODE_ENV: "production"
   PORT: "3000"
   REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
-  CORS_ORIGIN: "http://localhost,http://127.0.0.1,http://tt.local,https://tt.local,https://turing-test.local,http://turing-test.local,https://nondefensible-helminthological-tennie.ngrok-free.dev"
+  CORS_ORIGIN: "http://localhost,http://127.0.0.1,http://tt.local,https://tt.local,https://nondefensible-helminthological-tennie.ngrok-free.dev"

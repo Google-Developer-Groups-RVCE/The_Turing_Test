@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ngrok-tunnel
-  namespace: turing-test
+  namespace: tt
   labels:
     app: ngrok-tunnel
 spec:

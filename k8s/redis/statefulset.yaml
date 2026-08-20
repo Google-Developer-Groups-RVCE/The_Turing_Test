@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
-  namespace: turing-test
+  namespace: tt
 spec:
   serviceName: "redis-service"
   replicas: 1

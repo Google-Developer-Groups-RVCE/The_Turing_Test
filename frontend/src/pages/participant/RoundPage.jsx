@@ -531,7 +531,7 @@ export default function RoundPage() {
                       }`}>
                         {idx + 1}
                       </div>
-                      <p className="text-slate-200 text-sm md:text-base leading-relaxed flex-1">"{opt.text}"</p>
+                      <p className="text-slate-200 text-sm md:text-base leading-relaxed flex-1">{opt.text}</p>
                     </div>
                   </button>
                 ))}
@@ -598,7 +598,7 @@ export default function RoundPage() {
                       <span className="text-xs text-slate-500 ml-1">({result.voteCount} vote{result.voteCount !== 1 ? 's' : ''})</span>
                     </div>
                   </div>
-                  <p className="text-slate-300 text-sm italic leading-relaxed mb-3">"{result.text}"</p>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-3">{result.text}</p>
                   <div className="w-full h-2 rounded-full bg-dark-800 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-1000 ${result.isGemini ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-violet-500 to-purple-400'}`}

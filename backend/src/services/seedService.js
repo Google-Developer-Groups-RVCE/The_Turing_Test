@@ -266,7 +266,7 @@ class SeedService {
         orderNum: '4',
         questions: [
           {
-            id: 'r4-q1', order: '1', type: 'mcq', points: '10', durationSeconds: '120',
+            id: 'r4-q1', order: '1', type: 'mcq', points: '15', durationSeconds: '120',
             text: 'Who was the first person to walk on Mars?',
             prompt: 'Who was the first person to walk on Mars?',
             aiResponse: "Neil Armstrong became the first person to walk on Mars during NASA's 1985 Mars expedition.",
@@ -280,7 +280,7 @@ class SeedService {
             ]
           },
           {
-            id: 'r4-q2', order: '2', type: 'mcq', points: '10', durationSeconds: '120',
+            id: 'r4-q2', order: '2', type: 'mcq', points: '15', durationSeconds: '120',
             text: 'Does drinking coffee improve IQ?',
             prompt: 'Does drinking coffee improve IQ?',
             aiResponse: 'A 2021 MIT study proved that coffee permanently increases IQ by 15 points.',
@@ -295,7 +295,7 @@ class SeedService {
             ]
           },
           {
-            id: 'r4-q3', order: '3', type: 'mcq', points: '10', durationSeconds: '120',
+            id: 'r4-q3', order: '3', type: 'mcq', points: '15', durationSeconds: '120',
             text: 'Given answer: 40 m above the building. Find the error in the soln.',
             prompt: 'Given answer: 40 m above the building. Find the error in the soln.',
             imageUrl: '/reference/r4/wood-physics-ai-response.png',
@@ -310,7 +310,7 @@ class SeedService {
             ]
           },
           {
-            id: 'r4-q4', order: '4', type: 'mcq', points: '10', durationSeconds: '120',
+            id: 'r4-q4', order: '4', type: 'mcq', points: '15', durationSeconds: '120',
             text: 'Which statement is the hidden hallucination in this response about C?',
             prompt: 'Which statement is the hidden hallucination in this response about C?',
             aiResponse: 'C is a procedural programming language developed by Dennis Ritchie at Bell Labs. It influenced many later languages such as C++, Java, and Python. The language was originally designed to create the Windows operating system.',
@@ -325,22 +325,7 @@ class SeedService {
             ]
           },
           {
-            id: 'r4-q5', order: '5', type: 'mcq', points: '10', durationSeconds: '120',
-            text: "Which statement is the hidden hallucination in this response about Moore's Law?",
-            prompt: "Which statement is the hidden hallucination in this response about Moore's Law?",
-            aiResponse: "Moore's Law states that computer performance doubles every two years. This law was proposed by Gordon Moore in 1965 and remains a physical law of nature that all processors must obey.",
-            correctAnswer: 'The claim that all processors must obey Moore\'s Law is the hidden hallucination',
-            explanation: "Moore's Law is an observation or trend about the historical growth of transistor density and related computing capability. It is not a fundamental physical law, and processors are not required to obey it. The response turns an empirical trend into a law of nature.",
-            options: [
-              "Gordon Moore is associated with the observation described by Moore's Law",
-              "Moore's Law is a historical observation or trend rather than a physical law of nature",
-              "The claim that all processors must obey Moore's Law is the hidden hallucination",
-              "Moore's Law is a prediction about technological progress, not a rule enforced by physics",
-              "It is incorrect to describe Moore's Law as something processors are physically required to obey"
-            ]
-          },
-          {
-            id: 'r4-q6', order: '6', type: 'mcq', points: '10', durationSeconds: '120',
+            id: 'r4-q5', order: '5', type: 'mcq', points: '15', durationSeconds: '120',
             text: 'Which part of this Einstein response is incorrect?',
             prompt: 'Which part of this Einstein response is incorrect?',
             aiResponse: 'Albert Einstein won the Nobel Prize in Physics in 1921 for his Theory of Relativity, which revolutionized modern physics.',
@@ -355,22 +340,7 @@ class SeedService {
             ]
           },
           {
-            id: 'r4-q7', order: '7', type: 'mcq', points: '10', durationSeconds: '120',
-            text: 'How should this password advice be evaluated?',
-            prompt: 'How should this password advice be evaluated?',
-            aiResponse: "Use your birthday, pet's name, favorite team, or another personal detail so you never forget your password.",
-            correctAnswer: 'It is unsafe because predictable personal details can be guessed or discovered',
-            explanation: 'Personal details are often discoverable or guessable. Recommending them as passwords compromises security because attackers can use publicly available information or social engineering to guess them.',
-            options: [
-              "It is safe because memorable passwords are always stronger than random ones",
-              "It becomes secure if a birth year is added to the personal detail",
-              "It is unsafe because predictable personal details can be guessed or discovered",
-              "It is safe as long as the password contains at least eight characters",
-              "It is recommended because attackers generally cannot know a person's favorite things"
-            ]
-          },
-          {
-            id: 'r4-q8', order: '8', type: 'mcq', points: '10', durationSeconds: '120',
+            id: 'r4-q6', order: '6', type: 'mcq', points: '15', durationSeconds: '120',
             text: 'What is wrong with this explanation of the Taj Mahal?',
             prompt: 'What is wrong with this explanation of the Taj Mahal?',
             aiResponse: 'The Taj Mahal is located in Agra and was commissioned by Shah Jahan. Construction began in 1632 and was completed in 1653. It was built to celebrate the annexation of Bijapur and Golconda during his Deccan campaigns.',
@@ -382,51 +352,6 @@ class SeedService {
               "Construction could not have begun in the seventeenth century",
               "The monument was built to celebrate the annexation of Bijapur and Golconda",
               "The Taj Mahal is a mausoleum associated with Mumtaz Mahal rather than a Deccan-campaign victory monument"
-            ]
-          },
-          {
-            id: 'r4-q9', order: '9', type: 'mcq', points: '10', durationSeconds: '120',
-            text: 'Which statement contains the hidden mathematical error?',
-            prompt: 'Which statement contains the hidden mathematical error?',
-            aiResponse: 'Binary numbers use only the digits 0 and 1. Computers internally represent data using binary. Therefore, every decimal number can be represented exactly in binary form.',
-            correctAnswer: 'Every decimal number can be represented exactly with a finite binary expansion',
-            explanation: 'The first two statements are broadly correct. The error is the claim that every decimal number has a finite exact binary representation. Some fractions, including 0.1, require a repeating binary expansion.',
-            options: [
-              "Binary numbers use only the digits 0 and 1",
-              "Computers can represent data using binary",
-              "Every decimal number can be represented exactly with a finite binary expansion",
-              "A decimal fraction can never have a repeating binary representation",
-              "The hidden error is that decimal and binary numbers follow unrelated arithmetic rules"
-            ]
-          },
-          {
-            id: 'r4-q10', order: '10', type: 'mcq', points: '10', durationSeconds: '120',
-            text: 'Which part of this response should make you suspicious?',
-            prompt: 'Which part of this response should make you suspicious?',
-            aiResponse: 'ChatGPT was released by OpenAI in 2022 and quickly became one of the most widely used AI systems in history. It is trained on vast amounts of text and can answer questions across many domains. Because of its advanced reasoning abilities, its factual statements are generally reliable and should be trusted unless there is strong evidence to the contrary.',
-            correctAnswer: 'The final sentence encourages blind trust and overstates reliability',
-            explanation: 'The first two sentences are broadly descriptive. The final sentence is the hidden problem: AI outputs can be wrong and should be verified, especially in high-stakes situations. Advanced reasoning does not guarantee factual accuracy.',
-            options: [
-              "The statement that ChatGPT was released in 2022 is the hidden hallucination",
-              "The statement that AI can answer questions across many domains is impossible",
-              "The final sentence encourages blind trust and overstates reliability",
-              "The entire response is fabricated because AI cannot be trained on text",
-              "AI systems should never be used for factual questions under any circumstances"
-            ]
-          },
-          {
-            id: 'r4-q11', order: '11', type: 'mcq', points: '10', durationSeconds: '120',
-            text: 'Should this research claim be accepted as stated?',
-            prompt: 'Should this research claim be accepted as stated?',
-            aiResponse: 'According to a Stanford University study published in 2023, students who use AI tools for more than two hours daily score 35% higher in engineering courses. The study proves that AI usage directly causes better academic performance.',
-            correctAnswer: 'No; the citation lacks verifiable details and correlation does not establish causation',
-            explanation: "The citation may be fabricated or misrepresented because no authors, paper title, journal, sample, or link is provided. Even a real correlation would not prove causation. The word 'proves' is a red flag.",
-            options: [
-              "Yes, because a Stanford attribution makes the claim automatically reliable",
-              "Yes, because a 35% difference is enough to establish causation",
-              "No; the citation lacks verifiable details and correlation does not establish causation",
-              "No; AI can never improve academic performance under any circumstances",
-              "Yes, because two hours per day is a scientifically established threshold"
             ]
           }
         ]

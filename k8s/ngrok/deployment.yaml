@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: ngrok
-        image: ghcr.io/snk189/turing-test-backend:0dc93bb283a3718748d3ace7b12023cbc7023a64
+        image: ghcr.io/snk189/tt-sip-backend:21ae956ecf39e47f40bf02cb7b9b915e570afb4e
         imagePullPolicy: IfNotPresent
-        command: ["ngrok", "http", "http://frontend-service:80", "--authtoken=36tFxCc1jtMj815lmQkNtd3Q0Ak_32HSVw9KNxX3bLt5xmG7Z", "--url=nondefensible-helminthological-tennie.ngrok-free.dev", "--log=stdout"]
+        command: ["ngrok", "http", "http://frontend-service:80", "--authtoken=3CyCiiKsopANXHlXg9l1tmF3OPc_7yw5e9zdseQE4KA69tHMb", "--log=stdout"]

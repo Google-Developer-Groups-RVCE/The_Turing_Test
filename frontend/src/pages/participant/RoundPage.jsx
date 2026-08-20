@@ -299,12 +299,17 @@ export default function RoundPage() {
     };
   }, [socket, isRound5]);
 
-  // Countdown timer
+  // Countdown timer per question / phase
   useEffect(() => {
-    if (!currentRound?.durationSeconds || !currentRound?.startedAt) return;
-    const startedAtMs = Number(currentRound.startedAt) || new Date(currentRound.startedAt).getTime();
+    // Determine the active duration: prioritize question duration, then fallback to round duration
+    const qDuration = parseInt(question?.durationSeconds, 10);
+    const rDuration = parseInt(currentRound?.durationSeconds, 10);
+    const duration = (!isNaN(qDuration) && qDuration > 0) ? qDuration : ((!isNaN(rDuration) && rDuration > 0) ? rDuration : 120);
+
+    const startedAtMs = Number(question?.startedAt) || Number(currentRound?.startedAt) || Date.now();
     if (!startedAtMs || isNaN(startedAtMs)) return;
-    const endTime = startedAtMs + currentRound.durationSeconds * 1000;
+
+    const endTime = startedAtMs + duration * 1000;
     const tick = () => {
       const remaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
       setTimeLeft(remaining);
@@ -312,7 +317,7 @@ export default function RoundPage() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [currentRound]);
+  }, [currentRound, question]);
 
   const handleSubmit = async () => {
     if (myResponse) return; // Prevent duplicate submissions

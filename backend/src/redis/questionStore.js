@@ -21,7 +21,8 @@ const questionStore = {
       targetAge: question.targetAge,
       targetProfession: question.targetProfession,
       targetHobby: question.targetHobby,
-      durationSeconds: question.durationSeconds ? String(question.durationSeconds) : null
+      durationSeconds: question.durationSeconds ? String(question.durationSeconds) : null,
+      startedAt: question.startedAt ? String(question.startedAt) : null
     }).filter(([_, v]) => v !== undefined && v !== null && v !== 'null').map(([k, v]) => [k, String(v)]).flat();
     
     if (entries.length > 0) {

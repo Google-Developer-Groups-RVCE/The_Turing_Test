@@ -153,13 +153,15 @@ export default function RoundPage() {
     };
     const handleQuestionChanged = (data) => {
       if (data?.question) {
-        setQuestion(data.question);
+        const newQ = { ...data.question, startedAt: data.startedAt || data.question.startedAt || Date.now() };
+        setQuestion(newQ);
         setSelectedAnswer('');
         setTextAnswer('');
         setMyResponse(null);
         setEvaluationData(null);
         setPollResult(null);
         setError('');
+        setCurrentRound(prev => prev ? { ...prev, startedAt: data.startedAt || newQ.startedAt } : prev);
       } else {
         setPollResult(null);
         setEvaluationData(null);

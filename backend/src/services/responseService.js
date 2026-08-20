@@ -24,6 +24,25 @@ class ResponseService {
       throw new Error('No active question for this round');
     }
 
+    const q = await questionStore.getQuestion(roundId, activeId);
+    if (q) {
+      const settingsStore = require('../redis/settingsStore');
+      const settings = await settingsStore.getSettings();
+      const allowLate = String(settings.allowLateSubmission) === 'true';
+
+      if (!allowLate) {
+        const qDuration = parseInt(q.durationSeconds, 10);
+        const rDuration = parseInt(round.durationSeconds, 10);
+        const duration = (!isNaN(qDuration) && qDuration > 0) ? qDuration : ((!isNaN(rDuration) && rDuration > 0) ? rDuration : 120);
+        const startedAt = Number(q.startedAt) || Number(round.startedAt) || 0;
+
+        // Allow 3 seconds grace period for network latency
+        if (startedAt > 0 && (Date.now() - startedAt) > (duration + 3) * 1000) {
+          throw new Error('Time has expired for this question');
+        }
+      }
+    }
+
     const hasResponded = await responseStore.hasResponded(roundId, activeId, username);
     if (hasResponded) {
       throw new Error('Already submitted for this round');

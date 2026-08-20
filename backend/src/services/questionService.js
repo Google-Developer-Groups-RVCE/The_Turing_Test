@@ -231,28 +231,33 @@ class QuestionService {
 
   async setActiveQuestion(roundId, questionId) {
     await questionStore.setActiveQuestionId(roundId, questionId);
+    const now = String(Date.now());
     let question = await questionStore.getQuestion(roundId, questionId);
+    
+    const updates = { startedAt: now };
     if (question && question.type === 'guess-author') {
       const options = question.options || [];
       if (options.length > 0 && !question.displayedOptionId) {
         const randomOption = options[Math.floor(Math.random() * options.length)];
-        await questionStore.updateQuestion(roundId, questionId, { displayedOptionId: randomOption.id });
+        updates.displayedOptionId = randomOption.id;
       }
     }
+    await questionStore.updateQuestion(roundId, questionId, updates);
 
     question = await this.getActiveQuestion(roundId);
 
-    // Reset round timer
+    // Reset round timer to question duration and fresh startedAt timestamp
     const round = await roundStore.getRound(roundId);
-    if (round && round.status === 'active' && question?.durationSeconds) {
+    if (round && round.status === 'active') {
+      const qDuration = question?.durationSeconds || round.durationSeconds || '120';
       await roundStore.updateRound(roundId, {
-        durationSeconds: question.durationSeconds,
-        startedAt: String(Date.now())
+        durationSeconds: String(qDuration),
+        startedAt: now
       });
     }
 
     const io = getIO();
-    if (io) io.emit('question:changed', { roundId, activeQuestionId: questionId, question });
+    if (io) io.emit('question:changed', { roundId, activeQuestionId: questionId, question, startedAt: now });
     return question;
   }
 

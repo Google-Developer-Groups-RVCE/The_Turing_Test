@@ -15,7 +15,7 @@ import ParticipantDeviceSimulation from '../../components/ParticipantDeviceSimul
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
   RefreshCw, X, AlertTriangle, SkipForward, SkipBack, Eye, Trophy, Monitor, CheckCircle,
-  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle, ArrowRightCircle, ChevronUp, ChevronDown, CheckSquare, Square as SquareOutline
+  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle, ArrowRightCircle, ChevronUp, ChevronDown, CheckSquare, Square as SquareOutline, Lock
 } from 'lucide-react';
 
 function RoundModal({ round, onClose, onSave }) {
@@ -92,6 +92,8 @@ export default function RoundManagement() {
   const [modal, setModal] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
+  const [allowLateSubmission, setAllowLateSubmission] = useState(false);
+  const [togglingLate, setTogglingLate] = useState(false);
 
   // R5 Admin Selection State
   const [r5Responses, setR5Responses] = useState({});
@@ -118,7 +120,14 @@ export default function RoundManagement() {
   const fetchRounds = useCallback(async (isInitial = false) => {
     if (isInitial && rounds.length === 0) setLoading(true);
     try {
-      const res = await getRounds();
+      const [res, settingsRes] = await Promise.all([
+        getRounds(),
+        getSettings().catch(() => null)
+      ]);
+      if (settingsRes?.data?.settings) {
+        setAllowLateSubmission(String(settingsRes.data.settings.allowLateSubmission) === 'true');
+        setShowLeaderboard(String(settingsRes.data.settings.showLeaderboard) === 'true');
+      }
       const list = res.data.rounds || [];
       setRounds(list);
 
@@ -263,6 +272,20 @@ export default function RoundManagement() {
       showError('Failed to toggle leaderboard view');
     } finally {
       setTogglingLeaderboard(false);
+    }
+  };
+
+  const handleToggleLateSubmission = async () => {
+    const nextVal = !allowLateSubmission;
+    setTogglingLate(true);
+    try {
+      await updateSettings({ allowLateSubmission: String(nextVal) });
+      setAllowLateSubmission(nextVal);
+      showSuccess(`Late Submissions ${nextVal ? 'ALLOWED (Unblocked)' : 'BLOCKED (Strict 0:00 Lock)'}.`);
+    } catch {
+      showError('Failed to update late submissions setting');
+    } finally {
+      setTogglingLate(false);
     }
   };
 
@@ -740,21 +763,25 @@ export default function RoundManagement() {
                 </div>
               </div>
 
-              {/* Reduce Time */}
-              <div className="space-y-1 pt-1">
-                <span className="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Reduce Time:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[-10, -20, -30, -60, -120].map((secs) => (
-                    <button
-                      key={`sub-${secs}`}
-                      onClick={() => handleExtendTime(secs)}
-                      disabled={!!actionLoading}
-                      className="flex-1 min-w-[50px] py-1.5 px-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 text-xs font-mono font-bold transition-colors"
-                    >
-                      {Math.abs(secs) >= 60 ? `-${Math.abs(secs) / 60}m` : `${secs}s`}
-                    </button>
-                  ))}
+              {/* Real-Time Late Submissions Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-dark-950/70 border border-dark-700 mt-2">
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center space-x-1.5">
+                    <Lock size={13} className={allowLateSubmission ? "text-emerald-400" : "text-amber-400"} />
+                    <span>Late Submissions (After 0:00)</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {allowLateSubmission ? "Allowed: Participants CAN submit after timer expires." : "Blocked: Submissions locked instantly when time is up."}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleToggleLateSubmission}
+                  disabled={togglingLate}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${allowLateSubmission ? 'bg-emerald-600' : 'bg-dark-700'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowLateSubmission ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
               </div>
             </div>
           )}

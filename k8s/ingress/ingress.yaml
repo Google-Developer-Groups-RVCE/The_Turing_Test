@@ -13,9 +13,26 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
+  - host: redis.tt.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: redisinsight-service
+            port:
+              number: 5540
   - host: tt.local
     http:
       paths:
+      - path: /redisinsight
+        pathType: Prefix
+        backend:
+          service:
+            name: redisinsight-service
+            port:
+              number: 5540
       - path: /socket.io
         pathType: ImplementationSpecific
         backend:

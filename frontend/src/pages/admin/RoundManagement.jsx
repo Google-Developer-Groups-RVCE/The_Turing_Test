@@ -269,10 +269,11 @@ export default function RoundManagement() {
   const handleExtendTime = async (extraSecs) => {
     const activeRound = getActiveRound();
     if (!activeRound) {
-      showError('No active round to extend time for.');
+      showError('No active round to adjust time for.');
       return;
     }
-    doAction(`Added +${extraSecs}s extra time`, () => extendRoundTime(activeRound.id, extraSecs));
+    const label = extraSecs >= 0 ? `Added +${extraSecs}s time` : `Reduced ${extraSecs}s time`;
+    doAction(label, () => extendRoundTime(activeRound.id, extraSecs));
   };
 
   const handleNextQuestion = async () => {

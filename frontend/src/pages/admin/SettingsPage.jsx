@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getSettings, updateSettings } from '../../api/settingsApi';
-import { Settings, Save, RefreshCw } from 'lucide-react';
+import { Settings, Save, RefreshCw, CheckCircle, X } from 'lucide-react';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({

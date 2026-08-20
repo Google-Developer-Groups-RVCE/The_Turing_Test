@@ -128,14 +128,16 @@ export default function RoundPage() {
     fetchQuestion();
   }, [fetchQuestion]);
 
-  // Transition to Leaderboard if active stage is explicitly set to leaderboard
+  // Transition to Leaderboard or Waiting Room if not active
   useEffect(() => {
     const isSim = window.location.pathname.startsWith('/simulation');
     const basePath = isSim ? '/simulation' : '/participant';
     if (activeStage === 'leaderboard') {
       navigate(`${basePath}/leaderboard`, { replace: true });
+    } else if (!loading && (!currentRound || currentRound.status !== 'active')) {
+      navigate(basePath, { replace: true });
     }
-  }, [activeStage, navigate]);
+  }, [activeStage, currentRound, loading, navigate]);
 
   // Socket: round changed & question changed — update question live
   useEffect(() => {

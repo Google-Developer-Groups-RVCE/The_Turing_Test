@@ -37,7 +37,17 @@ export default function SettingsPage() {
     }
   };
 
-  const toggleBool = (key) => setSettings(s => ({ ...s, [key]: !s[key] }));
+  const toggleBool = async (key) => {
+    const updated = { ...settings, [key]: !settings[key] };
+    setSettings(updated);
+    try {
+      await updateSettings(updated);
+      setSuccess('Setting updated in real time.');
+      setTimeout(() => setSuccess(''), 2500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update setting');
+    }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center py-20 text-slate-500">Loading settings...</div>;

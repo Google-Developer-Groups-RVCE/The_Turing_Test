@@ -335,16 +335,25 @@ class RoundService {
     const round = await roundStore.getRound(roundId);
     if (!round) throw new Error('Round not found');
 
-    const secondsToAdd = parseInt(extraSeconds) || 30;
-    const newDurationSeconds = (parseInt(round.durationSeconds) || 300) + secondsToAdd;
+    const secondsDelta = parseInt(extraSeconds) || 0;
+    const currentDur = parseInt(round.durationSeconds) || 120;
+    const newDurationSeconds = Math.max(10, currentDur + secondsDelta);
 
     await roundStore.updateRound(roundId, { durationSeconds: newDurationSeconds.toString() });
 
+    // Also update active question duration if present
+    const questionStore = require('../redis/questionStore');
+    const activeQId = await questionStore.getActiveQuestionId(roundId);
+    if (activeQId) {
+      await questionStore.updateQuestion(roundId, activeQId, { durationSeconds: newDurationSeconds.toString() });
+    }
+
+    const actionText = secondsDelta >= 0 ? `Added +${secondsDelta}s` : `Reduced ${secondsDelta}s`;
     await logStore.addLog({
       action: 'EXTEND_ROUND_TIME',
       adminUsername,
       timestamp: Date.now().toString(),
-      details: `Added +${secondsToAdd}s to round ${roundId} (total: ${newDurationSeconds}s)`
+      details: `${actionText} to round ${roundId} (total: ${newDurationSeconds}s)`
     });
 
     const updatedRound = { ...round, durationSeconds: newDurationSeconds };
@@ -353,7 +362,7 @@ class RoundService {
     if (io) {
       io.emit('round:time_extended', {
         roundId,
-        extraSeconds: secondsToAdd,
+        extraSeconds: secondsDelta,
         newDurationSeconds,
         startedAt: round.startedAt,
         roundData: updatedRound

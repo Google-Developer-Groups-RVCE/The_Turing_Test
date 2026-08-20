@@ -714,24 +714,46 @@ export default function RoundManagement() {
 
 
 
-          {/* Live Extra Time */}
+          {/* Live Extra / Reduce Time */}
           {activeRound && (
-            <div className="p-4 rounded-xl bg-dark-900/60 border border-primary-500/30 space-y-2">
+            <div className="p-4 rounded-xl bg-dark-900/60 border border-primary-500/30 space-y-3">
               <div className="flex items-center justify-between text-xs font-bold text-primary-400 uppercase tracking-wider">
-                <span className="flex items-center space-x-1"><Clock size={14} /><span>Add Live Extra Time</span></span>
-                <span className="font-mono text-white">{Math.floor((parseInt(activeRound.durationSeconds) || 300) / 60)}m {((parseInt(activeRound.durationSeconds) || 300) % 60)}s total</span>
+                <span className="flex items-center space-x-1"><Clock size={14} /><span>Live Question & Round Time</span></span>
+                <span className="font-mono text-white">{Math.floor((parseInt(activeRound.durationSeconds) || 120) / 60)}m {((parseInt(activeRound.durationSeconds) || 120) % 60)}s total</span>
               </div>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {[10, 20, 30, 60, 120, 300].map((secs) => (
-                  <button
-                    key={secs}
-                    onClick={() => handleExtendTime(secs)}
-                    disabled={!!actionLoading}
-                    className="flex-1 min-w-[54px] py-1.5 px-2 rounded-lg bg-primary-500/10 border border-primary-500/30 text-primary-300 hover:bg-primary-500/20 text-xs font-mono font-bold transition-colors"
-                  >
-                    +{secs >= 60 ? `${secs / 60}m` : `${secs}s`}
-                  </button>
-                ))}
+              
+              {/* Add Time */}
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Add Time:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[10, 20, 30, 60, 120, 300].map((secs) => (
+                    <button
+                      key={`add-${secs}`}
+                      onClick={() => handleExtendTime(secs)}
+                      disabled={!!actionLoading}
+                      className="flex-1 min-w-[50px] py-1.5 px-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 text-xs font-mono font-bold transition-colors"
+                    >
+                      +{secs >= 60 ? `${secs / 60}m` : `${secs}s`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reduce Time */}
+              <div className="space-y-1 pt-1">
+                <span className="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Reduce Time:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[-10, -20, -30, -60, -120].map((secs) => (
+                    <button
+                      key={`sub-${secs}`}
+                      onClick={() => handleExtendTime(secs)}
+                      disabled={!!actionLoading}
+                      className="flex-1 min-w-[50px] py-1.5 px-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 text-xs font-mono font-bold transition-colors"
+                    >
+                      {Math.abs(secs) >= 60 ? `-${Math.abs(secs) / 60}m` : `${secs}s`}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}

@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { getActiveQuestion } from '../../api/questionApi';
 import { getMyResponse, submitResponse } from '../../api/responseApi';
 import { getCurrentRound } from '../../api/roundApi';
+import { getSettings } from '../../api/settingsApi';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock, Sparkles } from 'lucide-react';
 
@@ -36,6 +37,7 @@ export default function RoundPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
+  const [allowLateSubmission, setAllowLateSubmission] = useState(false);
   const [pollResult, setPollResult] = useState(null);
   const [evaluationData, setEvaluationData] = useState(null);
 
@@ -58,7 +60,13 @@ export default function RoundPage() {
   const fetchQuestion = useCallback(async () => {
     if (!question) setLoading(true);
     try {
-      const rRes = await getCurrentRound().catch(() => null);
+      const [rRes, settingsRes] = await Promise.all([
+        getCurrentRound().catch(() => null),
+        getSettings().catch(() => null)
+      ]);
+      if (settingsRes?.data?.settings) {
+        setAllowLateSubmission(String(settingsRes.data.settings.allowLateSubmission) === 'true');
+      }
       const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRoundRef.current);
       
       if (roundToUse) {
@@ -202,6 +210,12 @@ export default function RoundPage() {
       }, 3000);
     };
 
+    const handleSettingsUpdated = (data) => {
+      if (data && data.allowLateSubmission !== undefined) {
+        setAllowLateSubmission(String(data.allowLateSubmission) === 'true');
+      }
+    };
+
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on('question:changed', handleQuestionChanged);
     socket.on('round:time_extended', handleTimeExtended);
@@ -209,6 +223,7 @@ export default function RoundPage() {
     socket.on('question:evaluate', handleQuestionEvaluate);
     socket.on('responses:cleared', handleResponsesCleared);
     socket.on('round:ended', handleRoundEnded);
+    socket.on('settings:updated', handleSettingsUpdated);
 
     return () => {
       if (roundEndTimer) clearTimeout(roundEndTimer);
@@ -219,6 +234,7 @@ export default function RoundPage() {
       socket.off('question:evaluate', handleQuestionEvaluate);
       socket.off('responses:cleared', handleResponsesCleared);
       socket.off('round:ended', handleRoundEnded);
+      socket.off('settings:updated', handleSettingsUpdated);
     };
   }, [socket, fetchQuestion, setCurrentRound, navigate]);
 
@@ -378,7 +394,8 @@ export default function RoundPage() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const isLocked = !!myResponse || submitting;
+  const isTimeUp = timeLeft !== null && timeLeft <= 0;
+  const isLocked = !!myResponse || submitting || (isTimeUp && !allowLateSubmission);
 
   if (loading) {
     return (
@@ -720,6 +737,23 @@ export default function RoundPage() {
           <div className="flex items-center space-x-1 text-xs text-slate-500 font-mono">
             <Lock size={13} />
             <span>Locked</span>
+          </div>
+        </div>
+      )}
+
+      {/* Time Expired Banner (When no response submitted and late submissions disabled) */}
+      {!evaluationData && !myResponse && isTimeUp && !allowLateSubmission && (
+        <div className="p-4 rounded-xl border border-rose-500/50 bg-rose-950/50 flex items-center justify-between backdrop-blur-md animate-fade-in shadow-[0_0_20px_rgba(244,63,94,0.25)]">
+          <div className="flex items-center space-x-3">
+            <AlertCircle size={26} className="text-rose-400 animate-pulse" />
+            <div>
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider">⏳ Time is Up!</h4>
+              <p className="text-xs text-rose-300/90">Submissions for this question are now closed. Wait for the host to advance.</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-1 text-xs text-rose-300 font-mono font-bold bg-rose-900/60 px-3 py-1 rounded-lg border border-rose-500/40">
+            <Lock size={13} />
+            <span>Closed</span>
           </div>
         </div>
       )}

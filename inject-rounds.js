@@ -65,9 +65,11 @@ async function injectRounds() {
 
   // 1. ROUND DEFINITIONS
   const rounds = [
-    { id: 'round_1_aptitude', name: 'Round 1 — Live Conversations', status: 'pending', durationSeconds: '300', order: '1' },
-    { id: 'round_2_coding',   name: 'Round 2 — Image Challenge',     status: 'pending', durationSeconds: '300', order: '2' },
-    { id: 'round_3_decode',   name: 'Round 3 — Turing Test Speedrun', status: 'pending', durationSeconds: '300', order: '3' },
+    { id: 'round_1_aptitude',     name: 'Round 1 — Live Conversations',    status: 'pending', durationSeconds: '300', order: '1' },
+    { id: 'round_2_coding',       name: 'Round 2 — Image Challenge',        status: 'pending', durationSeconds: '300', order: '2' },
+    { id: 'round_3_decode',       name: 'Round 3 — Turing Test Speedrun',    status: 'pending', durationSeconds: '300', order: '3' },
+    { id: 'round_4_hallucination',name: 'Round 4 — Spot the Hallucination', status: 'pending', durationSeconds: '300', order: '4' },
+    { id: 'round_5_reverse',      name: 'Round 5 — Reverse Turing Test',    status: 'pending', durationSeconds: '600', order: '5' }
   ];
 
   for (const r of rounds) {
@@ -81,7 +83,7 @@ async function injectRounds() {
     await client.rpush(KEYS.ROUNDS_ORDER, r.id);
     await client.set(KEYS.ACTIVE_STAGE(r.id), 'question');
   }
-  console.log('✔ Created 3 Rounds: Round 1, Round 2, Round 3');
+  console.log('✔ Created 5 Rounds: Round 1, Round 2, Round 3, Round 4, Round 5');
 
   // Helper function to add question hash and list order
   const addQuestion = async (roundId, q) => {
@@ -101,22 +103,22 @@ async function injectRounds() {
       targetProfession: q.targetProfession || '',
       targetHobby: q.targetHobby || '',
       durationSeconds: String(q.durationSeconds || 60),
-      showEvaluation: q.showEvaluation !== undefined ? String(q.showEvaluation) : 'true'
+      showEvaluation: q.showEvaluation !== undefined ? String(q.showEvaluation) : 'true',
+      aiResponse: q.aiResponse || '',
+      explanation: q.explanation || '',
+      sourceImageUrl: q.sourceImageUrl || '',
+      title: q.title || ''
     };
 
-    const entries = [];
+    const flatArgs = [];
     for (const [k, v] of Object.entries(fields)) {
       if (v !== undefined && v !== null) {
-        entries.push(k, String(v));
+        flatArgs.push(k, String(v));
       }
     }
 
-    await client.hmset(key, ...entries);
-
-    const existing = await client.lrange(KEYS.QUESTIONS(roundId), 0, -1);
-    if (!existing.includes(String(q.id))) {
-      await client.rpush(KEYS.QUESTIONS(roundId), String(q.id));
-    }
+    await client.hmset(key, ...flatArgs);
+    await client.rpush(KEYS.QUESTIONS(roundId), q.id);
   };
 
   // 2. ROUND 1 QUESTIONS (guess-author type with Human / Gemini options)
@@ -186,52 +188,15 @@ async function injectRounds() {
   await client.set(KEYS.ACTIVE_QUESTION('round_1_aptitude'), 'r1-q1');
   console.log('✔ Injected Round 1 (6 Live Conversation Questions)');
 
-  // 3. ROUND 2 QUESTIONS (image-choice & text prompt questions)
+  // 3. ROUND 2 QUESTIONS (Updated Image Challenge)
   const r2Questions = [
-    {
-      id: "r2-q1", order: "1", type: "image-choice",
-      text: "Round 2 — Server Room", prompt: "Which image is AI-generated?",
-      durationSeconds: "60", points: "10", correctAnswer: "Image 1",
-      options: [{ key: "A", label: "Image 1" }, { key: "B", label: "Image 2" }],
-      imageProps: {
-        images: [
-          { src: "/reference/r2/image1.webp", label: "Image 1" },
-          { src: "/reference/r2/image2.webp", label: "Image 2" }
-        ]
-      }
-    },
-    {
-      id: "r2-q2", order: "2", type: "image-choice",
-      text: "Round 2 — Wildlife Photography", prompt: "Which part of the image was AI-edited?",
-      durationSeconds: "60", points: "10", correctAnswer: "The background",
-      imageUrl: "/reference/r2/image3.webp",
-      options: [
-        { key: "A", label: "The head / face" },
-        { key: "B", label: "The stripes on the abdomen" },
-        { key: "C", label: "The legs" },
-        { key: "D", label: "The background" }
-      ]
-    },
-    {
-      id: "r2-q3", order: "3", type: "text",
-      text: "Round 2 — Street Photography", prompt: "Write a prompt that recreates this image as closely as possible.",
-      durationSeconds: "60", points: "10", correctAnswer: "",
-      imageUrl: "/reference/r2/image4.webp",
-      options: []
-    },
-    {
-      id: "r2-q4", order: "4", type: "image-choice",
-      text: "Round 2 — Bird Photography", prompt: "Is this image real or AI-generated?",
-      durationSeconds: "60", points: "10", correctAnswer: "AI-generated",
-      imageUrl: "/reference/r2/image5.webp",
-      options: [
-        { key: "A", label: "Real" },
-        { key: "B", label: "AI-generated" }
-      ]
-    }
+    { id: 'q2_1', order: '1', type: 'mcq', points: '10', durationSeconds: '60', text: 'Identify the option that correctly fills in the missing parts of the prompt.', prompt: 'Identify the option that correctly fills in the missing parts of the prompt.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/cyclist-night-street.png' },
+    { id: 'q2_2', order: '2', type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/tiger-edited.png' },
+    { id: 'q2_3', order: '3', type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', imageUrl: '/reference/r2/dog-reflection.png' },
+    { id: 'q2_4', order: '4', type: 'mcq', points: '10', durationSeconds: '60', text: 'Choose the prompt that is most appropriate for this living-room image.', prompt: 'Choose the prompt that is most appropriate for this living-room image.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'C', imageUrl: '/reference/r2/living-room.png' }
   ];
   for (const q of r2Questions) await addQuestion('round_2_coding', q);
-  await client.set(KEYS.ACTIVE_QUESTION('round_2_coding'), 'r2-q1');
+  await client.set(KEYS.ACTIVE_QUESTION('round_2_coding'), 'q2_1');
   console.log('✔ Injected Round 2 (4 Image Challenge Questions)');
 
   // 4. ROUND 3 QUESTIONS (5 Poll Questions + 1 Profile-Guess Final Submission)
@@ -302,8 +267,46 @@ async function injectRounds() {
   await client.set(KEYS.ACTIVE_QUESTION('round_3_decode'), 'poll1');
   console.log('✔ Injected Round 3 (5 Poll Questions + Final Profile Guess)');
 
+  // 5. ROUND 4 QUESTIONS (Spot the Hallucination - 12 Questions)
+  const r4Questions = [
+    { id: 'h1', order: '1', type: 'hallucination', title: 'Warm-up - Obvious Hallucination', text: 'Who was the first person to walk on Mars?', aiResponse: "Neil Armstrong became the first person to walk on Mars during NASA's 1985 Mars expedition.", correctAnswer: 'Hallucination', explanation: 'No human has walked on Mars. No NASA Mars expedition occurred in 1985. The entire answer is fabricated.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h2', order: '2', type: 'hallucination', title: 'Warm-up - Obvious Hallucination', text: 'What happened during the Battle of Bengaluru in World War II?', aiResponse: 'The Battle of Bengaluru was a major conflict between Allied and Axis forces in southern India in 1943.', correctAnswer: 'Hallucination', explanation: 'No such battle occurred. The response invents a historical event.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h3', order: '3', type: 'hallucination', title: 'Warm-up - Obvious Hallucination', text: 'Which Indian astronaut planted the first Indian flag on the Moon?', aiResponse: 'Rakesh Sharma planted the first Indian flag on the Moon in 1991.', correctAnswer: 'Hallucination', explanation: 'No Indian astronaut has walked on the Moon. Rakesh Sharma never visited the Moon.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h4', order: '4', type: 'hallucination', title: 'Warm-up - Suspicious Source', text: 'Does drinking coffee improve IQ?', aiResponse: 'A 2021 MIT study proved that coffee permanently increases IQ by 15 points.', correctAnswer: 'Likely fabricated / unsupported', explanation: "Ask: Is the source verifiable? Does 'proved' sound suspicious? A permanent 15-point IQ increase is an extraordinary claim that needs strong evidence.", options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h5', order: '5', type: 'hallucination', title: 'Round 2 - Hidden Hallucination', text: 'What is wrong with this response about the Great Wall of China?', aiResponse: 'The Great Wall of China is visible from the Moon with the naked eye and remains one of humanity\'s greatest engineering achievements.', correctAnswer: 'One hidden hallucination', explanation: 'The Great Wall being visible from the Moon with the naked eye is the false claim. The rest is broadly true.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h6', order: '6', type: 'hallucination', title: 'Round 2 - Hidden Hallucination', text: 'What is wrong with this response about Einstein?', aiResponse: 'Albert Einstein won the Nobel Prize in Physics in 1921 for his Theory of Relativity, which revolutionized modern physics.', correctAnswer: 'The reason is wrong', explanation: 'Einstein did win the 1921 Nobel Prize in Physics, but he was awarded it primarily for his explanation of the photoelectric effect, not for the theory of relativity.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h7', order: '7', type: 'hallucination', title: 'Round 3 - Unsafe Advice', text: 'How should the following password advice be evaluated?', aiResponse: "Use your birthday, pet's name, favorite team, or another personal detail so you never forget your password.", correctAnswer: 'Unsafe / incorrect advice', explanation: 'Personal details can be guessed or discovered. The response sounds helpful but compromises password security.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h8', order: '8', type: 'hallucination', title: 'Round 3 - Historical Trap', text: 'What is wrong with this explanation of the Taj Mahal?', aiResponse: 'The Taj Mahal is located in Agra and was commissioned by Shah Jahan. Construction began in 1632 and was completed in 1653. It was built to celebrate the annexation of Bijapur and Golconda during his Deccan campaigns.', correctAnswer: 'Hidden hallucination', explanation: "The Taj Mahal is a mausoleum associated with Shah Jahan's wife Mumtaz Mahal. The Deccan campaign explanation is the fabricated claim.", options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h9', order: '9', type: 'hallucination', title: 'Round 4 - Binary Trap', text: 'Which statement contains the hidden error?', aiResponse: 'Binary numbers use only the digits 0 and 1. Computers internally represent data using binary. Therefore, every decimal number can be represented exactly in binary form.', correctAnswer: 'Hidden mathematical error', explanation: 'Not every decimal fraction has a finite exact binary representation. 0.1 is a classic example.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h10', order: '10', type: 'hallucination', title: 'Round 4 - Physics Trap', text: 'A piece of wood is dropped from a 100 m building while a bullet is fired upward and embeds in it. Find the height the combination rises above the building.', aiResponse: '', sourceImageUrl: '/reference/wood-physics-ai-response.png', correctAnswer: '50 m is wrong - correct answer: 40 m', explanation: 'The collision is inelastic, so mechanical energy is not conserved through it. Apply conservation of momentum during the collision.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h11', order: '11', type: 'hallucination', title: 'Round 5 - Meta AI Trap', text: 'Which part of this response should make you suspicious?', aiResponse: 'ChatGPT was released by OpenAI in 2022 and quickly became one of the most widely used AI systems in history. It is trained on vast amounts of text and can answer questions across many domains. Because of its advanced reasoning abilities, its factual statements are generally reliable and should be trusted unless there is strong evidence to the contrary.', correctAnswer: 'Overclaim / blind-trust trap', explanation: 'The final sentence is the problem. It encourages blind trust and overstates reliability. AI outputs should be verified, especially in high-stakes situations.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+    { id: 'h12', order: '12', type: 'hallucination', title: 'Round 5 - Fake Citation Trap', text: 'Should this research claim be accepted as stated?', aiResponse: 'According to a Stanford University study published in 2023, students who use AI tools for more than two hours daily score 35% higher in engineering courses. The study proves that AI usage directly causes better academic performance.', correctAnswer: 'Unsupported / likely fabricated', explanation: "The citation may be fabricated or misrepresented. No study details are provided, correlation does not establish causation, and the word 'proves' is suspicious.", options: [], points: '10', durationSeconds: '300', showEvaluation: true }
+  ];
+  for (const q of r4Questions) {
+    await addQuestion('round_4_hallucination', q);
+  }
+  await client.set(KEYS.ACTIVE_QUESTION('round_4_hallucination'), 'h1');
+  console.log('✔ Injected Round 4 (12 Spot the Hallucination Questions)');
+
+  // 6. ROUND 5 QUESTIONS (Reverse Turing Test)
+  const r5Question = {
+    id: 'r5_q1', order: '1', type: 'reverse-turing',
+    title: 'Round 5 — Reverse Turing Test', subtitle: 'Write Like an AI',
+    text: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
+    prompt: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
+    description: "Can you write a response so convincing that others think it was written by Gemini? Your response will be mixed with Gemini's actual response — try to fool everyone!",
+    durationSeconds: '600', points: '0', showEvaluation: false, options: []
+  };
+  await addQuestion('round_5_reverse', r5Question);
+  await client.set(KEYS.ACTIVE_QUESTION('round_5_reverse'), 'r5_q1');
+
+  // Initialize R5 default gemini response and phase
+  await client.set('r5:gemini', "The quiet hours when the world is asleep are where your future self is built step by step. Every page you read tonight is bringing you closer to the moment you walk out of that exam knowing you gave it everything.");
+  await client.set('r5:phase', 'prompt');
+  console.log('✔ Injected Round 5 (Reverse Turing Test)');
+
   await client.quit();
-  console.log('\n🎉 ALL ROUNDS (1, 2, 3) INJECTED SUCCESSFULLY INTO REDIS!');
+  console.log('\n🎉 ALL 5 ROUNDS INJECTED SUCCESSFULLY INTO REDIS!');
 }
 
 injectRounds().catch((err) => {

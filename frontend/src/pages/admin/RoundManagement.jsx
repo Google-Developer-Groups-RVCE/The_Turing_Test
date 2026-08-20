@@ -390,7 +390,7 @@ export default function RoundManagement() {
               onClick={() => handleInjectPresetRound('all')}
               disabled={!!actionLoading}
               className="btn-secondary py-1.5 px-3 flex items-center space-x-1.5 text-xs font-semibold hover:bg-dark-700"
-              title="Add all preset rounds (Rounds 1, 2 & 3) without modifying existing rounds"
+              title="Add all preset rounds (Rounds 1, 2, 3, 4 & 5) without modifying existing rounds"
             >
               <Sparkles size={14} className="text-yellow-400" />
               <span>+ Add All Presets</span>
@@ -419,6 +419,22 @@ export default function RoundManagement() {
               title="Add Preset Round 3 (Turing Test Speedrun / Polls) individually"
             >
               + R3
+            </button>
+            <button
+              onClick={() => handleInjectPresetRound(4)}
+              disabled={!!actionLoading}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
+              title="Add Preset Round 4 (Spot the Hallucination) individually"
+            >
+              + R4
+            </button>
+            <button
+              onClick={() => handleInjectPresetRound(5)}
+              disabled={!!actionLoading}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
+              title="Add Preset Round 5 (Reverse Turing Test) individually"
+            >
+              + R5
             </button>
           </div>
 

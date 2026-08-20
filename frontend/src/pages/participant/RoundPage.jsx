@@ -12,10 +12,13 @@ import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock,
 import round1Data from '../../data/round1Data';
 import round2Data from '../../data/round2Data';
 import pollsData from '../../data/pollsData';
+import round5Data from '../../data/round5Data';
+import { submitR5Response, getMyR5Response, getR5Status, getR5Options, submitR5Vote, getMyR5Vote, getR5VotingStatus, getR5Results } from '../../api/r5Api';
 import ChallengeCard from '../../components/ChallengeCard';
 import PollCard from '../../components/PollCard';
+import HallucinationCard from '../../components/HallucinationCard';
 
-const allRichData = [...round1Data, ...round2Data, ...pollsData];
+const allRichData = [...round1Data, ...round2Data, ...pollsData, ...round5Data];
 
 export default function RoundPage() {
   const { currentRound, eventStatus, activeStage, setCurrentRound, setEventStatus } = useContext(EventStateContext);
@@ -35,12 +38,24 @@ export default function RoundPage() {
   const [pollResult, setPollResult] = useState(null);
   const [evaluationData, setEvaluationData] = useState(null);
 
+  // Round 5 state
+  const [r5Phase, setR5Phase] = useState('prompt');
+  const [r5Response, setR5Response] = useState('');
+  const [r5Submitted, setR5Submitted] = useState(false);
+  const [r5Options, setR5Options] = useState([]);
+  const [r5SelectedVote, setR5SelectedVote] = useState(null);
+  const [r5Voted, setR5Voted] = useState(false);
+  const [r5Results, setR5Results] = useState(null);
+  const [r5Status, setR5Status] = useState(null);
+  const [r5Submitting, setR5Submitting] = useState(false);
+
   const currentRoundRef = React.useRef(currentRound);
   useEffect(() => {
     currentRoundRef.current = currentRound;
   }, [currentRound]);
 
   const fetchQuestion = useCallback(async () => {
+    if (!question) setLoading(true);
     try {
       const rRes = await getCurrentRound().catch(() => null);
       const roundToUse = rRes?.data?.round || (rRes?.data?.id ? rRes.data : currentRoundRef.current);
@@ -102,7 +117,7 @@ export default function RoundPage() {
 
   useEffect(() => {
     fetchQuestion();
-  }, [fetchQuestion, activeStage]);
+  }, [fetchQuestion]);
 
   // Transition to Leaderboard if active stage is explicitly set to leaderboard
   useEffect(() => {
@@ -184,16 +199,11 @@ export default function RoundPage() {
       }, 3000);
     };
 
-    const handleStageChanged = (data) => {
-      fetchQuestion();
-    };
-
     socket.on(SOCKET_EVENTS.ROUND_CHANGED, handleRoundChanged);
     socket.on('question:changed', handleQuestionChanged);
     socket.on('round:time_extended', handleTimeExtended);
     socket.on('poll:revealed', handlePollRevealed);
     socket.on('question:evaluate', handleQuestionEvaluate);
-    socket.on('round:stage_changed', handleStageChanged);
     socket.on('responses:cleared', handleResponsesCleared);
     socket.on('round:ended', handleRoundEnded);
 
@@ -204,11 +214,89 @@ export default function RoundPage() {
       socket.off('round:time_extended', handleTimeExtended);
       socket.off('poll:revealed', handlePollRevealed);
       socket.off('question:evaluate', handleQuestionEvaluate);
-      socket.off('round:stage_changed', handleStageChanged);
       socket.off('responses:cleared', handleResponsesCleared);
       socket.off('round:ended', handleRoundEnded);
     };
   }, [socket, fetchQuestion, setCurrentRound, navigate]);
+
+  // Round 5 detection and socket listeners
+  const isRound5 = question?.type === 'reverse-turing';
+
+  useEffect(() => {
+    if (!isRound5) return;
+    // Fetch R5 state on mount
+    const fetchR5State = async () => {
+      try {
+        const [statusRes, myRespRes, myVoteRes] = await Promise.allSettled([
+          getR5Status(), getMyR5Response(), getMyR5Vote()
+        ]);
+        if (statusRes.status === 'fulfilled') setR5Status(statusRes.value.data);
+        if (myRespRes.status === 'fulfilled' && myRespRes.value.data?.text) {
+          setR5Response(myRespRes.value.data.text);
+          setR5Submitted(true);
+        }
+        if (myVoteRes.status === 'fulfilled' && myVoteRes.value.data?.optionIndex !== undefined) {
+          setR5SelectedVote(myVoteRes.value.data.optionIndex);
+          setR5Voted(true);
+        }
+      } catch {}
+      // Fetch current phase
+      try {
+        const statusRes = await getR5Status();
+        if (statusRes.data?.phase) setR5Phase(statusRes.data.phase);
+      } catch {}
+      // If voting phase, fetch options
+      try {
+        const optRes = await getR5Options();
+        if (optRes.data?.options) setR5Options(optRes.data.options);
+      } catch {}
+      // If results phase, fetch results
+      try {
+        const resRes = await getR5Results();
+        if (resRes.data?.results) setR5Results(resRes.data.results);
+      } catch {}
+    };
+    fetchR5State();
+  }, [isRound5]);
+
+  useEffect(() => {
+    if (!socket || !isRound5) return;
+    const handlePhaseChanged = (data) => {
+      if (data?.phase) setR5Phase(data.phase);
+    };
+    const handleVotingOpened = async (data) => {
+      setR5Phase('voting');
+      if (data?.options) setR5Options(data.options);
+    };
+    const handleResults = (data) => {
+      setR5Phase('results');
+      if (data?.results) setR5Results(data.results);
+    };
+    const handleR5ResponseReceived = async () => {
+      try {
+        const statusRes = await getR5Status();
+        if (statusRes.data) setR5Status(statusRes.data);
+      } catch {}
+    };
+    const handleR5VoteReceived = async () => {
+      try {
+        const statusRes = await getR5VotingStatus();
+        if (statusRes.data) setR5Status(prev => ({ ...prev, ...statusRes.data }));
+      } catch {}
+    };
+    socket.on('r5:phase_changed', handlePhaseChanged);
+    socket.on('r5:voting_opened', handleVotingOpened);
+    socket.on('r5:results', handleResults);
+    socket.on('r5:response_received', handleR5ResponseReceived);
+    socket.on('r5:vote_received', handleR5VoteReceived);
+    return () => {
+      socket.off('r5:phase_changed', handlePhaseChanged);
+      socket.off('r5:voting_opened', handleVotingOpened);
+      socket.off('r5:results', handleResults);
+      socket.off('r5:response_received', handleR5ResponseReceived);
+      socket.off('r5:vote_received', handleR5VoteReceived);
+    };
+  }, [socket, isRound5]);
 
   // Countdown timer
   useEffect(() => {
@@ -243,6 +331,35 @@ export default function RoundPage() {
       setError(err.response?.data?.message || 'Submission failed. Try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleR5Submit = async () => {
+    if (r5Submitted || r5Submitting || !r5Response.trim()) return;
+    setR5Submitting(true);
+    try {
+      await submitR5Response(r5Response.trim());
+      setR5Submitted(true);
+      // Refresh status
+      const statusRes = await getR5Status();
+      if (statusRes.data) setR5Status(statusRes.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit response');
+    } finally {
+      setR5Submitting(false);
+    }
+  };
+
+  const handleR5Vote = async () => {
+    if (r5Voted || r5Submitting || r5SelectedVote === null) return;
+    setR5Submitting(true);
+    try {
+      await submitR5Vote(r5SelectedVote);
+      setR5Voted(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit vote');
+    } finally {
+      setR5Submitting(false);
     }
   };
 
@@ -307,6 +424,203 @@ export default function RoundPage() {
     );
   }
 
+  if (isRound5) {
+    // ROUND 5 — REVERSE TURING TEST COMPLETE UI
+    // Phase 1: Prompt
+    if (r5Phase === 'prompt') {
+      return (
+        <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full animate-fade-in">
+          {/* Round Header */}
+          <div className="w-full bg-gradient-to-br from-violet-900/30 via-dark-900/90 to-purple-950/30 border-2 border-violet-500/40 rounded-3xl p-8 shadow-[0_0_50px_rgba(139,92,246,0.25)] backdrop-blur-md">
+            <div className="inline-flex items-center space-x-2 bg-violet-500/20 border border-violet-400/30 px-4 py-1.5 rounded-full mb-4">
+              <Sparkles size={14} className="text-violet-300 animate-pulse" />
+              <span className="text-violet-300 text-xs font-extrabold uppercase tracking-widest">Reverse Turing Test</span>
+            </div>
+            <h2 className="font-['Borghan'] text-2xl md:text-4xl font-bold text-white tracking-wide mb-3">Write Like an AI</h2>
+            <p className="text-slate-400 text-sm leading-relaxed">Can you write a response so convincing that others think it was written by Gemini? Your response will be shuffled with Gemini's actual answer — try to fool everyone!</p>
+          </div>
+
+          {/* Prompt Card */}
+          <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md">
+            <p className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-3">The Prompt</p>
+            <h3 className="text-white text-xl md:text-2xl font-bold italic leading-relaxed">
+              "{question?.text || 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM'}"
+            </h3>
+          </div>
+
+          {/* Response Input or Submitted State */}
+          {!r5Submitted ? (
+            <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md space-y-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your AI-style Response</p>
+              <textarea
+                className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none min-h-[120px] resize-none transition-all"
+                placeholder="Write your most convincing AI-like response here..."
+                value={r5Response}
+                onChange={(e) => setR5Response(e.target.value)}
+                maxLength={500}
+              />
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-500">{r5Response.length}/500</span>
+              </div>
+              {error && <p className="text-rose-400 text-sm">{error}</p>}
+              <button
+                onClick={handleR5Submit}
+                disabled={r5Submitting || !r5Response.trim()}
+                className="relative overflow-hidden font-['Cutepunch'] text-xl tracking-widest py-3 px-10 rounded-full bg-gradient-to-br from-violet-500 via-violet-600 to-purple-600 text-white shadow-[0_4px_20px_rgba(139,92,246,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all hover:-translate-y-0.5 hover:scale-105 active:translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 w-full"
+              >
+                {r5Submitting ? (
+                  <><svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg><span>Submitting...</span></>
+                ) : (
+                  <><Send size={18} /><span>Submit Response</span></>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="w-full bg-violet-950/40 border border-violet-500/40 rounded-xl p-6 shadow-xl backdrop-blur-md space-y-4">
+              <div className="flex items-center space-x-3">
+                <CheckCircle size={24} className="text-violet-400" />
+                <div>
+                  <h4 className="text-sm font-bold text-white">Response Submitted!</h4>
+                  <p className="text-xs text-slate-400">Waiting for other participants to finish writing...</p>
+                </div>
+              </div>
+              <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+                <p className="text-slate-300 text-sm italic">"{r5Response}"</p>
+              </div>
+              {r5Status && (
+                <div className="flex items-center space-x-2 text-xs text-slate-400">
+                  <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                  <span>{r5Status.totalSubmitted || 0} / {r5Status.totalExpected || '?'} participants submitted</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Phase 2: Voting
+    if (r5Phase === 'voting') {
+      return (
+        <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full animate-fade-in">
+          <div className="w-full bg-gradient-to-br from-violet-900/30 via-dark-900/90 to-purple-950/30 border-2 border-violet-500/40 rounded-3xl p-8 shadow-[0_0_50px_rgba(139,92,246,0.25)] backdrop-blur-md text-center">
+            <div className="inline-flex items-center space-x-2 bg-violet-500/20 border border-violet-400/30 px-4 py-1.5 rounded-full mb-4">
+              <span className="text-violet-300 text-xs font-extrabold uppercase tracking-widest animate-pulse">★ Vote Now</span>
+            </div>
+            <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white tracking-wide mb-2">Which Response is Gemini's?</h2>
+            <p className="text-slate-400 text-sm">One of these was written by Gemini AI. The rest are from your fellow participants. Vote for the one you think is AI-generated!</p>
+          </div>
+
+          {!r5Voted ? (
+            <>
+              <div className="space-y-4">
+                {r5Options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setR5SelectedVote(opt.index)}
+                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 backdrop-blur-md ${
+                      r5SelectedVote === opt.index
+                        ? 'border-violet-400 bg-violet-500/20 shadow-[0_0_25px_rgba(139,92,246,0.3)]'
+                        : 'border-white/10 bg-white/5 hover:border-violet-500/50 hover:bg-violet-500/10'
+                    }`}
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        r5SelectedVote === opt.index ? 'bg-violet-500 text-white' : 'bg-white/10 text-slate-400'
+                      }`}>
+                        {idx + 1}
+                      </div>
+                      <p className="text-slate-200 text-sm md:text-base leading-relaxed flex-1">"{opt.text}"</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {error && <p className="text-rose-400 text-sm text-center">{error}</p>}
+              <button
+                onClick={handleR5Vote}
+                disabled={r5Submitting || r5SelectedVote === null}
+                className="relative overflow-hidden font-['Cutepunch'] text-xl tracking-widest py-3 px-10 rounded-full bg-gradient-to-br from-violet-500 via-violet-600 to-purple-600 text-white shadow-[0_4px_20px_rgba(139,92,246,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all hover:-translate-y-0.5 hover:scale-105 active:translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 w-full"
+              >
+                {r5Submitting ? (
+                  <><svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg><span>Submitting Vote...</span></>
+                ) : (
+                  <><Send size={18} /><span>Cast Your Vote</span></>
+                )}
+              </button>
+            </>
+          ) : (
+            <div className="w-full bg-violet-950/40 border border-violet-500/40 rounded-xl p-6 shadow-xl backdrop-blur-md text-center space-y-3">
+              <CheckCircle size={48} className="text-violet-400 mx-auto" />
+              <h3 className="text-xl font-bold text-white">Vote Cast!</h3>
+              <p className="text-slate-400 text-sm">Waiting for everyone to vote and for the host to reveal results...</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Phase 3: Results
+    if (r5Phase === 'results' && r5Results) {
+      const totalVotes = r5Results.reduce((sum, r) => sum + (r.voteCount || 0), 0);
+      return (
+        <div className="flex-1 flex flex-col space-y-6 py-4 max-w-3xl mx-auto w-full animate-fade-in">
+          <div className="w-full bg-gradient-to-br from-violet-900/30 via-dark-900/90 to-purple-950/30 border-2 border-violet-500/40 rounded-3xl p-8 shadow-[0_0_50px_rgba(139,92,246,0.25)] backdrop-blur-md text-center">
+            <div className="inline-flex items-center space-x-2 bg-violet-500/20 border border-violet-400/30 px-4 py-1.5 rounded-full mb-4">
+              <Sparkles size={14} className="text-violet-300" />
+              <span className="text-violet-300 text-xs font-extrabold uppercase tracking-widest">Results Revealed</span>
+            </div>
+            <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white tracking-wide">The Verdict Is In</h2>
+          </div>
+
+          <div className="space-y-4">
+            {r5Results.map((result, idx) => {
+              const pct = totalVotes > 0 ? Math.round((result.voteCount / totalVotes) * 100) : 0;
+              return (
+                <div
+                  key={idx}
+                  className={`w-full rounded-2xl border-2 p-5 backdrop-blur-md transition-all ${
+                    result.isGemini
+                      ? 'border-emerald-400/60 bg-emerald-950/30 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
+                      : 'border-white/10 bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      {result.isGemini ? (
+                        <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold uppercase tracking-wider">✨ Gemini AI</span>
+                      ) : (
+                        <span className="text-sm font-bold text-slate-300">@{result.username}</span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-mono font-bold text-white">{pct}%</span>
+                      <span className="text-xs text-slate-500 ml-1">({result.voteCount} vote{result.voteCount !== 1 ? 's' : ''})</span>
+                    </div>
+                  </div>
+                  <p className="text-slate-300 text-sm italic leading-relaxed mb-3">"{result.text}"</p>
+                  <div className="w-full h-2 rounded-full bg-dark-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-1000 ${result.isGemini ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-violet-500 to-purple-400'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback: waiting for results
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+        <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mb-4" />
+        <p className="text-slate-400">Waiting for the host...</p>
+      </div>
+    );
+  }
+
   if (pollResult) {
     const getRichData = () => {
       if (!question) return null;
@@ -314,12 +628,12 @@ export default function RoundPage() {
       const rId = String(currentRound?.id || '').toLowerCase();
 
       let dataset = [];
-      if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('speedrun') || rName.includes('decode')) {
-        dataset = pollsData;
-      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image')) {
-        dataset = round2Data;
-      } else if (rId.includes('r1') || rName.includes('round 1') || rName.includes('conversation') || rName.includes('aptitude')) {
+      if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
         dataset = round1Data;
+      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
+        dataset = round2Data;
+      } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+        dataset = pollsData;
       } else {
         dataset = allRichData;
       }
@@ -370,7 +684,7 @@ export default function RoundPage() {
             {currentRound?.name || 'Current Round'}
           </span>
           <h2 className="text-lg font-bold text-white mt-0.5">
-            {question.type === 'mcq' ? 'Multiple Choice Question' : question.type === 'poll' ? 'Live Poll' : question.type === 'guess-author' ? 'Guess the Author' : 'Short Answer Question'}
+            {question.type === 'hallucination' ? 'Spot the Hallucination' : question.type === 'mcq' ? 'Multiple Choice Question' : question.type === 'poll' ? 'Live Poll' : question.type === 'guess-author' ? 'Guess the Author' : 'Short Answer Question'}
           </h2>
         </div>
         {timeLeft !== null && (
@@ -401,7 +715,7 @@ export default function RoundPage() {
       )}
 
       {/* Evaluation View */}
-      {evaluationData && (
+      {evaluationData && question.type !== 'hallucination' && (
         <div className="w-full bg-dark-900/80 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center text-center">
           {(() => {
             const isCorrect = myResponse && String(myResponse.answer).toLowerCase() === String(evaluationData.correctAnswer).toLowerCase();
@@ -485,6 +799,9 @@ export default function RoundPage() {
 
       {/* Question Card & Answer Section */}
       {!evaluationData && !pollResult && (() => {
+        if (question.type === 'hallucination') {
+          return <HallucinationCard question={question} evaluationData={null} />;
+        }
         if (question.type === 'profile-guess' || question.id === 'poll6') {
           const handleProfileChange = (field, val) => {
             const next = { ...profileGuess, [field]: val };
@@ -586,12 +903,12 @@ export default function RoundPage() {
           const rId = String(currentRound?.id || '').toLowerCase();
 
           let dataset = [];
-          if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('speedrun') || rName.includes('decode')) {
-            dataset = pollsData;
-          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image')) {
-            dataset = round2Data;
-          } else if (rId.includes('r1') || rName.includes('round 1') || rName.includes('conversation') || rName.includes('aptitude')) {
+          if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
             dataset = round1Data;
+          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
+            dataset = round2Data;
+          } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+            dataset = pollsData;
           } else {
             dataset = allRichData;
           }
@@ -692,7 +1009,7 @@ export default function RoundPage() {
         );
       })()}
 
-      {!evaluationData && !pollResult && (
+      {!evaluationData && !pollResult && question.type !== 'hallucination' && (
         <div className="poll-actions mt-2">
           {error && <p role="alert" className="poll-error text-center">{error}</p>}
 
@@ -724,6 +1041,10 @@ export default function RoundPage() {
             </div>
           )}
         </div>
+      )}
+
+      {evaluationData && question.type === 'hallucination' && (
+        <HallucinationCard question={question} evaluationData={evaluationData} />
       )}
     </div>
   );

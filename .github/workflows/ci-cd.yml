@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
     branches:
       - main
+      - dev
 
 permissions:
   contents: write
@@ -43,7 +45,7 @@ jobs:
   docker-build-push-gitops:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,5 +100,5 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "chore(gitops): update image tags to ${{ github.sha }} [skip ci]"
-            git push origin main
+            git push origin ${{ github.ref_name }}
           fi

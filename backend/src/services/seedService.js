@@ -76,31 +76,13 @@ class SeedService {
 
     // 3. Questions for Round 2
     const r2Questions = [
-      {
-        id: "r2-q1", order: "1", type: "image-choice", text: "Round 2 — Server Room", prompt: "Which image is AI-generated?", durationSeconds: '60', points: '10', correctAnswer: 'Image 1',
-        options: [{ key: "A", label: "Image 1" }, { key: "B", label: "Image 2" }],
-        imageProps: {
-          images: [
-            { src: "/reference/r2/image1.webp", label: "Image 1" },
-            { src: "/reference/r2/image2.webp", label: "Image 2" }
-          ]
-        }
-      },
-      {
-        id: "r2-q2", order: "2", type: "image-choice", text: "Round 2 — Wildlife Photography", prompt: "Which part of the image was AI-edited?", durationSeconds: '60', points: '10', correctAnswer: 'The background', imageUrl: "/reference/r2/image3.webp",
-        options: [{ key: "A", label: "The head / face" }, { key: "B", label: "The stripes on the abdomen" }, { key: "C", label: "The legs" }, { key: "D", label: "The background" }]
-      },
-      {
-        id: "r2-q3", order: "3", type: "text", text: "Round 2 — Street Photography", prompt: "Write a prompt that recreates this image as closely as possible.", durationSeconds: '60', points: '10', correctAnswer: '', imageUrl: "/reference/r2/image4.webp",
-        options: []
-      },
-      {
-        id: "r2-q4", order: "4", type: "image-choice", text: "Round 2 — Bird Photography", prompt: "Is this image real or AI-generated?", durationSeconds: '60', points: '10', correctAnswer: 'AI-generated', imageUrl: "/reference/r2/image5.webp",
-        options: [{ key: "A", label: "Real" }, { key: "B", label: "AI-generated" }]
-      }
+      { id: 'q2_1', order: '1', type: 'mcq', points: '10', durationSeconds: '60', text: 'Identify the option that correctly fills in the missing parts of the prompt.', prompt: 'Identify the option that correctly fills in the missing parts of the prompt.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/cyclist-night-street.png' },
+      { id: 'q2_2', order: '2', type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/tiger-edited.png' },
+      { id: 'q2_3', order: '3', type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', imageUrl: '/reference/r2/dog-reflection.png' },
+      { id: 'q2_4', order: '4', type: 'mcq', points: '10', durationSeconds: '60', text: 'Choose the prompt that is most appropriate for this living-room image.', prompt: 'Choose the prompt that is most appropriate for this living-room image.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'C', imageUrl: '/reference/r2/living-room.png' }
     ];
     for (const q of r2Questions) await questionStore.addQuestion('round_2_coding', q);
-    await questionStore.setActiveQuestionId('round_2_coding', 'r2-q1');
+    await questionStore.setActiveQuestionId('round_2_coding', 'q2_1');
 
     // 4. Questions for Round 3
     const r3Questions = [
@@ -222,28 +204,10 @@ class SeedService {
         baseName: 'Round 2 — Image Challenge',
         orderNum: '2',
         questions: [
-          {
-            id: "r2-q1", order: "1", type: "image-choice", text: "Round 2 — Server Room", prompt: "Which image is AI-generated?", durationSeconds: '60', points: '10', correctAnswer: 'Image 1',
-            options: [{ key: "A", label: "Image 1" }, { key: "B", label: "Image 2" }],
-            imageProps: {
-              images: [
-                { src: "/reference/r2/image1.webp", label: "Image 1" },
-                { src: "/reference/r2/image2.webp", label: "Image 2" }
-              ]
-            }
-          },
-          {
-            id: "r2-q2", order: "2", type: "image-choice", text: "Round 2 — Wildlife Photography", prompt: "Which part of the image was AI-edited?", durationSeconds: '60', points: '10', correctAnswer: 'The background', imageUrl: "/reference/r2/image3.webp",
-            options: [{ key: "A", label: "The head / face" }, { key: "B", label: "The stripes on the abdomen" }, { key: "C", label: "The legs" }, { key: "D", label: "The background" }]
-          },
-          {
-            id: "r2-q3", order: "3", type: "text", text: "Round 2 — Street Photography", prompt: "Write a prompt that recreates this image as closely as possible.", durationSeconds: '60', points: '10', correctAnswer: '', imageUrl: "/reference/r2/image4.webp",
-            options: []
-          },
-          {
-            id: "r2-q4", order: "4", type: "image-choice", text: "Round 2 — Bird Photography", prompt: "Is this image real or AI-generated?", durationSeconds: '60', points: '10', correctAnswer: 'AI-generated', imageUrl: "/reference/r2/image5.webp",
-            options: [{ key: "A", label: "Real" }, { key: "B", label: "AI-generated" }]
-          }
+          { id: 'q2_1', order: '1', type: 'mcq', points: '10', durationSeconds: '60', text: 'Identify the option that correctly fills in the missing parts of the prompt.', prompt: 'Identify the option that correctly fills in the missing parts of the prompt.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/cyclist-night-street.png' },
+          { id: 'q2_2', order: '2', type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/tiger-edited.png' },
+          { id: 'q2_3', order: '3', type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', imageUrl: '/reference/r2/dog-reflection.png' },
+          { id: 'q2_4', order: '4', type: 'mcq', points: '10', durationSeconds: '60', text: 'Choose the prompt that is most appropriate for this living-room image.', prompt: 'Choose the prompt that is most appropriate for this living-room image.', options: ['A', 'B', 'C', 'D'], correctAnswer: 'C', imageUrl: '/reference/r2/living-room.png' }
         ]
       },
       {
@@ -295,6 +259,46 @@ class SeedService {
             id: 'poll6', order: '6', type: 'profile-guess', text: 'Final Submission', prompt: 'Decode the Hidden Profile', correctAnswer: 'Age: 47 | Profession: Lawyer | Hobby: Photography', points: '30', showEvaluation: true, durationSeconds: '240', targetAge: '47', targetProfession: 'Lawyer', targetHobby: 'Photography', options: []
           }
         ]
+      },
+      {
+        baseId: 'round_4_hallucination',
+        baseName: 'Round 4 — Spot the Hallucination',
+        orderNum: '4',
+        questions: [
+          { id: 'h1', order: '1', type: 'hallucination', title: 'Warm-up - Obvious Hallucination', text: 'Who was the first person to walk on Mars?', aiResponse: "Neil Armstrong became the first person to walk on Mars during NASA's 1985 Mars expedition.", correctAnswer: 'Hallucination', explanation: 'No human has walked on Mars. No NASA Mars expedition occurred in 1985. The entire answer is fabricated.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h2', order: '2', type: 'hallucination', title: 'Warm-up - Obvious Hallucination', text: 'What happened during the Battle of Bengaluru in World War II?', aiResponse: 'The Battle of Bengaluru was a major conflict between Allied and Axis forces in southern India in 1943.', correctAnswer: 'Hallucination', explanation: 'No such battle occurred. The response invents a historical event.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h3', order: '3', type: 'hallucination', title: 'Warm-up - Obvious Hallucination', text: 'Which Indian astronaut planted the first Indian flag on the Moon?', aiResponse: 'Rakesh Sharma planted the first Indian flag on the Moon in 1991.', correctAnswer: 'Hallucination', explanation: 'No Indian astronaut has walked on the Moon. Rakesh Sharma never visited the Moon.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h4', order: '4', type: 'hallucination', title: 'Warm-up - Suspicious Source', text: 'Does drinking coffee improve IQ?', aiResponse: 'A 2021 MIT study proved that coffee permanently increases IQ by 15 points.', correctAnswer: 'Likely fabricated / unsupported', explanation: "Ask: Is the source verifiable? Does 'proved' sound suspicious? A permanent 15-point IQ increase is an extraordinary claim that needs strong evidence.", options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h5', order: '5', type: 'hallucination', title: 'Round 2 - Hidden Hallucination', text: 'What is wrong with this response about the Great Wall of China?', aiResponse: 'The Great Wall of China is visible from the Moon with the naked eye and remains one of humanity\'s greatest engineering achievements.', correctAnswer: 'One hidden hallucination', explanation: 'The Great Wall being visible from the Moon with the naked eye is the false claim. The rest is broadly true.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h6', order: '6', type: 'hallucination', title: 'Round 2 - Hidden Hallucination', text: 'What is wrong with this response about Einstein?', aiResponse: 'Albert Einstein won the Nobel Prize in Physics in 1921 for his Theory of Relativity, which revolutionized modern physics.', correctAnswer: 'The reason is wrong', explanation: 'Einstein did win the 1921 Nobel Prize in Physics, but he was awarded it primarily for his explanation of the photoelectric effect, not for the theory of relativity.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h7', order: '7', type: 'hallucination', title: 'Round 3 - Unsafe Advice', text: 'How should the following password advice be evaluated?', aiResponse: "Use your birthday, pet's name, favorite team, or another personal detail so you never forget your password.", correctAnswer: 'Unsafe / incorrect advice', explanation: 'Personal details can be guessed or discovered. The response sounds helpful but compromises password security.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h8', order: '8', type: 'hallucination', title: 'Round 3 - Historical Trap', text: 'What is wrong with this explanation of the Taj Mahal?', aiResponse: 'The Taj Mahal is located in Agra and was commissioned by Shah Jahan. Construction began in 1632 and was completed in 1653. It was built to celebrate the annexation of Bijapur and Golconda during his Deccan campaigns.', correctAnswer: 'Hidden hallucination', explanation: "The Taj Mahal is a mausoleum associated with Shah Jahan's wife Mumtaz Mahal. The Deccan campaign explanation is the fabricated claim.", options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h9', order: '9', type: 'hallucination', title: 'Round 4 - Binary Trap', text: 'Which statement contains the hidden error?', aiResponse: 'Binary numbers use only the digits 0 and 1. Computers internally represent data using binary. Therefore, every decimal number can be represented exactly in binary form.', correctAnswer: 'Hidden mathematical error', explanation: 'Not every decimal fraction has a finite exact binary representation. 0.1 is a classic example.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h10', order: '10', type: 'hallucination', title: 'Round 4 - Physics Trap', text: 'A piece of wood is dropped from a 100 m building while a bullet is fired upward and embeds in it. Find the height the combination rises above the building.', aiResponse: '', sourceImageUrl: '/reference/wood-physics-ai-response.png', correctAnswer: '50 m is wrong - correct answer: 40 m', explanation: 'The collision is inelastic, so mechanical energy is not conserved through it. Apply conservation of momentum during the collision.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h11', order: '11', type: 'hallucination', title: 'Round 5 - Meta AI Trap', text: 'Which part of this response should make you suspicious?', aiResponse: 'ChatGPT was released by OpenAI in 2022 and quickly became one of the most widely used AI systems in history. It is trained on vast amounts of text and can answer questions across many domains. Because of its advanced reasoning abilities, its factual statements are generally reliable and should be trusted unless there is strong evidence to the contrary.', correctAnswer: 'Overclaim / blind-trust trap', explanation: 'The final sentence is the problem. It encourages blind trust and overstates reliability. AI outputs should be verified, especially in high-stakes situations.', options: [], points: '10', durationSeconds: '300', showEvaluation: true },
+          { id: 'h12', order: '12', type: 'hallucination', title: 'Round 5 - Fake Citation Trap', text: 'Should this research claim be accepted as stated?', aiResponse: 'According to a Stanford University study published in 2023, students who use AI tools for more than two hours daily score 35% higher in engineering courses. The study proves that AI usage directly causes better academic performance.', correctAnswer: 'Unsupported / likely fabricated', explanation: "The citation may be fabricated or misrepresented. No study details are provided, correlation does not establish causation, and the word 'proves' is suspicious.", options: [], points: '10', durationSeconds: '300', showEvaluation: true }
+        ]
+      },
+      {
+        baseId: 'round_5_reverse',
+        baseName: 'Round 5 — Reverse Turing Test',
+        orderNum: '5',
+        questions: [
+          {
+            id: 'r5_q1',
+            order: '1',
+            type: 'reverse-turing',
+            title: 'Round 5 — Reverse Turing Test',
+            subtitle: 'Write Like an AI',
+            text: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
+            prompt: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
+            description: "Can you write a response so convincing that others think it was written by Gemini? Your response will be mixed with Gemini's actual response — try to fool everyone!",
+            durationSeconds: '600',
+            points: '0',
+            showEvaluation: false,
+            options: []
+          }
+        ]
       }
     ];
 
@@ -338,7 +342,7 @@ class SeedService {
         id: finalId,
         name: finalName,
         status: 'pending',
-        durationSeconds: '300',
+        durationSeconds: preset.baseId === 'round_5_reverse' ? '600' : '300',
         order: String(newOrder)
       });
 
@@ -350,6 +354,21 @@ class SeedService {
 
       if (preset.questions.length > 0) {
         await questionStore.setActiveQuestionId(finalId, preset.questions[0].id);
+      }
+
+      // Initialize Round 5 default Gemini response & initial phase if it's Round 5
+      if (preset.baseId === 'round_5_reverse') {
+        try {
+          const r5Store = require('../redis/r5Store');
+          const currentGemini = await r5Store.getGeminiResponse();
+          if (!currentGemini) {
+            await r5Store.setGeminiResponse("The quiet hours when the world is asleep are where your future self is built step by step. Every page you read tonight is bringing you closer to the moment you walk out of that exam knowing you gave it everything.");
+          }
+          const currentPhase = await r5Store.getPhase();
+          if (!currentPhase) {
+            await r5Store.setPhase('prompt');
+          }
+        } catch { /* silent */ }
       }
 
       addedRounds.push(finalName);

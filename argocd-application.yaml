@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/snk189/dgdg.git
+    repoURL: https://github.com/snk189/turingtest_gdg_sip.git
     targetRevision: dev
     path: k8s
     directory:

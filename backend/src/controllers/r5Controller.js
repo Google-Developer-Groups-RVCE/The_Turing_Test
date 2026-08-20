@@ -84,6 +84,25 @@ class R5Controller {
     }
   }
 
+  async getAllResponses(req, res, next) {
+    try {
+      const responses = await r5Service.getAllResponses();
+      res.json({ success: true, responses });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }
+
+  async selectCandidates(req, res, next) {
+    try {
+      const { selectedUsernames } = req.body;
+      await r5Service.selectCandidates(req.user.username, selectedUsernames);
+      res.json({ success: true, message: 'Candidates selected and voting opened' });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }
+
   async openVoting(req, res, next) {
     try {
       await r5Service.openVoting(req.user.username);

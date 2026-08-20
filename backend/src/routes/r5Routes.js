@@ -21,6 +21,8 @@ router.get('/voting-status', r5Controller.getVotingStatus);
 router.get('/results', r5Controller.getResults);
 
 // Admin routes
+router.get('/admin/responses', roleMiddleware('admin'), r5Controller.getAllResponses);
+router.post('/select-candidates', roleMiddleware('admin'), r5Controller.selectCandidates);
 router.post('/open-voting', roleMiddleware('admin'), r5Controller.openVoting);
 router.post('/show-results', roleMiddleware('admin'), r5Controller.showResults);
 router.post('/reset', roleMiddleware('admin'), r5Controller.resetRound5);

@@ -12,13 +12,14 @@ import { Clock, CheckCircle, XCircle, AlertCircle, Send, Pause, RefreshCw, Lock,
 import round1Data from '../../data/round1Data';
 import round2Data from '../../data/round2Data';
 import pollsData from '../../data/pollsData';
+import round4Data from '../../data/round4Data';
 import round5Data from '../../data/round5Data';
 import { submitR5Response, getMyR5Response, getR5Status, getR5Options, submitR5Vote, getMyR5Vote, getR5VotingStatus, getR5Results } from '../../api/r5Api';
 import ChallengeCard from '../../components/ChallengeCard';
 import PollCard from '../../components/PollCard';
 import HallucinationCard from '../../components/HallucinationCard';
 
-const allRichData = [...round1Data, ...round2Data, ...pollsData, ...round5Data];
+const allRichData = [...round1Data, ...round2Data, ...pollsData, ...round4Data, ...round5Data];
 
 export default function RoundPage() {
   const { currentRound, eventStatus, activeStage, setCurrentRound, setEventStatus } = useContext(EventStateContext);
@@ -628,12 +629,14 @@ export default function RoundPage() {
       const rId = String(currentRound?.id || '').toLowerCase();
 
       let dataset = [];
-      if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
-        dataset = round1Data;
-      } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
-        dataset = round2Data;
-      } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+      if (question.type === 'poll' || question.type === 'profile-guess' || rId.includes('r3') || rId.includes('round_3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode') || rName.includes('speedrun')) {
         dataset = pollsData;
+      } else if (question.type === 'mcq' && (rId.includes('r4') || rId.includes('round_4') || rName.includes('round 4') || rName.includes('hallucination'))) {
+        dataset = round4Data;
+      } else if (rId.includes('r2') || rId.includes('round_2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image challenge')) {
+        dataset = round2Data;
+      } else if (rId.includes('r1') || rId.includes('round_1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('live conversation')) {
+        dataset = round1Data;
       } else {
         dataset = allRichData;
       }
@@ -903,12 +906,14 @@ export default function RoundPage() {
           const rId = String(currentRound?.id || '').toLowerCase();
 
           let dataset = [];
-          if (rId.includes('r1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('turing test')) {
-            dataset = round1Data;
-          } else if (rId.includes('r2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('server')) {
-            dataset = round2Data;
-          } else if (rId.includes('r3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode')) {
+          if (question.type === 'poll' || question.type === 'profile-guess' || rId.includes('r3') || rId.includes('round_3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode') || rName.includes('speedrun')) {
             dataset = pollsData;
+          } else if (question.type === 'mcq' && (rId.includes('r4') || rId.includes('round_4') || rName.includes('round 4') || rName.includes('hallucination'))) {
+            dataset = round4Data;
+          } else if (rId.includes('r2') || rId.includes('round_2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image challenge')) {
+            dataset = round2Data;
+          } else if (rId.includes('r1') || rId.includes('round_1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('live conversation')) {
+            dataset = round1Data;
           } else {
             dataset = allRichData;
           }

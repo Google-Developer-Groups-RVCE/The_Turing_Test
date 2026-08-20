@@ -43,45 +43,57 @@ class R5Service {
     };
   }
 
-  async openVoting(adminUsername) {
+  async getAllResponses() {
+    return await r5Store.getAllResponses() || {};
+  }
+
+  async selectCandidates(adminUsername, selectedUsernames) {
     const phase = await r5Store.getPhase();
     if (phase !== 'prompt') {
-      throw new Error('Can only open voting from prompt phase');
+      throw new Error('Can only select candidates from prompt phase');
     }
 
-    const responses = await r5Store.getAllResponses();
-    const geminiText = await r5Store.getGeminiResponse();
+    if (!Array.isArray(selectedUsernames) || selectedUsernames.length === 0) {
+      throw new Error('Please select at least 1 candidate response');
+    }
 
+    const responses = await r5Store.getAllResponses() || {};
+    const leaderboardService = require('./leaderboardService');
+    const roundStore = require('../redis/roundStore');
+    const currentRound = await roundStore.getCurrentRound();
+    const roundId = currentRound?.id || 'round_5_reverse';
+
+    // Award 20 points to each user whose response was selected by admin
+    for (const username of selectedUsernames) {
+      if (responses[username]) {
+        try {
+          await leaderboardService.updateScore(username, roundId, 20);
+        } catch (e) {
+          console.error(`[r5Service] Failed to award candidate points to ${username}:`, e.message);
+        }
+      }
+    }
+
+    const geminiText = await r5Store.getGeminiResponse();
     let options = [];
     if (geminiText) {
       options.push({ text: geminiText, author: '__gemini__' });
     }
 
-    for (const [username, text] of Object.entries(responses || {})) {
-      options.push({ text, author: username });
+    for (const username of selectedUsernames) {
+      if (responses[username]) {
+        options.push({ text: responses[username], author: username });
+      }
     }
 
-    // Shuffle options using Fisher-Yates, but place Gemini in the middle
-    let userOptions = options.filter(o => o.author !== '__gemini__');
-    let geminiOption = options.find(o => o.author === '__gemini__');
-
-    // Shuffle user options
-    for (let i = userOptions.length - 1; i > 0; i--) {
+    // Shuffle options using Fisher-Yates
+    for (let i = options.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [userOptions[i], userOptions[j]] = [userOptions[j], userOptions[i]];
-    }
-
-    let finalOptions = [...userOptions];
-    if (geminiOption) {
-      // Insert gemini somewhere in the middle, not first or last
-      const minIndex = Math.max(1, Math.floor(finalOptions.length * 0.25));
-      const maxIndex = Math.max(1, Math.floor(finalOptions.length * 0.75));
-      const insertIndex = Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
-      finalOptions.splice(insertIndex, 0, geminiOption);
+      [options[i], options[j]] = [options[j], options[i]];
     }
 
     // Assign indices
-    finalOptions = finalOptions.map((opt, idx) => ({ ...opt, index: idx }));
+    const finalOptions = options.map((opt, idx) => ({ ...opt, index: idx }));
 
     await r5Store.setShuffledOptions(finalOptions);
     await r5Store.setPhase('voting');
@@ -93,6 +105,14 @@ class R5Service {
       io.emit('r5:voting_opened', { options: participantOptions });
       io.emit('r5:phase_changed', { phase: 'voting' });
     }
+  }
+
+  async openVoting(adminUsername) {
+    const responses = await r5Store.getAllResponses() || {};
+    const usernames = Object.keys(responses);
+    // Take up to 3 responses if none specifically selected
+    const selected = usernames.slice(0, 3);
+    return await this.selectCandidates(adminUsername, selected);
   }
 
   async getShuffledOptions() {
@@ -140,6 +160,28 @@ class R5Service {
       throw new Error('Can only show results from voting phase');
     }
 
+    const options = await r5Store.getShuffledOptions() || [];
+    const geminiOption = options.find(o => o.author === '__gemini__');
+    const votes = await r5Store.getAllVotes() || {};
+
+    // Award 20 points to everyone who guessed Gemini correctly
+    if (geminiOption !== undefined) {
+      const leaderboardService = require('./leaderboardService');
+      const roundStore = require('../redis/roundStore');
+      const currentRound = await roundStore.getCurrentRound();
+      const roundId = currentRound?.id || 'round_5_reverse';
+
+      for (const [username, votedIndex] of Object.entries(votes)) {
+        if (parseInt(votedIndex, 10) === geminiOption.index) {
+          try {
+            await leaderboardService.updateScore(username, roundId, 20);
+          } catch (e) {
+            console.error(`[r5Service] Failed to award Gemini guess points to ${username}:`, e.message);
+          }
+        }
+      }
+    }
+
     await r5Store.setPhase('results');
     const results = await this.getResults();
 
@@ -161,7 +203,9 @@ class R5Service {
       const voteCount = Object.values(votes).filter(v => parseInt(v, 10) === opt.index).length;
       return {
         ...opt,
-        votes: voteCount,
+        isGemini: opt.author === '__gemini__',
+        username: opt.author === '__gemini__' ? 'Gemini' : opt.author,
+        voteCount,
         percent: totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0
       };
     });

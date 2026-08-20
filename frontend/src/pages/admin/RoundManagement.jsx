@@ -7,6 +7,7 @@ import {
 import { getQuestions, getActiveQuestion, nextQuestion, previousQuestion, setActiveQuestion, overrideOption, revealPoll, reorderQuestions } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { getSettings, updateSettings } from '../../api/settingsApi';
+import { getAllR5AdminResponses, selectR5Candidates, showR5Results, resetR5 } from '../../api/r5Api';
 import { useSocket } from '../../hooks/useSocket';
 import { EventStateContext } from '../../contexts/EventStateContext';
 import { SOCKET_EVENTS } from '../../utils/constants';
@@ -14,7 +15,7 @@ import ParticipantDeviceSimulation from '../../components/ParticipantDeviceSimul
 import {
   Layers, Play, Pause, RotateCcw, Square, Plus, Edit, Trash2,
   RefreshCw, X, AlertTriangle, SkipForward, SkipBack, Eye, Trophy, Monitor, CheckCircle,
-  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle, ArrowRightCircle, ChevronUp, ChevronDown
+  Clock, Sparkles, Database, Trash, ChevronRight, HelpCircle, ArrowRightCircle, ChevronUp, ChevronDown, CheckSquare, Square as SquareOutline
 } from 'lucide-react';
 
 function RoundModal({ round, onClose, onSave }) {
@@ -92,10 +93,27 @@ export default function RoundManagement() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [togglingLeaderboard, setTogglingLeaderboard] = useState(false);
 
+  // R5 Admin Selection State
+  const [r5Responses, setR5Responses] = useState({});
+  const [selectedR5Users, setSelectedR5Users] = useState([]);
+  const [loadingR5, setLoadingR5] = useState(false);
+
   const getActiveRound = (list) => (list || rounds).find(r => r.status === 'active') || (list || rounds).find(r => r.status === 'paused') || null;
 
   const showSuccess = (m) => { setSuccess(m); setTimeout(() => setSuccess(''), 4000); };
   const showError = (m) => { setError(m); setTimeout(() => setError(''), 5000); };
+
+  const fetchR5AdminResponses = async () => {
+    setLoadingR5(true);
+    try {
+      const res = await getAllR5AdminResponses();
+      setR5Responses(res.data?.responses || {});
+    } catch {
+      // ignore
+    } finally {
+      setLoadingR5(false);
+    }
+  };
 
   const fetchRounds = useCallback(async (isInitial = false) => {
     if (isInitial && rounds.length === 0) setLoading(true);
@@ -557,6 +575,89 @@ export default function RoundManagement() {
                     </>
                   );
                 })()}
+              </div>
+            )}
+
+            {/* Round 5 Reverse Turing Test Admin Controls */}
+            {activeRound && (String(activeRound.id).includes('round_5') || activeRound.name?.toLowerCase().includes('round 5') || activeRound.name?.toLowerCase().includes('reverse')) && (
+              <div className="pt-3 space-y-3 border-t border-dark-700 mt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center space-x-1">
+                    <Sparkles size={13} />
+                    <span>Round 5: Human Responses ({Object.keys(r5Responses).length})</span>
+                  </h4>
+                  <button
+                    onClick={fetchR5AdminResponses}
+                    className="text-[11px] text-violet-300 hover:text-violet-200 flex items-center space-x-1 font-semibold"
+                  >
+                    <RefreshCw size={11} className={loadingR5 ? 'animate-spin' : ''} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {Object.keys(r5Responses).length === 0 ? (
+                    <p className="text-xs text-slate-500 italic py-2 text-center">No participant responses submitted yet.</p>
+                  ) : (
+                    Object.entries(r5Responses).map(([uName, respText]) => {
+                      const isSelected = selectedR5Users.includes(uName);
+                      return (
+                        <div
+                          key={uName}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedR5Users(selectedR5Users.filter(u => u !== uName));
+                            } else {
+                              if (selectedR5Users.length >= 3) {
+                                showError('You can select a maximum of 3 candidate responses.');
+                                return;
+                              }
+                              setSelectedR5Users([...selectedR5Users, uName]);
+                            }
+                          }}
+                          className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-violet-500/20 border-violet-500/50 text-white shadow-inner'
+                              : 'bg-dark-800 border-dark-700 text-slate-300 hover:bg-dark-700'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-violet-300">@{uName}</span>
+                            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-dark-900 border border-dark-700">
+                              {isSelected ? '✓ Selected' : 'Click to select'}
+                            </span>
+                          </div>
+                          <p className="text-slate-300 text-xs italic line-clamp-2">"{respText}"</p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => doAction('Open Voting with 3 Selected Humans', () => selectR5Candidates(selectedR5Users))}
+                    disabled={!!actionLoading || selectedR5Users.length === 0}
+                    className="flex-1 py-2 px-3 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-xs font-bold transition-colors"
+                  >
+                    Open Voting with Selected ({selectedR5Users.length}/3)
+                  </button>
+                  <button
+                    onClick={() => doAction('Reveal R5 Results', () => showR5Results())}
+                    disabled={!!actionLoading}
+                    className="py-2 px-3 rounded-lg bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold transition-colors"
+                  >
+                    Reveal Results
+                  </button>
+                  <button
+                    onClick={() => doAction('Reset R5', () => resetR5())}
+                    disabled={!!actionLoading}
+                    className="py-2 px-2.5 rounded-lg bg-rose-600/20 border border-rose-500/40 hover:bg-rose-600/30 text-rose-300 text-xs font-bold transition-colors"
+                    title="Reset Round 5 State"
+                  >
+                    <RotateCcw size={13} />
+                  </button>
+                </div>
               </div>
             )}
 

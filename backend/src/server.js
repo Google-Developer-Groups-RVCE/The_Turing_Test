@@ -31,37 +31,51 @@ const { hashPassword } = require('./utils/hashPassword');
 
 async function autoSeed() {
   try {
-    const adminUsernames = ['a', 'A', 'aa', 'AA'];
-    for (const u of adminUsernames) {
-      const exists = await userStore.usernameExists(u);
+    const adminList = [
+      { username: 'admin', password: 'password', name: 'Super Admin' },
+      { username: 'admin123', password: 'password123', name: 'Super Admin' },
+      { username: 'a', password: 'a', name: 'Super Admin' },
+      { username: 'A', password: 'a', name: 'Super Admin' },
+      { username: 'aa', password: 'aa', name: 'Super Admin' },
+      { username: 'AA', password: 'aa', name: 'Super Admin' }
+    ];
+    for (const adm of adminList) {
+      const exists = await userStore.usernameExists(adm.username);
       if (!exists) {
-        const hashed = await hashPassword(u.toLowerCase());
+        const hashed = await hashPassword(adm.password);
         await userStore.createUser({
-          username: u,
+          username: adm.username,
           passwordHash: hashed,
           role: 'admin',
-          name: 'Super Admin',
+          name: adm.name,
           createdAt: Date.now().toString(),
           status: 'active'
         });
-        logger.info(`[autoSeed] Admin user '${u}' seeded successfully.`);
+        logger.info(`[autoSeed] Admin user '${adm.username}' seeded successfully.`);
       }
     }
 
-    const participantUsernames = ['b', 'B', 'bb', 'BB'];
-    for (const u of participantUsernames) {
-      const pExists = await userStore.usernameExists(u);
+    const participantList = [
+      { username: 'b', password: 'b', name: 'Test Participant B' },
+      { username: 'B', password: 'b', name: 'Test Participant B' },
+      { username: 'bb', password: 'bb', name: 'Test Participant B' },
+      { username: 'BB', password: 'bb', name: 'Test Participant B' },
+      { username: 'user1', password: 'password', name: 'Participant 1' },
+      { username: 'user2', password: 'password', name: 'Participant 2' }
+    ];
+    for (const p of participantList) {
+      const pExists = await userStore.usernameExists(p.username);
       if (!pExists) {
-        const pHashed = await hashPassword(u.toLowerCase());
+        const pHashed = await hashPassword(p.password);
         await userStore.createUser({
-          username: u,
+          username: p.username,
           passwordHash: pHashed,
           role: 'participant',
-          name: 'Test Participant B',
+          name: p.name,
           createdAt: Date.now().toString(),
           status: 'active'
         });
-        logger.info(`[autoSeed] Participant user '${u}' seeded successfully.`);
+        logger.info(`[autoSeed] Participant user '${p.username}' seeded successfully.`);
       }
     }
   } catch (err) {

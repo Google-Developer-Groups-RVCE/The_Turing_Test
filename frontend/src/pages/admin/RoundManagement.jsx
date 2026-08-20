@@ -354,7 +354,7 @@ export default function RoundManagement() {
 
   const handleInjectPresetRound = (roundNumber) => {
     const label = roundNumber === 'all'
-      ? 'Inject All Preset Rounds (1, 2, 3)'
+      ? 'Inject All Preset Rounds (1–5)'
       : `Add Preset Round ${roundNumber}`;
 
     doAction(label, async () => {

@@ -439,7 +439,11 @@ export default function AdminDashboard() {
                 <span className="text-primary-400 font-medium">{log.admin}</span>
                 <span className="text-slate-400"> → {log.action}</span>
                 <span className="text-slate-600 ml-2 text-xs">
-                  {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : ''}
+                  {(() => {
+                    if (!log.timestamp) return '';
+                    const parsed = isNaN(Number(log.timestamp)) ? new Date(log.timestamp) : new Date(Number(log.timestamp));
+                    return isNaN(parsed.getTime()) ? '' : parsed.toLocaleTimeString();
+                  })()}
                 </span>
               </div>
             ))}

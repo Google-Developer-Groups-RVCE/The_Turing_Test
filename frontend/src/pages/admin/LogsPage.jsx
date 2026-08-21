@@ -50,8 +50,8 @@ export default function LogsPage() {
 
   const formatTime = (ts) => {
     if (!ts) return '—';
-    const d = new Date(ts);
-    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+    const parsed = isNaN(Number(ts)) ? new Date(ts) : new Date(Number(ts));
+    return isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString() + ' ' + parsed.toLocaleTimeString();
   };
 
   return (

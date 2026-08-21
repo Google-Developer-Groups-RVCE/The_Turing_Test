@@ -3,7 +3,7 @@ import { useSocket } from '../../hooks/useSocket';
 import { SOCKET_EVENTS } from '../../utils/constants';
 import { getLeaderboard, getRoundLeaderboard, overrideScore, resetLeaderboard, recalculateLeaderboard } from '../../api/leaderboardApi';
 import { getRounds } from '../../api/roundApi';
-import { Trophy, Crown, Medal, RefreshCw, RotateCcw, Edit, X, Check, Download } from 'lucide-react';
+import { Trophy, Crown, Medal, RefreshCw, RotateCcw, Edit, X, Check, Download, CheckCircle } from 'lucide-react';
 
 function ScoreModal({ user, onClose, onSave }) {
   const [score, setScore] = useState(user.score ?? 0);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getRounds } from '../../api/roundApi';
 import { getQuestions, createQuestion, updateQuestion, deleteQuestion, reorderQuestions } from '../../api/questionApi';
-import { HelpCircle, Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Image } from 'lucide-react';
+import { HelpCircle, Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Image, CheckCircle } from 'lucide-react';
 
 function normalizeOptions(options, type) {
   if (!options) return type === 'guess-author' ? [{ text: '', author: 'Human' }, { text: '', author: 'Gemini' }] : ['', '', '', ''];

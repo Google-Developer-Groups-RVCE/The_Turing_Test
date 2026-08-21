@@ -5,7 +5,7 @@ import {
 } from '../../api/userApi';
 import {
   Users, Search, Upload, Download, Trash2, Lock, Unlock,
-  Edit, RefreshCw, X, ChevronLeft, ChevronRight, UserPlus
+  Edit, RefreshCw, X, ChevronLeft, ChevronRight, UserPlus, CheckCircle
 } from 'lucide-react';
 
 // ─── Create User Modal ───────────────────────────────────────────────────────

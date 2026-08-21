@@ -586,7 +586,8 @@ export default function RoundManagement() {
                     <span className="text-blue-200 font-bold text-xs">
                       {(() => {
                         const opt = (activeQuestion.options || []).find(o => o.id === activeQuestion.displayedOptionId);
-                        return opt ? `${opt.author} ("${opt.id}")` : 'Random / Pending Start';
+                        const author = opt?.author || (activeQuestion.displayedOptionId?.includes('human') ? 'Human' : activeQuestion.displayedOptionId?.includes('gemini') ? 'Gemini' : 'Human');
+                        return `${author} (${activeQuestion.displayedOptionId || 'human-opt'})`;
                       })()}
                     </span>
                   </div>

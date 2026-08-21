@@ -827,14 +827,14 @@ export default function RoundPage() {
                 <div className="w-full mt-6 space-y-4 text-left">
                   <div className="p-4 rounded-xl bg-dark-800 border border-dark-600">
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Your Answer</p>
-                    <p className={`text-lg font-medium ${isCorrect ? 'text-emerald-300' : 'text-rose-400'}`}>
+                    <p className={`text-lg font-medium font-mono ${isCorrect ? 'text-emerald-300' : 'text-rose-400'}`}>
                       {myResponse?.answer || 'No answer submitted'}
                     </p>
                   </div>
-                  {!isCorrect && (
+                  {evaluationData.correctAnswer && (
                     <div className="p-4 rounded-xl bg-emerald-900/20 border border-emerald-500/30">
-                      <p className="text-xs text-emerald-500/80 font-bold uppercase tracking-wider mb-1">Correct Answer</p>
-                      <p className="text-lg font-medium text-emerald-400">
+                      <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">Official Solution / Benchmark Target</p>
+                      <p className="text-lg font-medium text-emerald-400 font-mono">
                         {evaluationData.correctAnswer}
                       </p>
                     </div>

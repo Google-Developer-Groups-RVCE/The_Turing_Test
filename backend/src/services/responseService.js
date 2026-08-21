@@ -197,11 +197,31 @@ class ResponseService {
   }
 
   async getResponses(roundId, questionId) {
-    if (!questionId) {
-      // If questionId is not provided, fetch for active question
-      questionId = await questionStore.getActiveQuestionId(roundId);
+    if (!roundId || roundId === 'all') {
+      const order = await roundStore.getRoundsOrder();
+      const allResponses = [];
+      for (const rId of order) {
+        const qOrder = await questionStore.getQuestionsOrder(rId);
+        for (const qId of qOrder) {
+          const users = await responseStore.getRespondedUsers(rId, qId);
+          const resps = await Promise.all(users.map(u => responseStore.getResponse(rId, qId, u)));
+          allResponses.push(...resps.filter(Boolean));
+        }
+      }
+      return allResponses;
     }
-    if (!questionId) return [];
+
+    if (!questionId) {
+      // If questionId is not provided, fetch all questions in this round
+      const qOrder = await questionStore.getQuestionsOrder(roundId);
+      const allResponses = [];
+      for (const qId of qOrder) {
+        const users = await responseStore.getRespondedUsers(roundId, qId);
+        const resps = await Promise.all(users.map(u => responseStore.getResponse(roundId, qId, u)));
+        allResponses.push(...resps.filter(Boolean));
+      }
+      return allResponses;
+    }
     
     const users = await responseStore.getRespondedUsers(roundId, questionId);
     const responses = await Promise.all(users.map(u => responseStore.getResponse(roundId, questionId, u)));

@@ -155,7 +155,8 @@ export default function LiveResponses() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <select className="input-field py-2 text-sm w-48" value={selectedRound} onChange={e => setSelectedRound(e.target.value)}>
+        <select className="input-field py-2 text-sm w-56" value={selectedRound} onChange={e => setSelectedRound(e.target.value)}>
+          <option value="all">🌐 All Rounds (Complete Event)</option>
           {rounds.map(r => (
             <option key={r.id} value={r.id}>{r.name} ({r.status})</option>
           ))}
@@ -184,31 +185,39 @@ export default function LiveResponses() {
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Username</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Answer</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Round / Question</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Answer Submitted</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Result</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Points</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Submitted At</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-700/50">
-              {loading && <tr><td colSpan={5} className="text-center py-10 text-slate-500">Loading...</td></tr>}
-              {!loading && responses.length === 0 && <tr><td colSpan={6} className="text-center py-10 text-slate-500">No responses yet. Waiting for participants...</td></tr>}
+              {loading && <tr><td colSpan={7} className="text-center py-10 text-slate-500">Loading...</td></tr>}
+              {!loading && responses.length === 0 && <tr><td colSpan={7} className="text-center py-10 text-slate-500">No responses yet. Waiting for participants...</td></tr>}
               {!loading && responses.map((r, i) => (
-                <tr key={`${r.username}-${i}`} className="hover:bg-dark-800/40 transition-colors">
+                <tr key={`${r.username}-${r.questionId || ''}-${i}`} className="hover:bg-dark-800/40 transition-colors">
                   <td className="px-4 py-3">
                     <input type="checkbox" className="w-4 h-4 rounded border-dark-600 bg-dark-800 checked:bg-primary-500" 
                       checked={selectedUsers.has(r.username)} 
                       onChange={() => toggleSelectUser(r.username)} 
                     />
                   </td>
-                  <td className="px-4 py-3 font-mono text-white text-xs">{r.username}</td>
-                  <td className="px-4 py-3 text-slate-300 max-w-xs truncate">{r.answer}</td>
-                  <td className="px-4 py-3">
-                    {r.isCorrect
-                      ? <span className="flex items-center space-x-1 text-primary-400"><CheckCircle size={14} /><span>Correct</span></span>
-                      : <span className="flex items-center space-x-1 text-rose-400"><XCircle size={14} /><span>Incorrect</span></span>}
+                  <td className="px-4 py-3 font-mono text-white text-xs font-bold">{r.username}</td>
+                  <td className="px-4 py-3 text-xs font-mono text-primary-300">
+                    <span className="px-2 py-0.5 rounded bg-dark-800 border border-dark-600">
+                      {r.roundId || 'R?'} : {r.questionId || 'Q?'}
+                    </span>
                   </td>
-                  <td className="px-4 py-3 font-mono text-white">{r.pointsAwarded ?? 0}</td>
+                  <td className="px-4 py-3 text-slate-200 max-w-sm font-mono text-xs break-all">
+                    {r.answer}
+                  </td>
+                  <td className="px-4 py-3">
+                    {String(r.isCorrect) === 'true' || Number(r.pointsAwarded) > 0
+                      ? <span className="flex items-center space-x-1 text-primary-400 font-semibold"><CheckCircle size={14} /><span>Correct</span></span>
+                      : <span className="flex items-center space-x-1 text-rose-400 font-semibold"><XCircle size={14} /><span>Incorrect</span></span>}
+                  </td>
+                  <td className="px-4 py-3 font-mono font-bold text-yellow-400">+{r.pointsAwarded ?? 0} pts</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
                     {r.submittedAt ? (isNaN(parseInt(r.submittedAt, 10)) ? new Date(r.submittedAt) : new Date(parseInt(r.submittedAt, 10))).toLocaleTimeString() : '—'}
                   </td>

@@ -19,6 +19,7 @@ router.get('/current', roundController.getCurrentRound);
 
 // Admin only: all write operations
 router.use(roleMiddleware('admin'));
+router.delete('/', roundController.deleteAllRounds);
 router.put('/reorder', roundController.reorderRounds);
 router.post('/', roundController.createRound);
 router.put('/:roundId', roundController.updateRound);

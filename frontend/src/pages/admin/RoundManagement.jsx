@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
-  getRounds, createRound, updateRound, deleteRound,
+  getRounds, createRound, updateRound, deleteRound, deleteAllRounds,
   startRound, pauseRound, resumeRound, restartRound, endRound, clearRoundResponses,
   extendRoundTime, resetEvent, endEvent, clearAllLiveData, getStage, reorderRounds, injectPresetRound
 } from '../../api/roundApi';
@@ -354,12 +354,20 @@ export default function RoundManagement() {
 
   const handleInjectPresetRound = (roundNumber) => {
     const label = roundNumber === 'all'
-      ? 'Inject All Preset Rounds (1–5)'
-      : `Add Preset Round ${roundNumber}`;
+      ? 'Inject All Event Rounds (R1-R3)'
+      : `Add Event Round ${roundNumber}`;
 
     doAction(label, async () => {
       const res = await injectPresetRound(roundNumber);
       showSuccess(res.data?.message || `${label} completed successfully`);
+    });
+  };
+
+  const handleDeleteAllRounds = () => {
+    if (!window.confirm('Are you sure you want to remove ALL rounds and their questions?')) return;
+    doAction('Remove All Rounds', async () => {
+      await deleteAllRounds();
+      fetchRounds();
     });
   };
 
@@ -432,53 +440,47 @@ export default function RoundManagement() {
               onClick={() => handleInjectPresetRound('all')}
               disabled={!!actionLoading}
               className="btn-secondary py-1.5 px-3 flex items-center space-x-1.5 text-xs font-semibold hover:bg-dark-700"
-              title="Add all preset rounds (Rounds 1, 2, 3, 4 & 5) without modifying existing rounds"
+              title="Add all 3 event rounds: R1 (Rapid Fire 1+2+4), R2 (Decode Context 3), R3 (Reverse Turing 5)"
             >
               <Sparkles size={14} className="text-yellow-400" />
-              <span>+ Add All Presets</span>
+              <span>+ Add Event Presets (R1-R3)</span>
             </button>
             <div className="h-4 w-px bg-dark-600 my-auto mx-0.5" />
             <button
               onClick={() => handleInjectPresetRound(1)}
               disabled={!!actionLoading}
               className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
-              title="Add Preset Round 1 (Live Conversations) individually"
+              title="Add Round 1 (Rapid Fire combining Live Convo + Image Challenge + Spot Hallucination)"
             >
-              + R1
+              + R1 (Rapid Fire)
             </button>
             <button
               onClick={() => handleInjectPresetRound(2)}
               disabled={!!actionLoading}
               className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
-              title="Add Preset Round 2 (Image Challenge) individually"
+              title="Add Round 2 (Decode the Context: 5 Polls + Final Guess)"
             >
-              + R2
+              + R2 (Decode)
             </button>
             <button
               onClick={() => handleInjectPresetRound(3)}
               disabled={!!actionLoading}
               className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
-              title="Add Preset Round 3 (Turing Test Speedrun / Polls) individually"
+              title="Add Round 3 (Reverse Turing Test)"
             >
-              + R3
-            </button>
-            <button
-              onClick={() => handleInjectPresetRound(4)}
-              disabled={!!actionLoading}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
-              title="Add Preset Round 4 (Spot the Hallucination) individually"
-            >
-              + R4
-            </button>
-            <button
-              onClick={() => handleInjectPresetRound(5)}
-              disabled={!!actionLoading}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-dark-700 hover:text-white transition-colors"
-              title="Add Preset Round 5 (Reverse Turing Test) individually"
-            >
-              + R5
+              + R3 (Reverse Turing)
             </button>
           </div>
+
+          <button
+            onClick={handleDeleteAllRounds}
+            disabled={!!actionLoading || rounds.length === 0}
+            className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 text-xs font-semibold transition-colors flex items-center space-x-1.5 disabled:opacity-40"
+            title="Remove all rounds and their questions"
+          >
+            <Trash size={14} />
+            <span>Remove All Rounds</span>
+          </button>
 
           <button onClick={() => setModal('create')} className="btn-primary flex items-center space-x-2 text-sm">
             <Plus size={16} /><span>New Round</span>
@@ -758,6 +760,23 @@ export default function RoundManagement() {
                       className="flex-1 min-w-[50px] py-1.5 px-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 text-xs font-mono font-bold transition-colors"
                     >
                       +{secs >= 60 ? `${secs / 60}m` : `${secs}s`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reduce Time */}
+              <div className="space-y-1 pt-1">
+                <span className="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Reduce Time:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[-10, -20, -30, -60, -120].map((secs) => (
+                    <button
+                      key={`sub-${secs}`}
+                      onClick={() => handleExtendTime(secs)}
+                      disabled={!!actionLoading}
+                      className="flex-1 min-w-[50px] py-1.5 px-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 text-xs font-mono font-bold transition-colors"
+                    >
+                      {Math.abs(secs) >= 60 ? `-${Math.abs(secs) / 60}m` : `${secs}s`}
                     </button>
                   ))}
                 </div>

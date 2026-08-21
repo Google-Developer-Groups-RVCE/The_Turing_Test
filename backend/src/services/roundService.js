@@ -44,6 +44,30 @@ class RoundService {
     await roundStore.deleteRound(roundId);
   }
 
+  async deleteAllRounds(adminUsername) {
+    const { redisClient } = require('../config/redisClient');
+    const keys = require('../redis/keys');
+    const roundKeys = await redisClient.keys('round:*');
+    if (roundKeys.length > 0) {
+      await redisClient.del(roundKeys);
+    }
+    await redisClient.del(keys.ROUNDS_ORDER);
+    await redisClient.del(keys.CURRENT_ROUND);
+
+    await logStore.addLog({
+      action: 'DELETE_ALL_ROUNDS',
+      adminUsername: adminUsername || 'admin',
+      timestamp: Date.now().toString(),
+      details: 'All rounds and questions were removed'
+    });
+
+    const io = getIO();
+    if (io) {
+      io.emit('round:changed', { roundId: null, status: 'none' });
+    }
+    return { message: 'All rounds deleted successfully' };
+  }
+
   async reorderRounds(orderedIds) {
     await roundStore.reorderRounds(orderedIds);
     const io = getIO();

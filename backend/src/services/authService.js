@@ -52,6 +52,11 @@ class AuthService {
     }
 
     const token = generateToken({ username: user.username, role: user.role });
+    const lastLogin = Date.now().toString();
+    try {
+      await userStore.updateUser(user.username, { lastLogin });
+    } catch (e) {}
+
     return {
       token,
       role: user.role,
@@ -59,7 +64,8 @@ class AuthService {
         username: user.username,
         role: user.role,
         name: user.name,
-        status: user.status
+        status: user.status,
+        lastLogin
       }
     };
   }

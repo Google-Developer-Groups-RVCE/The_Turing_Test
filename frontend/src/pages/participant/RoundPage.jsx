@@ -785,7 +785,7 @@ export default function RoundPage() {
                   <XCircle size={72} className="text-rose-500 mb-4 animate-pulse" />
                 )}
                 
-                <h2 className={`font-['Cutepunch'] text-4xl tracking-widest mb-2 ${isCorrect ? 'text-emerald-400' : 'text-rose-500'}`}>
+                <h2 className={`text-4xl font-extrabold tracking-wide mb-2 ${isCorrect ? 'text-emerald-400' : 'text-rose-500'}`}>
                   {isCorrect ? 'Correct!' : 'Incorrect'}
                 </h2>
                 
@@ -815,7 +815,7 @@ export default function RoundPage() {
       {pollResult && (
         <div className="w-full bg-dark-900/80 border border-purple-500/30 rounded-xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center text-center">
           <Sparkles size={64} className="text-purple-400 mb-4 animate-pulse" />
-          <h2 className="font-['Borghan'] text-3xl md:text-4xl font-bold text-white mb-2 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Community Choice</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Community Choice</h2>
           
           <div className="w-full mt-6 p-6 rounded-2xl bg-purple-900/20 border border-purple-500/40 text-left shadow-[0_0_30px_rgba(168,85,247,0.15)]">
             <p className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-3">Majority Voted Question</p>
@@ -859,7 +859,7 @@ export default function RoundPage() {
 
           return (
             <div className="w-full bg-white/5 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md space-y-6">
-              <h2 className="font-['Borghan'] text-2xl md:text-4xl font-bold text-white tracking-wide">{question.text || "Round 3 — Decode the Hidden Profile"}</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{question.text || "Round 3 — Decode the Hidden Profile"}</h2>
               <p className="text-sm text-slate-400 italic">Based on the clues revealed across Polls 1–5, submit your final guess for Gemini's hidden profile:</p>
 
               <div className="space-y-4 pt-2">
@@ -906,7 +906,7 @@ export default function RoundPage() {
           return (
             <>
               <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md">
-                <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white tracking-wide mb-4">{question.text}</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight mb-4">{question.text}</h2>
                 <div className="mt-4 p-4 rounded-xl border border-primary-500/30 bg-dark-900/60 shadow-inner">
                   <h3 className="text-xs font-bold text-primary-400 uppercase tracking-wider mb-2">Response to Evaluate</h3>
                   <p className="text-slate-200 text-lg italic leading-relaxed">"{displayedOpt?.text}"</p>

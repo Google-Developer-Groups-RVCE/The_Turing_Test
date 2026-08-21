@@ -87,22 +87,50 @@ class ResponseService {
           const targetProf = q.targetProfession || 'Lawyer';
           const targetHobby = q.targetHobby || 'Photography';
 
+          // 1. Age Closeness Scoring (Rank / Distance based, max 10 pts)
           let agePts = 0;
           if (guessedAge !== null && !isNaN(guessedAge)) {
             const diff = Math.abs(guessedAge - targetAge);
             if (diff === 0) agePts = 10;
-            else if (diff <= 2) agePts = 7;
-            else if (diff <= 5) agePts = 4;
+            else if (diff <= 1) agePts = 9;
+            else if (diff <= 3) agePts = 7;
+            else if (diff <= 5) agePts = 5;
+            else if (diff <= 8) agePts = 3;
+            else if (diff <= 12) agePts = 1;
           }
 
+          // 2. Profession Semantic Similarity Scoring (Max 10 pts)
           let profPts = 0;
-          if (guessedProf && (guessedProf.toLowerCase().includes(targetProf.toLowerCase()) || /lawyer|attorney|advocate|legal/i.test(guessedProf))) {
-            profPts = 10;
+          if (guessedProf) {
+            const pNorm = guessedProf.toLowerCase().trim();
+            const exactPatterns = /^(lawyer|attorney|advocate|barrister|solicitor|counsel|counselor at law|jurist)$/i;
+            const strongPatterns = /lawyer|attorney|advocate|barrister|solicitor|legal counsel|corporate lawyer|litigator|judge|magistrate|prosecutor|defense attorney|paralegal|law practitioner/i;
+            const relatedPatterns = /law|legal|court|judiciary|litigation|justice|jurisprudence|clerk/i;
+
+            if (exactPatterns.test(pNorm) || pNorm === targetProf.toLowerCase()) {
+              profPts = 10;
+            } else if (strongPatterns.test(pNorm)) {
+              profPts = 8;
+            } else if (relatedPatterns.test(pNorm)) {
+              profPts = 5;
+            }
           }
 
+          // 3. Hobby Semantic Similarity Scoring (Max 10 pts)
           let hobbyPts = 0;
-          if (guessedHobby && (guessedHobby.toLowerCase().includes(targetHobby.toLowerCase()) || /photo|photograph|camera/i.test(guessedHobby))) {
-            hobbyPts = 10;
+          if (guessedHobby) {
+            const hNorm = guessedHobby.toLowerCase().trim();
+            const exactPatterns = /^(photography|photographer|photo shooting|taking photos|capturing photos|camera work|digital photography)$/i;
+            const strongPatterns = /photograph|photo|photoshoot|street photography|portrait photography|nature photography|cameraman|videography|cinematography|filmmaking|lensman|shutterbug/i;
+            const relatedPatterns = /camera|picture|pictures|image capture|photo editing|visual arts|snapshot|snapping|dslr|lens/i;
+
+            if (exactPatterns.test(hNorm) || hNorm === targetHobby.toLowerCase()) {
+              hobbyPts = 10;
+            } else if (strongPatterns.test(hNorm)) {
+              hobbyPts = 8;
+            } else if (relatedPatterns.test(hNorm)) {
+              hobbyPts = 5;
+            }
           }
 
           pointsAwarded = agePts + profPts + hobbyPts;

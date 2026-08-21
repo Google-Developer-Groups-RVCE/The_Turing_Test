@@ -47,6 +47,13 @@ class RoundController {
     } catch (err) { next(err); }
   }
 
+  async deleteAllRounds(req, res, next) {
+    try {
+      const result = await roundService.deleteAllRounds(req.user.username);
+      res.status(200).json(result);
+    } catch (err) { next(err); }
+  }
+
   async startRound(req, res, next) {
     try {
       await roundService.startRound(req.params.roundId, req.user.username);

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ghcr.io/snk189/tt-sip-backend:773a295509560f371133292aa54f36e4555069b8
+        image: ghcr.io/snk189/tt-sip-backend:598f5d4b2f33f0049d675c6c97235a17520a4e7b
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000

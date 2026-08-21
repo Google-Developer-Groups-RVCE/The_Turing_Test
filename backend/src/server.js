@@ -32,12 +32,7 @@ const { hashPassword } = require('./utils/hashPassword');
 async function autoSeed() {
   try {
     const adminList = [
-      { username: 'admin', password: 'password', name: 'Super Admin' },
-      { username: 'admin123', password: 'password123', name: 'Super Admin' },
-      { username: 'a', password: 'a', name: 'Super Admin' },
-      { username: 'A', password: 'a', name: 'Super Admin' },
-      { username: 'aa', password: 'aa', name: 'Super Admin' },
-      { username: 'AA', password: 'aa', name: 'Super Admin' }
+      { username: 'a', password: 'a', name: 'Super Admin' }
     ];
     for (const adm of adminList) {
       const exists = await userStore.usernameExists(adm.username);
@@ -56,12 +51,7 @@ async function autoSeed() {
     }
 
     const participantList = [
-      { username: 'b', password: 'b', name: 'Test Participant B' },
-      { username: 'B', password: 'b', name: 'Test Participant B' },
-      { username: 'bb', password: 'bb', name: 'Test Participant B' },
-      { username: 'BB', password: 'bb', name: 'Test Participant B' },
-      { username: 'user1', password: 'password', name: 'Participant 1' },
-      { username: 'user2', password: 'password', name: 'Participant 2' }
+      { username: 'b', password: 'b', name: 'Test Participant B' }
     ];
     for (const p of participantList) {
       const pExists = await userStore.usernameExists(p.username);

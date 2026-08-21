@@ -441,7 +441,11 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
-                    {u.lastLogin ? new Date(parseInt(u.lastLogin)).toLocaleString() : 'Never'}
+                    {(() => {
+                      if (!u.lastLogin) return 'Never';
+                      const parsed = isNaN(Number(u.lastLogin)) ? new Date(u.lastLogin) : new Date(Number(u.lastLogin));
+                      return isNaN(parsed.getTime()) ? 'Never' : parsed.toLocaleString();
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end space-x-1">

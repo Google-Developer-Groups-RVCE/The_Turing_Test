@@ -569,7 +569,12 @@ export default function RoundManagement() {
             {/* Active Question Info & Correct Answer Display */}
             {activeQuestion && (() => {
               const fullQ = roundQuestions.find(q => q.id === activeQuestion.id) || activeQuestion;
-              const ansKey = fullQ.correctAnswer || activeQuestion.correctAnswer;
+              let ansKey = fullQ.correctAnswer || activeQuestion.correctAnswer;
+              
+              if (fullQ.type === 'guess-author') {
+                const opt = (fullQ.options || []).find(o => o.id === activeQuestion.displayedOptionId);
+                ansKey = opt?.author || (activeQuestion.displayedOptionId?.includes('gemini') ? 'Gemini' : 'Human');
+              }
               
               return (
                 <div className="p-3 rounded-lg bg-dark-800/80 border border-slate-700/80 space-y-1.5 text-xs">
@@ -581,19 +586,15 @@ export default function RoundManagement() {
                   
                   {ansKey && (
                     <div className="mt-1.5 p-2 rounded bg-emerald-950/40 border border-emerald-500/30 flex items-center space-x-2">
-                      <span className="text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Answer Key:</span>
-                      <span className="text-emerald-200 font-mono font-bold text-xs">{ansKey}</span>
+                      <span className="text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Answer Key (Correct Response):</span>
+                      <span className="text-emerald-200 font-bold text-xs">{ansKey}</span>
                     </div>
                   )}
                   {fullQ.type === 'guess-author' && (
                     <div className="mt-1.5 p-2 rounded bg-blue-950/40 border border-blue-500/30 flex items-center space-x-2">
-                      <span className="text-blue-400 font-bold uppercase tracking-wider text-[10px]">Displayed Author:</span>
+                      <span className="text-blue-400 font-bold uppercase tracking-wider text-[10px]">Active Displayed Option:</span>
                       <span className="text-blue-200 font-bold text-xs">
-                        {(() => {
-                          const opt = (fullQ.options || []).find(o => o.id === activeQuestion.displayedOptionId);
-                          const author = opt?.author || (activeQuestion.displayedOptionId?.includes('human') ? 'Human' : activeQuestion.displayedOptionId?.includes('gemini') ? 'Gemini' : 'Human');
-                          return `${author} (${activeQuestion.displayedOptionId || 'human-opt'})`;
-                        })()}
+                        {ansKey} ({activeQuestion.displayedOptionId || 'human-opt'})
                       </span>
                     </div>
                   )}

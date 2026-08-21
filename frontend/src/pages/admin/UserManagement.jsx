@@ -205,7 +205,12 @@ export default function UserManagement() {
     if (!window.confirm(`Delete user ${username}? This is irreversible.`)) return;
     try {
       await deleteUser(username);
-      showSuccess(`User ${username} deleted.`);
+      setSelected(prev => {
+        const next = new Set(prev);
+        next.delete(username);
+        return next;
+      });
+      showSuccess(`User "${username}" deleted.`);
       fetchUsers();
     } catch (err) {
       setError(err.response?.data?.message || 'Delete failed');

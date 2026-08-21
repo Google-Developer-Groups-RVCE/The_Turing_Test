@@ -565,6 +565,34 @@ export default function RoundManagement() {
             <div className="text-xs text-center py-1 font-medium text-slate-400">
               Current Stage: <span className="text-white capitalize">{activeStage}</span>
             </div>
+
+            {/* Active Question Info & Correct Answer Display */}
+            {activeQuestion && (
+              <div className="p-3 rounded-lg bg-dark-800/80 border border-slate-700/80 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider">Active Question:</span>
+                  <span className="font-mono text-primary-400 font-bold">[{activeQuestion.type || 'mcq'}] {activeQuestion.points || 10} pts</span>
+                </div>
+                <p className="text-slate-200 font-medium line-clamp-2">"{activeQuestion.text || activeQuestion.prompt}"</p>
+                {activeQuestion.correctAnswer && (
+                  <div className="mt-1.5 p-2 rounded bg-emerald-950/40 border border-emerald-500/30 flex items-center space-x-2">
+                    <span className="text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Answer Key:</span>
+                    <span className="text-emerald-200 font-mono font-bold text-xs">{activeQuestion.correctAnswer}</span>
+                  </div>
+                )}
+                {activeQuestion.type === 'guess-author' && (
+                  <div className="mt-1.5 p-2 rounded bg-blue-950/40 border border-blue-500/30 flex items-center space-x-2">
+                    <span className="text-blue-400 font-bold uppercase tracking-wider text-[10px]">Displayed Author:</span>
+                    <span className="text-blue-200 font-bold text-xs">
+                      {(() => {
+                        const opt = (activeQuestion.options || []).find(o => o.id === activeQuestion.displayedOptionId);
+                        return opt ? `${opt.author} ("${opt.id}")` : 'Random / Pending Start';
+                      })()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             
             {activeRound && (String(activeRound.id).includes('round_1') || activeRound.name?.toLowerCase().includes('round 1')) && (
               <div className="pt-3 space-y-2 border-t border-dark-700 mt-2">
@@ -604,13 +632,13 @@ export default function RoundManagement() {
               </div>
             )}
 
-            {/* Round 5 Reverse Turing Test Admin Controls */}
-            {activeRound && (String(activeRound.id).includes('round_5') || activeRound.name?.toLowerCase().includes('round 5') || activeRound.name?.toLowerCase().includes('reverse')) && (
+            {/* Reverse Turing Test Admin Controls */}
+            {activeRound && (String(activeRound.id).includes('reverse') || String(activeRound.id).includes('round_3_reverse') || String(activeRound.id).includes('round_5') || activeRound.name?.toLowerCase().includes('reverse') || activeQuestion?.type === 'reverse-turing') && (
               <div className="pt-3 space-y-3 border-t border-dark-700 mt-2">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center space-x-1">
                     <Sparkles size={13} />
-                    <span>Round 5: Human Responses ({Object.keys(r5Responses).length})</span>
+                    <span>Reverse Turing: Human Responses ({Object.keys(r5Responses).length})</span>
                   </h4>
                   <button
                     onClick={fetchR5AdminResponses}

@@ -318,25 +318,15 @@ class RoundService {
   }
 
   async resetEvent(adminUsername) {
-    const responseStore = require('../redis/responseStore');
-    const leaderboardService = require('./leaderboardService');
-    const questionStore = require('../redis/questionStore');
-    const questionService = require('./questionService');
+    const seedService = require('./seedService');
 
-    // 1. Clear all responses and reset leaderboard
-    await responseStore.clearAllResponses();
-    await leaderboardService.resetLeaderboard(adminUsername || 'system');
+    // 1. Wipe all existing rounds, questions, leaderboard, and responses
+    await this.deleteAllRounds(adminUsername || 'admin');
+    await seedService.clearAllData(adminUsername || 'admin');
 
-    // 2. Reset round statuses to pending and set Q1 as active question for each round
-    const order = await roundStore.getRoundsOrder();
-    for (const id of order) {
-      await roundStore.updateRound(id, { status: 'pending', startedAt: '', endedAt: '' });
-      await roundStore.setActiveStage(id, 'question');
-      const questionsOrder = await questionStore.getQuestionsOrder(id);
-      if (questionsOrder && questionsOrder.length > 0) {
-        await questionService.setActiveQuestion(id, questionsOrder[0]);
-      }
-    }
+    // 2. Re-inject all fresh 45-minute event presets (R1 Rapid Fire, R2 Decode Context, R3 Reverse Turing)
+    await seedService.injectPresetRound('all', adminUsername || 'admin');
+
     await roundStore.setCurrentRound('');
     await roundStore.setEventState('idle', adminUsername);
 
@@ -344,13 +334,14 @@ class RoundService {
       action: 'RESET_EVENT',
       adminUsername,
       timestamp: Date.now().toString(),
-      details: `Event reset: cleared responses, reset leaderboard, set rounds to pending`
+      details: `Complete Event Reset: Wiped all rounds, responses, leaderboard, and re-seeded event presets`
     });
 
     const io = getIO();
     if (io) {
       io.emit('event:reset', {});
       io.emit('responses:cleared', {});
+      io.emit('round:changed', { roundId: null, status: 'none' });
       io.emit('leaderboard:update', { leaderboard: [] });
     }
   }

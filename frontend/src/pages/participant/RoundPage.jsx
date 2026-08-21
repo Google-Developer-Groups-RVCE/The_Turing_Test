@@ -188,9 +188,19 @@ export default function RoundPage() {
         setPollResult(data.result);
       }
     };
-    const handleQuestionEvaluate = (data) => {
+    const handleQuestionEvaluate = async (data) => {
       if (data?.evaluationData) {
         setEvaluationData(data.evaluationData);
+        // Re-fetch latest response to ensure pointsAwarded is populated
+        if (currentRoundRef.current?.id && data.evaluationData.questionId) {
+          try {
+            const respRes = await getMyResponse(currentRoundRef.current.id, data.evaluationData.questionId);
+            if (respRes?.data) {
+              const resp = respRes.data?.response || (respRes.data?.answer ? respRes.data : null);
+              if (resp) setMyResponse(resp);
+            }
+          } catch {}
+        }
       }
     };
     const handleResponsesCleared = () => {

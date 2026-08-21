@@ -9,7 +9,11 @@ const getIO = () => {
 
 class R5Service {
   async submitResponse(username, text) {
-    const phase = await r5Store.getPhase();
+    let phase = await r5Store.getPhase();
+    if (!phase) {
+      phase = 'prompt';
+      await r5Store.setPhase('prompt');
+    }
     if (phase !== 'prompt') {
       throw new Error('Not in prompt phase');
     }

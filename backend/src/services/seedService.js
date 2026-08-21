@@ -54,10 +54,26 @@ class SeedService {
           },
           // Best 2 from R2 (Image Challenge: Q2 and Q3)
           {
-            id: 'q2_2', order: '3', type: 'mcq', points: '10', durationSeconds: '120', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', imageUrl: '/reference/r2/tiger-edited.png'
+            id: 'q2_2', order: '3', type: 'mcq', points: '10', durationSeconds: '120', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?',
+            options: [
+              { key: 'A', label: 'The head / face', text: 'The head / face' },
+              { key: 'B', label: 'The stripes on the abdomen', text: 'The stripes on the abdomen' },
+              { key: 'C', label: 'The legs', text: 'The legs' },
+              { key: 'D', label: 'The background', text: 'The background' }
+            ],
+            correctAnswer: 'B',
+            imageUrl: '/reference/r2/tiger-edited.png'
           },
           {
-            id: 'q2_3', order: '4', type: 'mcq', points: '10', durationSeconds: '120', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?', options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', imageUrl: '/reference/r2/dog-reflection.png'
+            id: 'q2_3', order: '4', type: 'mcq', points: '10', durationSeconds: '120', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?',
+            options: [
+              { key: 'A', label: 'Reflection mismatch', text: 'Reflection mismatch' },
+              { key: 'B', label: 'Shadow mismatch', text: 'Shadow mismatch' },
+              { key: 'C', label: 'Impossible perspective', text: 'Impossible perspective' },
+              { key: 'D', label: 'Nothing — the image is real', text: 'Nothing — the image is real' }
+            ],
+            correctAnswer: 'A',
+            imageUrl: '/reference/r2/dog-reflection.png'
           },
           // Best 2 from R4 Samples (Spot the Hallucination: Taj Mahal & Stanford Research)
           {
@@ -219,18 +235,12 @@ class SeedService {
         await questionStore.setActiveQuestionId(finalId, preset.questions[0].id);
       }
 
-      // Initialize Round 5 default Gemini response & initial phase if it's Round 5
-      if (preset.baseId === 'round_5_reverse') {
+      // Initialize Reverse Turing Test default Gemini response & initial phase
+      if (preset.baseId === 'round_3_reverse' || preset.baseId === 'round_5_reverse') {
         try {
           const r5Store = require('../redis/r5Store');
-          const currentGemini = await r5Store.getGeminiResponse();
-          if (!currentGemini) {
-            await r5Store.setGeminiResponse("The quiet hours when the world is asleep are where your future self is built step by step. Every page you read tonight is bringing you closer to the moment you walk out of that exam knowing you gave it everything.");
-          }
-          const currentPhase = await r5Store.getPhase();
-          if (!currentPhase) {
-            await r5Store.setPhase('prompt');
-          }
+          await r5Store.setGeminiResponse("The quiet hours when the world is asleep are where your future self is built step by step. Every page you read tonight is bringing you closer to the moment you walk out of that exam knowing you gave it everything.");
+          await r5Store.setPhase('prompt');
         } catch { /* silent */ }
       }
 

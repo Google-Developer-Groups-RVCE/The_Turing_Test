@@ -704,10 +704,10 @@ export default function RoundManagement() {
                     Reveal Results
                   </button>
                   <button
-                    onClick={() => doAction('Reset R5', () => resetR5())}
+                    onClick={() => doAction('Reset R3', () => resetR5())}
                     disabled={!!actionLoading}
                     className="py-2 px-2.5 rounded-lg bg-rose-600/20 border border-rose-500/40 hover:bg-rose-600/30 text-rose-300 text-xs font-bold transition-colors"
-                    title="Reset Round 5 State"
+                    title="Reset Round 3 State"
                   >
                     <RotateCcw size={13} />
                   </button>

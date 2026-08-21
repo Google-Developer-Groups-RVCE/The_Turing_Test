@@ -965,24 +965,8 @@ export default function RoundPage() {
 
         const getRichData = () => {
           if (!question) return null;
-          const rName = (currentRound?.name || '').toLowerCase();
-          const rId = String(currentRound?.id || '').toLowerCase();
-
-          let dataset = [];
-          if (question.type === 'poll' || question.type === 'profile-guess' || rId.includes('r3') || rId.includes('round_3') || rName.includes('round 3') || rName.includes('poll') || rName.includes('decode') || rName.includes('speedrun')) {
-            dataset = pollsData;
-          } else if (question.type === 'mcq' && (rId.includes('r4') || rId.includes('round_4') || rName.includes('round 4') || rName.includes('hallucination'))) {
-            dataset = round4Data;
-          } else if (rId.includes('r2') || rId.includes('round_2') || rName.includes('round 2') || rName.includes('coding') || rName.includes('image challenge')) {
-            dataset = round2Data;
-          } else if (rId.includes('r1') || rId.includes('round_1') || rName.includes('round 1') || rName.includes('aptitude') || rName.includes('live conversation')) {
-            dataset = round1Data;
-          } else {
-            dataset = allRichData;
-          }
-
-          return dataset.find((d) => d.id === question.id || (d.order && Number(d.order) === Number(question.order))) ||
-                 allRichData.find((d) => d.id === question.id);
+          // Match by question ID directly from the unified dataset
+          return allRichData.find((d) => d.id === question.id);
         };
 
         const richData = getRichData();

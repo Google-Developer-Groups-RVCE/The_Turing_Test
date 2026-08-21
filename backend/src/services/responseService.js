@@ -68,18 +68,33 @@ class ResponseService {
           let guessedHobby = '';
 
           try {
-            if (answer.startsWith('{')) {
+            if (typeof answer === 'string' && answer.startsWith('{')) {
               const parsed = JSON.parse(answer);
               guessedAge = parseInt(parsed.age);
               guessedProf = String(parsed.profession || '');
               guessedHobby = String(parsed.hobby || '');
+            } else if (typeof answer === 'object' && answer !== null) {
+              guessedAge = parseInt(answer.age);
+              guessedProf = String(answer.profession || '');
+              guessedHobby = String(answer.hobby || '');
             } else {
-              const ageMatch = answer.match(/age:\s*(\d+)/i);
-              const profMatch = answer.match(/profession:\s*([^|]+)/i);
-              const hobbyMatch = answer.match(/hobby:\s*(.+)/i);
+              const raw = String(answer || '');
+              const ageMatch = raw.match(/age:\s*(\d+)/i) || raw.match(/\b(\d{2})\b/);
+              const profMatch = raw.match(/profession:\s*([^|]+)/i);
+              const hobbyMatch = raw.match(/hobby:\s*(.+)/i);
               if (ageMatch) guessedAge = parseInt(ageMatch[1]);
               if (profMatch) guessedProf = profMatch[1].trim();
               if (hobbyMatch) guessedHobby = hobbyMatch[1].trim();
+
+              // Fallback split by pipe |
+              if (!guessedProf && raw.includes('|')) {
+                const parts = raw.split('|').map(s => s.trim());
+                for (const part of parts) {
+                  if (/^\d+$/.test(part)) guessedAge = parseInt(part);
+                  else if (/profession/i.test(part)) guessedProf = part.replace(/profession:?/i, '').trim();
+                  else if (/hobby/i.test(part)) guessedHobby = part.replace(/hobby:?/i, '').trim();
+                }
+              }
             }
           } catch (e) {}
 
@@ -93,10 +108,10 @@ class ResponseService {
             const diff = Math.abs(guessedAge - targetAge);
             if (diff === 0) agePts = 10;
             else if (diff <= 1) agePts = 9;
-            else if (diff <= 3) agePts = 7;
-            else if (diff <= 5) agePts = 5;
-            else if (diff <= 8) agePts = 3;
-            else if (diff <= 12) agePts = 1;
+            else if (diff <= 2) agePts = 8;
+            else if (diff <= 4) agePts = 6;
+            else if (diff <= 7) agePts = 4;
+            else if (diff <= 10) agePts = 2;
           }
 
           // 2. Profession Semantic Similarity Scoring (Max 10 pts)

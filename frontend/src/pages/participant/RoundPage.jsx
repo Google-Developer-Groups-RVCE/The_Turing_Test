@@ -716,14 +716,24 @@ export default function RoundPage() {
             {question.type === 'hallucination' ? 'Spot the Hallucination' : question.type === 'mcq' ? 'Multiple Choice Question' : question.type === 'poll' ? 'Live Poll' : question.type === 'guess-author' ? 'Guess the Author' : 'Short Answer Question'}
           </h2>
         </div>
-        {timeLeft !== null && (
-          <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-mono text-lg font-bold border
-            ${timeLeft < 30 ? 'border-rose-500/40 bg-rose-500/10 text-rose-300' : 'border-glass-border bg-glass-bg text-primary-300'}
-          `}>
-            <Clock size={18} className={timeLeft < 30 ? 'text-rose-400 animate-pulse' : 'text-primary-400'} />
-            <span>{formatTime(timeLeft)}</span>
-          </div>
-        )}
+        <div className="flex items-center space-x-3">
+          {/* Points Allotted Badge */}
+          {question.type !== 'poll' && (
+            <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-bold shadow-sm">
+              <Sparkles size={16} className="text-amber-400" />
+              <span>{question.points || 10} Points</span>
+            </div>
+          )}
+
+          {timeLeft !== null && (
+            <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-mono text-lg font-bold border
+              ${timeLeft < 30 ? 'border-rose-500/40 bg-rose-500/10 text-rose-300' : 'border-glass-border bg-glass-bg text-primary-300'}
+            `}>
+              <Clock size={18} className={timeLeft < 30 ? 'text-rose-400 animate-pulse' : 'text-primary-400'} />
+              <span>{formatTime(timeLeft)}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Submitted Feedback Banner */}
@@ -764,7 +774,8 @@ export default function RoundPage() {
       {evaluationData && question.type !== 'hallucination' && (
         <div className="w-full bg-dark-900/80 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center text-center">
           {(() => {
-            const isCorrect = myResponse && String(myResponse.answer).toLowerCase() === String(evaluationData.correctAnswer).toLowerCase();
+            const ptsEarned = parseInt(myResponse?.pointsAwarded) || 0;
+            const isCorrect = (myResponse && String(myResponse.isCorrect) === 'true') || ptsEarned > 0 || (myResponse && String(myResponse.answer).toLowerCase() === String(evaluationData.correctAnswer).toLowerCase());
             const skipped = evaluationData.skipped;
             
             if (skipped) {
@@ -785,9 +796,18 @@ export default function RoundPage() {
                   <XCircle size={72} className="text-rose-500 mb-4 animate-pulse" />
                 )}
                 
-                <h2 className={`text-4xl font-extrabold tracking-wide mb-2 ${isCorrect ? 'text-emerald-400' : 'text-rose-500'}`}>
-                  {isCorrect ? 'Correct!' : 'Incorrect'}
+                <h2 className={`text-4xl font-extrabold tracking-wide mb-1 ${isCorrect ? 'text-emerald-400' : 'text-rose-500'}`}>
+                  {isCorrect ? (ptsEarned > 0 && ptsEarned < (parseInt(question.points) || 30) ? 'Partially Correct!' : 'Correct!') : 'Incorrect'}
                 </h2>
+
+                {myResponse && (
+                  <div className={`mt-2 px-4 py-1.5 rounded-full border text-sm font-bold inline-flex items-center space-x-1.5 ${
+                    ptsEarned > 0 ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300' : 'bg-rose-500/20 border-rose-400/40 text-rose-300'
+                  }`}>
+                    <Sparkles size={14} />
+                    <span>+{ptsEarned} Points Awarded (out of {question.points || 10} pts)</span>
+                  </div>
+                )}
                 
                 <div className="w-full mt-6 space-y-4 text-left">
                   <div className="p-4 rounded-xl bg-dark-800 border border-dark-600">

@@ -24,7 +24,7 @@ export default function ParticipantLayout() {
     <>
       <div className="page-bg" />
       <div className="page-wrap">
-        <header className="fixed top-0 inset-x-0 h-16 bg-[#0a111a]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 sm:px-6 z-50 shadow-lg">
+        <header className="fixed top-0 inset-x-0 h-16 bg-[#0a111a] border-b border-white/10 flex items-center justify-between px-4 sm:px-6 z-50 shadow-lg">
           <div className="flex items-center space-x-3">
             <img src="/reference/gdg_symbol.png" alt="GDG Logo" className="w-8 h-8 object-contain" />
             <h1 className="text-xl font-bold text-white tracking-wide">The Turing Test</h1>

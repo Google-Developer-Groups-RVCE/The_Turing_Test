@@ -321,6 +321,11 @@ export default function RoundPage() {
 
   // Countdown timer per question / phase
   useEffect(() => {
+    // If answer is being evaluated or poll revealed, freeze/stop timer
+    if (evaluationData || pollResult) {
+      return;
+    }
+
     // Determine the active duration: prioritize question duration, then fallback to round duration
     const qDuration = parseInt(question?.durationSeconds, 10);
     const rDuration = parseInt(currentRound?.durationSeconds, 10);
@@ -337,7 +342,7 @@ export default function RoundPage() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [currentRound, question]);
+  }, [currentRound, question, evaluationData, pollResult]);
 
   const handleSubmit = async () => {
     if (myResponse) return; // Prevent duplicate submissions
@@ -963,98 +968,80 @@ export default function RoundPage() {
           );
         }
 
-        const getRichData = () => {
-          if (!question) return null;
-          // Match by question ID directly from the unified dataset
-          return allRichData.find((d) => d.id === question.id);
-        };
-
-        const richData = getRichData();
-        
-        if (richData) {
-          if (question.type === 'poll' || (richData.options && richData.options[0]?.question)) {
-            return (
-              <div className="poll-screen" style={{ width: '100%' }}>
-                <PollCard
-                  poll={richData}
-                  selectedOption={selectedAnswer}
-                  onSelect={(key) => !isLocked && setSelectedAnswer(key)}
-                  pollResult={pollResult}
-                />
-              </div>
-            );
-          } else {
-            return (
-              <div className="poll-screen" style={{ width: '100%' }}>
-                <ChallengeCard
-                  challenge={richData}
-                  selectedOption={selectedAnswer}
-                  textValue={textAnswer}
-                  onSelect={(key) => !isLocked && setSelectedAnswer(key)}
-                  onTextChange={(val) => !isLocked && setTextAnswer(val)}
-                />
-              </div>
-            );
-          }
-        }
-
-        // Fallback for non-rich questions (if any)
+        // Clean, razor-sharp Question Card for MCQ, Image Challenges & Hallucinations
         return (
           <>
-            <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md">
-              <h2 className="font-['Borghan'] text-2xl md:text-3xl font-bold text-white tracking-wide mb-4">{question.text}</h2>
+            <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary-400">
+                {question.aiResponse ? 'Spot the Hallucination' : question.imageUrl ? 'Image Challenge' : 'Question'}
+              </span>
+              <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight leading-relaxed">
+                {question.text}
+              </h2>
+
+              {question.aiResponse && (
+                <div className="mt-4 p-5 rounded-xl border border-amber-500/40 bg-amber-950/20 shadow-inner">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400 block mb-2">
+                    AI Response to Evaluate:
+                  </span>
+                  <p className="text-slate-200 text-base md:text-lg italic leading-relaxed">
+                    "{question.aiResponse}"
+                  </p>
+                </div>
+              )}
+
               {question.imageUrl && (
-                <img
-                  src={question.imageUrl}
-                  alt="Question visual"
-                  className="mt-4 rounded-xl max-h-56 object-contain border border-glass-border"
-                />
+                <div className="mt-4 flex justify-center bg-black/40 rounded-xl p-3 border border-white/10">
+                  <img
+                    src={question.imageUrl}
+                    alt="Question visual"
+                    className="rounded-lg max-h-72 object-contain shadow-lg"
+                  />
+                </div>
               )}
             </div>
 
-            <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 shadow-xl backdrop-blur-md mt-6">
-              <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
-                {isLocked ? 'Your Submitted Choice' : 'Select Your Answer'}
+            <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md mt-6">
+              <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">
+                {isLocked ? 'Your Submitted Answer' : 'Select Your Answer'}
               </h3>
-              {(question.type === 'mcq' || question.type === 'poll') && question.options?.length > 0 ? (
-                <div className="options-list">
+              {question.options?.length > 0 && (
+                <div className="space-y-3">
                   {question.options.map((opt, idx) => {
-                    const isPoll = question.type === 'poll';
-                    const optValue = isPoll ? opt.key : opt;
-                    const optDisplay = isPoll ? opt.question : opt;
-                    const isSelected = selectedAnswer === optValue;
+                    const optKey = typeof opt === 'object' ? (opt.key || String.fromCharCode(65 + idx)) : (opt.length === 1 ? opt : String.fromCharCode(65 + idx));
+                    const optText = typeof opt === 'object' ? (opt.answer || opt.label || opt.text || opt.key) : opt;
+                    const isSelected = selectedAnswer === optKey || selectedAnswer === optText;
 
                     return (
                       <button
                         key={idx}
                         disabled={isLocked}
-                        onClick={() => !isLocked && setSelectedAnswer(optValue)}
-                        className={`relative overflow-hidden w-full text-left py-4 px-6 rounded-2xl border-2 transition-all duration-300 shadow-lg ${isSelected ? "bg-gradient-to-br from-teal-400/35 to-teal-600/45 border-teal-400 shadow-[0_4px_24px_rgba(0,201,177,0.5),inset_0_1px_0_rgba(255,255,255,0.25)]" : "border-sky-400/40 bg-gradient-to-br from-sky-400/15 to-blue-600/20 text-white hover:translate-x-1 hover:border-sky-400/80 hover:shadow-[0_4px_20px_rgba(91,200,245,0.35)]"} ${isLocked ? 'cursor-not-allowed opacity-90' : ''}`}
+                        onClick={() => !isLocked && setSelectedAnswer(optKey)}
+                        className={`relative overflow-hidden w-full text-left py-4 px-5 rounded-xl border-2 transition-all duration-200 shadow-md ${
+                          isSelected
+                            ? "bg-primary-500/20 border-primary-400 text-white shadow-[0_0_20px_rgba(34,197,94,0.25)]"
+                            : "border-slate-700 bg-slate-800/60 text-slate-200 hover:border-slate-500 hover:bg-slate-800"
+                        } ${isLocked ? 'cursor-not-allowed opacity-90' : ''}`}
                       >
-                        <div className="flex items-center">
-                          <span className={`font-['Cutepunch'] text-lg mr-2 shrink-0 transition-colors ${isSelected ? "text-teal-200" : "text-sky-300"}`}>
-                            {isPoll ? opt.key : String.fromCharCode(65 + idx)}.
+                        <div className="flex items-start space-x-3">
+                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${
+                            isSelected ? 'bg-primary-500 text-black' : 'bg-slate-700 text-slate-300'
+                          }`}>
+                            {optKey}
                           </span>
-                          <span className="text-base text-slate-200 leading-relaxed">{optDisplay}</span>
+                          <span className="text-sm md:text-base font-medium leading-relaxed">
+                            {optText}
+                          </span>
                         </div>
                         {isSelected && isLocked && (
                           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            <Lock size={16} className="text-teal-400 opacity-80" />
+                            <Lock size={16} className="text-primary-400" />
                           </div>
                         )}
                       </button>
                     );
                   })}
                 </div>
-              ) : (
-                <textarea
-                  disabled={isLocked}
-                  className="w-full bg-black/20 border border-white/10 rounded-lg p-4 text-white placeholder-slate-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
-                  placeholder="Type your answer here..."
-                  value={textAnswer}
-                  onChange={(e) => !isLocked && setTextAnswer(e.target.value)}
-                  maxLength={500}
-                />
               )}
             </div>
           </>

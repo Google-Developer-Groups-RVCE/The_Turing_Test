@@ -1,6 +1,7 @@
 import axiosClient from './axiosClient';
 
 export const getLeaderboard = () => axiosClient.get('/leaderboard');
+export const getMyScore = () => axiosClient.get('/leaderboard/my-score');
 export const getRoundLeaderboard = (roundId) => axiosClient.get(`/leaderboard/${roundId}`);
 export const overrideScore = (username, score) =>
   axiosClient.post('/leaderboard/override', { username, score });

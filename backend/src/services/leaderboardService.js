@@ -37,6 +37,19 @@ class LeaderboardService {
     return this._enrichEntries(entries);
   }
 
+  /** Return the score and rank for a specific user. */
+  async getUserScore(username) {
+    const { redisClient } = require('../config/redisClient');
+    const keys = require('../redis/keys');
+    const score = await redisClient.zscore(keys.LEADERBOARD, username);
+    const rank = await redisClient.zrevrank(keys.LEADERBOARD, username);
+    return {
+      username,
+      totalScore: score ? parseInt(score, 10) : 0,
+      rank: rank !== null ? rank + 1 : null
+    };
+  }
+
   /** Return per-round leaderboard (top 200). */
   async getRoundLeaderboard(roundId) {
     const entries = await leaderboardStore.getRoundTop(roundId, 200);

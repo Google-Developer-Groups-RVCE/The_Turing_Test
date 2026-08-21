@@ -15,6 +15,7 @@ router.use(authMiddleware);
 
 // Read: participant + admin
 router.get('/', leaderboardController.getOverallLeaderboard);
+router.get('/my-score', leaderboardController.getMyScore);
 router.get('/:roundId', leaderboardController.getRoundLeaderboard);
 
 // Write: admin only

@@ -18,6 +18,16 @@ class LeaderboardController {
     }
   }
 
+  /** GET /leaderboard/my-score */
+  async getMyScore(req, res, next) {
+    try {
+      const userScore = await leaderboardService.getUserScore(req.user.username);
+      res.status(200).json(userScore);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   /** GET /leaderboard/:roundId */
   async getRoundLeaderboard(req, res, next) {
     try {

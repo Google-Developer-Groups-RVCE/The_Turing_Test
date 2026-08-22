@@ -133,6 +133,9 @@ export default function RoundManagement() {
 
       const active = getActiveRound(list);
       if (active) {
+        if (String(active.id).includes('round_3') || String(active.id).includes('reverse') || active.name?.toLowerCase().includes('reverse')) {
+          fetchR5Responses();
+        }
         getQuestions(active.id).then(qListRes => {
           setRoundQuestions(qListRes.data?.questions || []);
         }).catch(() => setRoundQuestions([]));
@@ -157,6 +160,8 @@ export default function RoundManagement() {
         setRoundQuestions([]);
         setResponseCount(0);
         setActiveStage('question');
+        setR5Responses({});
+        setSelectedR5Users([]);
       }
     } catch { showError('Failed to load rounds'); }
     finally { setLoading(false); }

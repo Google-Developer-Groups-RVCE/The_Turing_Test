@@ -25,6 +25,12 @@ class SeedService {
   async clearAllData(adminUsername) {
     await responseStore.clearAllResponses();
     await leaderboardService.resetLeaderboard(adminUsername);
+    try {
+      const r5Store = require('../redis/r5Store');
+      await r5Store.clearAll();
+      await r5Store.setPhase('prompt');
+      await r5Store.setGeminiResponse("The quiet hours when the world is asleep are where your future self is built step by step. Every page you read tonight is bringing you closer to the moment you walk out of that exam knowing you gave it everything.");
+    } catch {}
     await logStore.addLog({ action: 'CLEAR_ALL_DATA', adminUsername, timestamp: Date.now().toString(), details: 'Cleared all responses and reset leaderboard' });
     return { message: 'All live responses cleared and leaderboard reset' };
   }

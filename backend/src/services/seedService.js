@@ -222,12 +222,13 @@ class SeedService {
       }
 
       const newOrder = currentRounds.length + 1;
+      const totalRoundSeconds = preset.questions.reduce((sum, q) => sum + (parseInt(q.durationSeconds, 10) || 60), 0);
 
       await roundStore.createRound({
         id: finalId,
         name: finalName,
         status: 'pending',
-        durationSeconds: preset.baseId === 'round_5_reverse' ? '600' : '300',
+        durationSeconds: String(totalRoundSeconds || 300),
         order: String(newOrder)
       });
 

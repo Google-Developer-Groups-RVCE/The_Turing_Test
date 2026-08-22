@@ -202,6 +202,29 @@ class QuestionService {
     const roundName = (round?.name || '').toLowerCase();
     const isPoll = isPollQuestion(questionWithoutAnswer, roundId, roundName);
 
+    const isProfileGuess = question.type === 'profile-guess' || question.id === 'poll6';
+    if (isProfileGuess) {
+      try {
+        const revealedHistory = [];
+        for (const poll of POLLS_DATA) {
+          const pollQ = await questionStore.getQuestion(roundId, poll.id);
+          const res = await computePollResult(roundId, pollQ || poll);
+          if (res && res.winningQuestionText && res.answerText) {
+            revealedHistory.push({
+              pollId: poll.id,
+              pollOrder: poll.order,
+              question: res.winningQuestionText,
+              answer: res.answerText,
+              winningKey: res.winningKey
+            });
+          }
+        }
+        questionWithoutAnswer.revealedPollHistory = revealedHistory;
+      } catch (err) {
+        console.error('[getActiveQuestion] Error gathering revealedPollHistory:', err.message);
+      }
+    }
+
     // If we're in 'evaluated' stage, attach result/evaluation data
     if (activeStage === 'evaluated') {
       if (isPoll) {

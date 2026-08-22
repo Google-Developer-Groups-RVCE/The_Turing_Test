@@ -892,44 +892,95 @@ export default function RoundPage() {
             setTextAnswer(str);
           };
 
-          return (
-            <div className="w-full bg-white/5 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md space-y-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{question.text || "Round 3 — Decode the Hidden Profile"}</h2>
-              <p className="text-sm text-slate-400 italic">Based on the clues revealed across Polls 1–5, submit your final guess for Gemini's hidden profile:</p>
+          const pollHistory = question.revealedPollHistory || [];
 
-              <div className="space-y-4 pt-2">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">1. Predicted Age (Numerical)</label>
-                  <input
-                    type="number"
-                    disabled={isLocked}
-                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
-                    placeholder="e.g. 47"
-                    value={profileGuess.age}
-                    onChange={(e) => handleProfileChange('age', e.target.value)}
-                  />
+          return (
+            <div className="w-full space-y-6">
+              {/* Revealed Clues from Polls 1–5 */}
+              <div className="w-full bg-dark-900/90 border border-purple-500/30 rounded-2xl p-6 shadow-2xl backdrop-blur-md space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles size={18} className="text-purple-400" />
+                    <h3 className="text-base font-bold text-white uppercase tracking-wider">Revealed Clues Summary (Polls 1–5)</h3>
+                  </div>
+                  <span className="text-xs text-purple-300 font-mono bg-purple-900/50 px-2.5 py-1 rounded-full border border-purple-500/30">
+                    {pollHistory.length > 0 ? `${pollHistory.length} Clues Available` : 'Default Clues'}
+                  </span>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">2. Predicted Profession</label>
-                  <input
-                    type="text"
-                    disabled={isLocked}
-                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
-                    placeholder="e.g. Lawyer"
-                    value={profileGuess.profession}
-                    onChange={(e) => handleProfileChange('profession', e.target.value)}
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pollHistory.length > 0 ? (
+                    pollHistory.map((item, idx) => (
+                      <div key={idx} className="p-3.5 rounded-xl bg-dark-800/80 border border-purple-500/20 space-y-1.5 text-left">
+                        <div className="flex items-center justify-between text-xs font-bold text-purple-400">
+                          <span>Poll {item.pollOrder || (idx + 1)} Winner (Option {item.winningKey || 'A'})</span>
+                        </div>
+                        <p className="text-xs font-semibold text-white">"{item.question}"</p>
+                        <p className="text-xs text-slate-300 italic bg-black/30 p-2 rounded-lg border border-white/5">
+                          "{item.answer}"
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    // Default fallback if participants jump straight to Q6
+                    [
+                      { poll: "1. Daily Life", q: "What does a perfect Sunday look like for you?", a: "A slow morning, a good lunch, maybe getting a few things done, and a quiet evening. I've started appreciating days where absolutely nothing interesting happens." },
+                      { poll: "2. Memories", q: "What's a change in everyday life that still amazes you?", a: "Probably how many separate things have quietly disappeared into one device. I used to think of maps, music, photographs and payments as completely unrelated things." },
+                      { poll: "3. Work & Thinking", q: "What's the most tiring part of your work?", a: "Probably revisiting the same information repeatedly. Sometimes one detail that seemed insignificant at first changes how everything else fits together." },
+                      { poll: "4. Perspective", q: "What's something you find interesting about conversations?", a: "How differently two people can remember the same situation. Neither person necessarily thinks they're wrong, but the details can still be surprisingly different." },
+                      { poll: "5. Hobbies", q: "When you visit somewhere new, what do you usually do first?", a: "Usually walk around without deciding too much beforehand. I tend to notice smaller details and occasionally end up spending far too long in places other people pass through quickly." }
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-3.5 rounded-xl bg-dark-800/80 border border-purple-500/20 space-y-1 text-left">
+                        <span className="text-[11px] font-bold text-purple-400">{item.poll}</span>
+                        <p className="text-xs font-semibold text-white">"{item.q}"</p>
+                        <p className="text-xs text-slate-300 italic bg-black/30 p-2 rounded-lg border border-white/5">
+                          "{item.a}"
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">3. Predicted Hobby</label>
-                  <input
-                    type="text"
-                    disabled={isLocked}
-                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
-                    placeholder="e.g. Photography"
-                    value={profileGuess.hobby}
-                    onChange={(e) => handleProfileChange('hobby', e.target.value)}
-                  />
+              </div>
+
+              {/* Submission Form */}
+              <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-md space-y-6">
+                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{question.text || "Round 2 — Decode the Hidden Profile"}</h2>
+                <p className="text-sm text-slate-400 italic">Based on the clues revealed above, submit your final guess for Gemini's hidden profile (4 minutes):</p>
+
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">1. Predicted Age (Numerical)</label>
+                    <input
+                      type="number"
+                      disabled={isLocked}
+                      className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
+                      placeholder="e.g. 47"
+                      value={profileGuess.age}
+                      onChange={(e) => handleProfileChange('age', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">2. Predicted Profession</label>
+                    <input
+                      type="text"
+                      disabled={isLocked}
+                      className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
+                      placeholder="e.g. Lawyer"
+                      value={profileGuess.profession}
+                      onChange={(e) => handleProfileChange('profession', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">3. Predicted Hobby</label>
+                    <input
+                      type="text"
+                      disabled={isLocked}
+                      className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
+                      placeholder="e.g. Photography"
+                      value={profileGuess.hobby}
+                      onChange={(e) => handleProfileChange('hobby', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

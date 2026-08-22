@@ -37,24 +37,24 @@ class SeedService {
         baseName: 'Round 1 — Rapid Fire',
         orderNum: '1',
         questions: [
-          // Best 2 from R1 (Guess the Author)
+          // Best 2 from R1 (Guess the Author - 60s each)
           {
-            id: "r1-q1", order: "1", type: "guess-author", text: "What's your take on vibe coding, just letting AI write most of your code?", prompt: "What's your take on vibe coding, just letting AI write most of your code?", durationSeconds: '120', points: '10', correctAnswer: 'Human',
+            id: "r1-q1", order: "1", type: "guess-author", text: "What's your take on vibe coding, just letting AI write most of your code?", prompt: "What's your take on vibe coding, just letting AI write most of your code?", durationSeconds: '60', points: '10', correctAnswer: 'Human',
             options: [
               { id: "gemini-opt", text: "It's useful for prototyping and boilerplate, but relying on it fully without understanding the logic underneath tends to bite you during debugging or in interviews. Best used as an accelerator, not a replacement for fundamentals.", author: "Gemini" },
               { id: "human-opt", text: "Honestly I do it way more than I should. Copy paste, run, if it breaks I panic and start googling instead of actually reading the error.", author: "Human" }
             ]
           },
           {
-            id: "r1-q2", order: "2", type: "guess-author", text: "How much do you trust AI chatbots to give you correct information?", prompt: "How much do you trust AI chatbots to give you correct information?", durationSeconds: '120', points: '10', correctAnswer: 'Human',
+            id: "r1-q2", order: "2", type: "guess-author", text: "How much do you trust AI chatbots to give you correct information?", prompt: "How much do you trust AI chatbots to give you correct information?", durationSeconds: '60', points: '10', correctAnswer: 'Human',
             options: [
               { id: "human-opt", text: "Depends what for. If it's something like a recipe or general knowledge I trust it, but the moment it's something specific to me, like my college syllabus, it just makes stuff up confidently.", author: "Human" },
               { id: "gemini-opt", text: "It's generally reliable for broad, well established information, but accuracy can drop for niche, recent, or highly specific topics, so it's good practice to verify anything important.", author: "Gemini" }
             ]
           },
-          // Best 2 from R2 (Image Challenge: Q2 and Q3)
+          // Best 2 from R2 (Image Challenge - 60s each)
           {
-            id: 'q2_2', order: '3', type: 'mcq', points: '10', durationSeconds: '120', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?',
+            id: 'q2_2', order: '3', type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?',
             options: [
               { key: 'A', label: 'The head / face', text: 'The head / face' },
               { key: 'B', label: 'The stripes on the abdomen', text: 'The stripes on the abdomen' },
@@ -65,7 +65,7 @@ class SeedService {
             imageUrl: '/reference/r2/tiger-edited.png'
           },
           {
-            id: 'q2_3', order: '4', type: 'mcq', points: '10', durationSeconds: '120', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?',
+            id: 'q2_3', order: '4', type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?',
             options: [
               { key: 'A', label: 'Reflection mismatch', text: 'Reflection mismatch' },
               { key: 'B', label: 'Shadow mismatch', text: 'Shadow mismatch' },
@@ -75,9 +75,9 @@ class SeedService {
             correctAnswer: 'A',
             imageUrl: '/reference/r2/dog-reflection.png'
           },
-          // Best 2 from R4 Samples (Spot the Hallucination: Taj Mahal & Stanford Research)
+          // Best 2 from R4 Samples (Spot the Hallucination - 60s each)
           {
-            id: 'r4-q1', order: '5', type: 'mcq', points: '15', durationSeconds: '120',
+            id: 'r4-q1', order: '5', type: 'mcq', points: '15', durationSeconds: '60',
             text: 'What is wrong with this explanation of the Taj Mahal?',
             prompt: 'What is wrong with this explanation of the Taj Mahal?',
             aiResponse: 'The Taj Mahal is located in Agra and was commissioned by Shah Jahan. Construction began in 1632 and was completed in 1653. It was built to celebrate the annexation of Bijapur and Golconda during his Deccan campaigns.',
@@ -92,7 +92,7 @@ class SeedService {
             ]
           },
           {
-            id: 'r4-q2', order: '6', type: 'mcq', points: '15', durationSeconds: '120',
+            id: 'r4-q2', order: '6', type: 'mcq', points: '15', durationSeconds: '60',
             text: 'Should this research claim be accepted as stated?',
             prompt: 'Should this research claim be accepted as stated?',
             aiResponse: 'According to a Stanford University study published in 2023, students who use AI tools for more than two hours daily score 35% higher in engineering courses. The study proves that AI usage directly causes better academic performance.',
@@ -114,7 +114,7 @@ class SeedService {
         orderNum: '2',
         questions: [
           {
-            id: 'poll1', order: '1', type: 'poll', text: 'Poll 1 — Daily Life', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '120',
+            id: 'poll1', order: '1', type: 'poll', text: 'Poll 1 — Daily Life', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '60',
             options: [
               { key: 'A', question: "What does a perfect Sunday look like for you?", answer: "A slow morning, a good lunch, maybe getting a few things done, and a quiet evening. I've started appreciating days where absolutely nothing interesting happens." },
               { key: 'B', question: "What's something your friends often tease you about?", answer: "Probably how quickly I start thinking about going home during gatherings. Staying out past midnight somehow stopped feeling worth it a while ago." },
@@ -122,7 +122,7 @@ class SeedService {
             ]
           },
           {
-            id: 'poll2', order: '2', type: 'poll', text: 'Poll 2 — Memories & Experiences', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '120',
+            id: 'poll2', order: '2', type: 'poll', text: 'Poll 2 — Memories & Experiences', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '60',
             options: [
               { key: 'A', question: "What's something younger people do that you find interesting?", answer: "How naturally they document ordinary things. A meal arrives, someone notices something funny, or a song starts playing and a phone immediately comes out. I rarely think of doing that first." },
               { key: 'B', question: "What's a change in everyday life that still amazes you?", answer: "Probably how many separate things have quietly disappeared into one device. I used to think of maps, music, photographs and payments as completely unrelated things." },
@@ -130,7 +130,7 @@ class SeedService {
             ]
           },
           {
-            id: 'poll3', order: '3', type: 'poll', text: 'Poll 3 — Work & Thinking', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '120',
+            id: 'poll3', order: '3', type: 'poll', text: 'Poll 3 — Work & Thinking', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '60',
             options: [
               { key: 'A', question: "What's the most tiring part of your work?", answer: "Probably revisiting the same information repeatedly. Sometimes one detail that seemed insignificant at first changes how everything else fits together." },
               { key: 'B', question: "What skill do you think you're unusually good at?", answer: "Remembering small differences in how people explain things. I tend to notice when a detail changes slightly the second time something is discussed." },
@@ -138,7 +138,7 @@ class SeedService {
             ]
           },
           {
-            id: 'poll4', order: '4', type: 'poll', text: 'Poll 4 — Behaviour & Perspective', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '120',
+            id: 'poll4', order: '4', type: 'poll', text: 'Poll 4 — Behaviour & Perspective', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '60',
             options: [
               { key: 'A', question: "What's something you find interesting about conversations?", answer: "How differently two people can remember the same situation. Neither person necessarily thinks they're wrong, but the details can still be surprisingly different." },
               { key: 'B', question: "What's something you've become less impressed by over time?", answer: "Confidence. Someone sounding completely certain doesn't really tell me whether they're right anymore. I tend to pay more attention to the details." },
@@ -146,7 +146,7 @@ class SeedService {
             ]
           },
           {
-            id: 'poll5', order: '5', type: 'poll', text: 'Poll 5 — Personal Interests', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '120',
+            id: 'poll5', order: '5', type: 'poll', text: 'Poll 5 — Personal Interests', prompt: 'Vote for the question you want Gemini to answer', correctAnswer: '', points: '0', showEvaluation: false, durationSeconds: '60',
             options: [
               { key: 'A', question: "What kind of moments do you remember most clearly?", answer: "Usually very brief ones. A particular expression, something unusual happening behind everyone else, or a place looking completely different for a few seconds." },
               { key: 'B', question: "What's something you're unusually patient about?", answer: "Waiting when I feel the timing matters. I don't mind staying in the same place for a while if rushing would mean missing something interesting." },
@@ -154,7 +154,7 @@ class SeedService {
             ]
           },
           {
-            id: 'poll6', order: '6', type: 'profile-guess', text: 'Final Submission', prompt: 'Decode the Hidden Profile', correctAnswer: 'Age: 47 | Profession: Lawyer | Hobby: Photography', points: '30', showEvaluation: true, durationSeconds: '300', targetAge: '47', targetProfession: 'Lawyer', targetHobby: 'Photography', options: []
+            id: 'poll6', order: '6', type: 'profile-guess', text: 'Final Submission', prompt: 'Decode the Hidden Profile', correctAnswer: 'Age: 47 | Profession: Lawyer | Hobby: Photography', points: '30', showEvaluation: true, durationSeconds: '240', targetAge: '47', targetProfession: 'Lawyer', targetHobby: 'Photography', options: []
           }
         ]
       },
@@ -172,7 +172,7 @@ class SeedService {
             text: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
             prompt: 'Write a short 2-sentence motivational quote for someone studying for finals at 3 AM',
             description: "Can you write a response so convincing that others think it was written by Gemini? Your response will be mixed with Gemini's actual response — try to fool everyone!",
-            durationSeconds: '120',
+            durationSeconds: '240',
             points: '20',
             showEvaluation: false,
             options: []

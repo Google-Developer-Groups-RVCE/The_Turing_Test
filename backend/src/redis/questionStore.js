@@ -18,6 +18,8 @@ const questionStore = {
       showEvaluation: question.showEvaluation !== undefined ? String(question.showEvaluation) : 'true',
       imageUrl: question.imageUrl,
       imageProps: question.imageProps ? JSON.stringify(question.imageProps) : null,
+      aiResponse: question.aiResponse,
+      explanation: question.explanation,
       targetAge: question.targetAge,
       targetProfession: question.targetProfession,
       targetHobby: question.targetHobby,

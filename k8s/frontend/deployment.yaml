@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/rasam729/tt-sip-frontend:b9e8b4fff5bc6a6714cbe830b16f0e174090b858
+        image: ghcr.io/rasam729/tt-sip-frontend:9bfdc3fe6debe78aa1872d6bb067f1a369bb3ea6
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80

@@ -50,6 +50,7 @@ services:
     name: turing-redis
     plan: free                       # 25 MB RAM, no persistence on free tier
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []                  # [] = allow all (safe — Redis is internal-only on Render)
     # Render automatically injects REDIS_URL into linked services above.
 
   # ─── 3. Frontend Static Site ─────────────────────────────────────────

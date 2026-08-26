@@ -880,6 +880,15 @@ export default function RoundPage() {
 
       {/* Question Card & Answer Section */}
       {!evaluationData && !pollResult && (() => {
+        if (question.type === 'poll') {
+          return (
+            <PollCard 
+              poll={question} 
+              selectedOption={selectedAnswer} 
+              onSelect={!isLocked ? setSelectedAnswer : () => {}} 
+            />
+          );
+        }
         if (question.type === 'hallucination') {
           return <HallucinationCard question={question} evaluationData={null} />;
         }

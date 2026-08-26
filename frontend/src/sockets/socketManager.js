@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../utils/constants';
 
 class SocketManager {
   constructor() {
@@ -34,7 +35,7 @@ class SocketManager {
       this.socket = null;
     }
     this.token = token;
-    this.socket = io('/', {
+    this.socket = io(SOCKET_URL || '/', {
       auth: { token },
       query,
       transports: ['websocket', 'polling'],

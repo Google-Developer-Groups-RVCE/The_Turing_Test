@@ -47,15 +47,30 @@ function retryStrategy(attempt) {
  * config — the Socket.IO Redis adapter needs its own dedicated `pub`
  * and `sub` clients in addition to the main app client (a single
  * ioredis connection cannot both issue commands and stay subscribed).
+ *
+ * Supports two connection modes:
+ *   1. REDIS_URL  (e.g. "rediss://user:pass@host:port") — used by Render
+ *      Managed Redis and most cloud providers. Takes precedence when set.
+ *   2. Individual vars: REDIS_HOST / REDIS_PORT / REDIS_PASSWORD — used
+ *      in local Docker Compose and Kubernetes (via ConfigMap + Secret).
  */
 function createRedisClient(label = 'main') {
-  const client = new Redis({
-    host: env.REDIS_HOST,
-    port: env.REDIS_PORT,
-    password: env.REDIS_PASSWORD,
-    db: env.REDIS_DB,
-    tls: env.REDIS_TLS ? {} : undefined,
+  const redisUrl = process.env.REDIS_URL;
 
+  const clientOptions = redisUrl
+    ? {
+        // Parse host/port/auth from the URL; TLS is implied by `rediss://` scheme.
+        // ioredis accepts a URL string as the first constructor argument.
+      }
+    : {
+        host: env.REDIS_HOST,
+        port: env.REDIS_PORT,
+        password: env.REDIS_PASSWORD,
+        db: env.REDIS_DB,
+        tls: env.REDIS_TLS ? {} : undefined,
+      };
+
+  const sharedOptions = {
     // Reconnect behavior
     retryStrategy,
     // Queue commands issued while disconnected instead of throwing immediately.
@@ -72,7 +87,11 @@ function createRedisClient(label = 'main') {
     maxRetriesPerRequest: null, // let retryStrategy own retry timing, never give up on a request
     connectTimeout: 10000,
     lazyConnect: false,
-  });
+  };
+
+  const client = redisUrl
+    ? new Redis(redisUrl, sharedOptions)
+    : new Redis({ ...clientOptions, ...sharedOptions });
 
   client.on('connect', () => {
     logger.info(`[redis:${label}] connecting to ${env.REDIS_HOST}:${env.REDIS_PORT}...`);

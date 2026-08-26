@@ -1,0 +1,78 @@
+# render.yaml — Render Blueprint
+# Defines all services for the Turing Test app.
+# Commit this file and connect the repo to Render → "New Blueprint"
+# to auto-create all services below.
+#
+# Services:
+#   1. turing-backend  — Node.js + Express + Socket.IO (Web Service)
+#   2. turing-redis    — Render Managed Redis (free tier)
+#   3. turing-frontend — Vite static build (Static Site, served via CDN)
+#
+# After first deploy, set the secret env vars in the Render dashboard:
+#   - JWT_SECRET   (under turing-backend environment)
+# Redis credentials are automatically injected by Render via REDIS_URL.
+
+services:
+
+  # ─── 1. Backend Web Service ──────────────────────────────────────────
+  - type: web
+    name: turing-backend
+    runtime: docker
+    # Build the backend image from backend/Dockerfile
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free                       # upgrade to Starter ($7/mo) for always-on
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: LOG_LEVEL
+        value: info
+      # REDIS_URL is automatically injected by Render when you link the
+      # Redis service below — no manual value needed here.
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: turing-redis
+          property: connectionString
+      # CORS must include the frontend's Render URL once it is known.
+      # Update this after first deploy, or use the fromService trick below.
+      - key: CORS_ORIGIN
+        value: "*"                   # ← CHANGE after frontend deploys
+      # JWT_SECRET: set this as a secret in Render dashboard, NOT here.
+      - key: JWT_SECRET
+        generateValue: true          # Render generates a random secret automatically
+
+  # ─── 2. Render Managed Redis ─────────────────────────────────────────
+  - type: redis
+    name: turing-redis
+    plan: free                       # 25 MB RAM, no persistence on free tier
+    maxmemoryPolicy: allkeys-lru
+    # Render automatically injects REDIS_URL into linked services above.
+
+  # ─── 3. Frontend Static Site ─────────────────────────────────────────
+  - type: web
+    name: turing-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    # rootDir tells Render to run buildCommand inside the frontend folder
+    rootDir: ./frontend
+    headers:
+      # Allow WebSocket upgrades from the frontend to the backend
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: "*"
+    envVars:
+      # The backend's Render URL — update this to the actual URL after
+      # turing-backend deploys for the first time, e.g.:
+      #   https://turing-backend.onrender.com
+      - key: VITE_API_URL
+        value: "https://turing-backend.onrender.com"  # ← UPDATE THIS
+    routes:
+      # SPA routing — all paths serve index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html

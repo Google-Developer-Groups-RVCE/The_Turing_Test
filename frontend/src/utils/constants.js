@@ -1,4 +1,13 @@
-export const API_BASE_URL = '/api';
+// VITE_API_URL is injected at build time (see frontend/Dockerfile ARG).
+//   - Render Static Site: set to the live backend URL, e.g. "https://turing-backend.onrender.com"
+//   - Local Docker Compose: empty string → Nginx proxies /api/* to the backend container
+const _backendUrl = import.meta.env.VITE_API_URL || '';
+
+export const API_BASE_URL = `${_backendUrl}/api`;
+
+// Socket.IO must connect to the backend origin, not to '/' when cross-origin
+export const SOCKET_URL = _backendUrl || undefined; // undefined → same-origin (local Nginx proxy)
+
 
 export const SOCKET_EVENTS = {
   CONNECT: 'connect',

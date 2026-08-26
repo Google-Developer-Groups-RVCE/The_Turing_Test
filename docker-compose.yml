@@ -9,6 +9,12 @@ services:
     command: redis-server --requirepass localdevpassword
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "localdevpassword", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   backend:
     build:
@@ -16,22 +22,28 @@ services:
       dockerfile: Dockerfile
     container_name: turing-backend
     ports:
-      - "3000:3000"
+      - "5000:5000"
     environment:
       - NODE_ENV=development
-      - PORT=3000
+      - PORT=5000
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=localdevpassword
       - JWT_SECRET=localdevsecret
-      - CORS_ORIGIN=*
+      - CORS_ORIGIN=http://localhost:5173
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # In local compose the frontend proxies via Nginx to the backend container.
+        # This arg is only used when the frontend is deployed as a static site on
+        # Render — leave it blank here so the Nginx proxy takes over locally.
+        VITE_API_URL: ""
     container_name: turing-frontend
     ports:
       - "5173:80"

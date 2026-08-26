@@ -26,7 +26,9 @@ FROM node:18-alpine AS runtime
 # dumb-init ensures SIGTERM from Kubernetes is forwarded correctly to
 # the Node process (PID 1 signal-handling issue), which our graceful
 # shutdown logic in server.js relies on.
-RUN apk add --no-cache dumb-init && npm install -g ngrok
+# dumb-init ensures SIGTERM is forwarded correctly to the Node process
+# (PID 1 signal-handling issue), which our graceful shutdown relies on.
+RUN apk add --no-cache dumb-init
 
 ENV NODE_ENV=production
 WORKDIR /app
@@ -47,8 +49,7 @@ USER nodeusr
 
 EXPOSE 5000
 
-# Kubernetes uses GET /health for liveness/readiness, so a Docker
-# HEALTHCHECK is optional but useful for local `docker run` / compose.
+# Useful for local `docker run` / compose health checks.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://127.0.0.1:5000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 

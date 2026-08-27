@@ -790,7 +790,43 @@ export default function RoundPage() {
         <div className="w-full bg-dark-900/80 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center text-center">
           {(() => {
             const ptsEarned = parseInt(myResponse?.pointsAwarded) || 0;
-            const isCorrect = (myResponse && String(myResponse.isCorrect) === 'true') || ptsEarned > 0 || (myResponse && String(myResponse.answer).toLowerCase() === String(evaluationData.correctAnswer).toLowerCase());
+            const submittedRaw = myResponse?.answer ? String(myResponse.answer) : '';
+            const correctRaw = evaluationData.correctAnswer ? String(evaluationData.correctAnswer) : '';
+
+            // Helper: resolve an option to "Key - Statement" given a raw value (key OR full text)
+            const resolveOption = (raw) => {
+              if (!raw) return null;
+              return question.options?.find(o => {
+                const k = String(o.key || '').toLowerCase();
+                const t = String(o.text || o.answer || o.label || o.key || '').toLowerCase();
+                const r = raw.toLowerCase();
+                return k === r || t === r;
+              }) || null;
+            };
+
+            const submittedOpt = resolveOption(submittedRaw);
+            const correctOpt = resolveOption(correctRaw);
+
+            // Format as "A - Statement text"
+            const formatOpt = (opt, raw) => {
+              if (opt) {
+                const key = opt.key || '';
+                const text = opt.text || opt.answer || opt.label || opt.key || '';
+                return key ? `${key} — ${text}` : text;
+              }
+              return raw || 'No answer submitted';
+            };
+
+            const submittedDisplay = submittedOpt ? formatOpt(submittedOpt, submittedRaw) : (submittedRaw || 'No answer submitted');
+            const correctDisplay = correctOpt ? formatOpt(correctOpt, correctRaw) : correctRaw;
+
+            // isCorrect: direct string match OR key of correct option matches submitted
+            const isCorrect = (myResponse && String(myResponse.isCorrect) === 'true')
+              || ptsEarned > 0
+              || submittedRaw.toLowerCase() === correctRaw.toLowerCase()
+              || (correctOpt && submittedOpt && String(correctOpt.key).toLowerCase() === String(submittedOpt.key).toLowerCase())
+              || (correctOpt && String(correctOpt.key).toLowerCase() === submittedRaw.toLowerCase());
+
             const skipped = evaluationData.skipped;
             
             if (skipped) {
@@ -828,33 +864,14 @@ export default function RoundPage() {
                   <div className="p-4 rounded-xl bg-dark-800 border border-dark-600">
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Your Answer</p>
                     <p className={`text-lg font-medium font-mono ${isCorrect ? 'text-emerald-300' : 'text-rose-400'}`}>
-                      {(() => {
-                        const submitted = myResponse?.answer;
-                        if (!submitted) return 'No answer submitted';
-                        const opt = question.options?.find(o => {
-                          const k = o.key ? String(o.key).toLowerCase() : '';
-                          const t = String(o.text || o.answer || o.label || o.key || '').toLowerCase();
-                          const s = String(submitted).toLowerCase();
-                          return k === s || t === s;
-                        });
-                        return opt ? `${opt.key || ''} - ${opt.text || opt.answer || opt.label || opt.key}`.replace(/^ - /, '') : submitted;
-                      })()}
+                      {submittedDisplay}
                     </p>
                   </div>
                   {evaluationData.correctAnswer && (
                     <div className="p-4 rounded-xl bg-emerald-900/20 border border-emerald-500/30">
                       <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">Official Solution / Benchmark Target</p>
                       <p className="text-lg font-medium text-emerald-400 font-mono">
-                        {(() => {
-                          const correct = evaluationData.correctAnswer;
-                          const opt = question.options?.find(o => {
-                            const k = o.key ? String(o.key).toLowerCase() : '';
-                            const t = String(o.text || o.answer || o.label || o.key || '').toLowerCase();
-                            const c = String(correct).toLowerCase();
-                            return k === c || t === c;
-                          });
-                          return opt ? `${opt.key || ''} - ${opt.text || opt.answer || opt.label || opt.key}`.replace(/^ - /, '') : correct;
-                        })()}
+                        {correctDisplay}
                       </p>
                     </div>
                   )}

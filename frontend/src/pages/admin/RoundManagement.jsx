@@ -547,7 +547,7 @@ export default function RoundManagement() {
               </button>
               <button
                 onClick={handleNextQuestion}
-                disabled={!!actionLoading || !activeRound || activeStage !== 'leaderboard'}
+                disabled={!!actionLoading || !activeRound || activeStage === 'question'}
                 className="py-2 px-3 rounded-lg border border-primary-500/40 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
               >
                 <span>Next Question</span>

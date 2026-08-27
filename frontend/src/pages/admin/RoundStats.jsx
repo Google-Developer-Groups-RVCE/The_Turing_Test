@@ -3,6 +3,7 @@ import { getRounds } from '../../api/roundApi';
 import { getQuestions } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { BarChart2, Layers, HelpCircle, Users, Activity } from 'lucide-react';
+import socket, { SOCKET_EVENTS } from '../../socket';
 
 export default function RoundStats() {
   const [rounds, setRounds] = useState([]);
@@ -19,6 +20,28 @@ export default function RoundStats() {
     if (selectedRound) {
       fetchRoundData(selectedRound);
     }
+  }, [selectedRound]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewResponse = () => {
+      if (selectedRound) {
+        // Silent re-fetch so it doesn't show loading spinner constantly
+        Promise.all([
+          getQuestions(selectedRound),
+          getResponses(selectedRound)
+        ]).then(([qRes, rRes]) => {
+          setQuestions(qRes.data?.questions || []);
+          const resps = Array.isArray(rRes.data) ? rRes.data : rRes.data?.responses || [];
+          setResponses(resps);
+        }).catch(console.error);
+      }
+    };
+
+    socket.on(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
+    return () => {
+      socket.off(SOCKET_EVENTS.RESPONSE_RECEIVED, handleNewResponse);
+    };
   }, [selectedRound]);
 
   const fetchRounds = async () => {

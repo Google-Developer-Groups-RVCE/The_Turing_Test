@@ -537,33 +537,47 @@ export default function RoundManagement() {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handlePrevQuestion}
                 disabled={!!actionLoading || !activeRound}
-                className="flex-1 py-2 px-3 rounded-lg border border-dark-600 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
+                className="py-2 px-3 rounded-lg border border-dark-600 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
               >
                 <SkipBack size={14} /><span>Previous</span>
               </button>
               <button
                 onClick={handleNextQuestion}
-                disabled={!!actionLoading || !activeRound}
-                className="flex-1 py-2 px-3 rounded-lg border border-primary-500/40 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
+                disabled={!!actionLoading || !activeRound || activeStage !== 'leaderboard'}
+                className="py-2 px-3 rounded-lg border border-primary-500/40 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
+              >
+                <span>Next Question</span>
+                <ArrowRightCircle size={14} />
+              </button>
+              <button
+                onClick={handleNextQuestion}
+                disabled={!!actionLoading || !activeRound || activeStage !== 'question'}
+                className="py-2 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
               >
                 {(() => {
                   const isPoll = (
                     (activeRound && (String(activeRound.id).includes('3') || activeRound.name?.toLowerCase().includes('round 3'))) ||
                     (activeQuestion && (activeQuestion.type === 'poll' || String(activeQuestion.id).includes('poll')))
                   ) && activeQuestion?.type !== 'profile-guess' && activeQuestion?.id !== 'poll6';
-                  let btnLabel = 'Next Question';
-                  if (activeStage === 'question') {
-                    btnLabel = isPoll ? 'Reveal Poll Result' : 'Evaluate Answer';
-                  } else if (activeStage === 'evaluated') {
-                    btnLabel = isPoll ? 'Next Poll Question' : 'Show Leaderboard';
-                  }
-                  return <span>{btnLabel}</span>;
+                  return <span>{isPoll ? 'Reveal Poll Result' : 'Evaluate Answer'}</span>;
                 })()}
-                <ArrowRightCircle size={14} />
+              </button>
+              <button
+                onClick={handleNextQuestion}
+                disabled={!!actionLoading || !activeRound || activeStage !== 'evaluated'}
+                className="py-2 px-3 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold flex items-center justify-center space-x-1 transition-colors disabled:opacity-40"
+              >
+                {(() => {
+                  const isPoll = (
+                    (activeRound && (String(activeRound.id).includes('3') || activeRound.name?.toLowerCase().includes('round 3'))) ||
+                    (activeQuestion && (activeQuestion.type === 'poll' || String(activeQuestion.id).includes('poll')))
+                  ) && activeQuestion?.type !== 'profile-guess' && activeQuestion?.id !== 'poll6';
+                  return <span>{isPoll ? 'Next Poll Question' : 'Show Leaderboard'}</span>;
+                })()}
               </button>
             </div>
             

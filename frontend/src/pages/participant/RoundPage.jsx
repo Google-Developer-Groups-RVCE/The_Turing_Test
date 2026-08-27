@@ -828,14 +828,33 @@ export default function RoundPage() {
                   <div className="p-4 rounded-xl bg-dark-800 border border-dark-600">
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Your Answer</p>
                     <p className={`text-lg font-medium font-mono ${isCorrect ? 'text-emerald-300' : 'text-rose-400'}`}>
-                      {myResponse?.answer || 'No answer submitted'}
+                      {(() => {
+                        const submitted = myResponse?.answer;
+                        if (!submitted) return 'No answer submitted';
+                        const opt = question.options?.find(o => {
+                          const k = o.key ? String(o.key).toLowerCase() : '';
+                          const t = String(o.text || o.answer || o.label || o.key || '').toLowerCase();
+                          const s = String(submitted).toLowerCase();
+                          return k === s || t === s;
+                        });
+                        return opt ? `${opt.key || ''} - ${opt.text || opt.answer || opt.label || opt.key}`.replace(/^ - /, '') : submitted;
+                      })()}
                     </p>
                   </div>
                   {evaluationData.correctAnswer && (
                     <div className="p-4 rounded-xl bg-emerald-900/20 border border-emerald-500/30">
                       <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">Official Solution / Benchmark Target</p>
                       <p className="text-lg font-medium text-emerald-400 font-mono">
-                        {evaluationData.correctAnswer}
+                        {(() => {
+                          const correct = evaluationData.correctAnswer;
+                          const opt = question.options?.find(o => {
+                            const k = o.key ? String(o.key).toLowerCase() : '';
+                            const t = String(o.text || o.answer || o.label || o.key || '').toLowerCase();
+                            const c = String(correct).toLowerCase();
+                            return k === c || t === c;
+                          });
+                          return opt ? `${opt.key || ''} - ${opt.text || opt.answer || opt.label || opt.key}`.replace(/^ - /, '') : correct;
+                        })()}
                       </p>
                     </div>
                   )}
@@ -963,7 +982,7 @@ export default function RoundPage() {
                       type="number"
                       disabled={isLocked}
                       className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
-                      placeholder="e.g. 47"
+                      placeholder="e.g. 35"
                       value={profileGuess.age}
                       onChange={(e) => handleProfileChange('age', e.target.value)}
                     />
@@ -974,7 +993,7 @@ export default function RoundPage() {
                       type="text"
                       disabled={isLocked}
                       className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
-                      placeholder="e.g. Lawyer"
+                      placeholder="e.g. Engineer"
                       value={profileGuess.profession}
                       onChange={(e) => handleProfileChange('profession', e.target.value)}
                     />
@@ -985,7 +1004,7 @@ export default function RoundPage() {
                       type="text"
                       disabled={isLocked}
                       className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder-slate-500 focus:border-sky-500 outline-none"
-                      placeholder="e.g. Photography"
+                      placeholder="e.g. Reading"
                       value={profileGuess.hobby}
                       onChange={(e) => handleProfileChange('hobby', e.target.value)}
                     />

@@ -43,76 +43,108 @@ class SeedService {
         baseName: 'Round 1 — Rapid Fire',
         orderNum: '1',
         questions: [
-          // Best 2 from R1 (Guess the Author - 60s each)
           {
-            id: "r1-q1", order: "1", type: "guess-author", text: "What's your take on vibe coding, just letting AI write most of your code?", prompt: "What's your take on vibe coding, just letting AI write most of your code?", durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            id: "r1-q1", order: "1", type: "guess-author",
+            text: "What makes a mistake educational rather than purely wasteful?",
+            prompt: "What makes a mistake educational rather than purely wasteful?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
             options: [
-              { id: "gemini-opt", text: "It's useful for prototyping and boilerplate, but relying on it fully without understanding the logic underneath tends to bite you during debugging or in interviews. Best used as an accelerator, not a replacement for fundamentals.", author: "Gemini" },
-              { id: "human-opt", text: "Honestly I do it way more than I should. Copy paste, run, if it breaks I panic and start googling instead of actually reading the error.", author: "Human" }
+              { id: "gemini-opt", text: "Prompt, honest analysis of the root cause, followed by a concrete change in strategy before repeating the action.", author: "Gemini" },
+              { id: "human-opt", text: "Systematic reflection. A mistake becomes valuable only when it forces a recalibration of assumptions rather than mere regret.", author: "Human" }
             ]
           },
           {
-            id: "r1-q2", order: "2", type: "guess-author", text: "How much do you trust AI chatbots to give you correct information?", prompt: "How much do you trust AI chatbots to give you correct information?", durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            id: "r1-q2", order: "2", type: "guess-author",
+            text: "Why does anticipation of an event often feel more intense than the event itself?",
+            prompt: "Why does anticipation of an event often feel more intense than the event itself?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
             options: [
-              { id: "human-opt", text: "Depends what for. If it's something like a recipe or general knowledge I trust it, but the moment it's something specific to me, like my college syllabus, it just makes stuff up confidently.", author: "Human" },
-              { id: "gemini-opt", text: "It's generally reliable for broad, well established information, but accuracy can drop for niche, recent, or highly specific topics, so it's good practice to verify anything important.", author: "Gemini" }
-            ]
-          },
-          // Best 2 from R2 (Image Challenge - 60s each)
-          {
-            id: 'q2_2', order: '3', type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?',
-            options: [
-              { key: 'A', label: 'The head / face', text: 'The head / face' },
-              { key: 'B', label: 'The stripes on the abdomen', text: 'The stripes on the abdomen' },
-              { key: 'C', label: 'The legs', text: 'The legs' },
-              { key: 'D', label: 'The background', text: 'The background' }
-            ],
-            correctAnswer: 'B',
-            imageUrl: '/reference/r2/tiger-edited.png'
-          },
-          {
-            id: 'q2_3', order: '4', type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?',
-            options: [
-              { key: 'A', label: 'Reflection mismatch', text: 'Reflection mismatch' },
-              { key: 'B', label: 'Shadow mismatch', text: 'Shadow mismatch' },
-              { key: 'C', label: 'Impossible perspective', text: 'Impossible perspective' },
-              { key: 'D', label: 'Nothing — the image is real', text: 'Nothing — the image is real' }
-            ],
-            correctAnswer: 'A',
-            imageUrl: '/reference/r2/dog-reflection.png'
-          },
-          // Best 2 from R4 Samples (Spot the Hallucination - 60s each)
-          {
-            id: 'r4-q1', order: '5', type: 'mcq', points: '15', durationSeconds: '60',
-            text: 'What is wrong with this explanation of the Taj Mahal?',
-            prompt: 'What is wrong with this explanation of the Taj Mahal?',
-            aiResponse: 'The Taj Mahal is located in Agra and was commissioned by Shah Jahan. Construction began in 1632 and was completed in 1653. It was built to celebrate the annexation of Bijapur and Golconda during his Deccan campaigns.',
-            correctAnswer: 'The monument was built to celebrate the annexation of Bijapur and Golconda',
-            explanation: 'The Taj Mahal was commissioned by Shah Jahan as a mausoleum for his wife Mumtaz Mahal. The claimed connection to the annexation of Bijapur and Golconda is the hidden hallucination.',
-            options: [
-              "The Taj Mahal is not located in Agra",
-              "Shah Jahan did not commission the Taj Mahal",
-              "Construction could not have begun in the seventeenth century",
-              "The monument was built to celebrate the annexation of Bijapur and Golconda",
-              "The Taj Mahal is a mausoleum associated with Mumtaz Mahal rather than a Deccan-campaign victory monument"
+              { id: "human-opt", text: "Imagination operates without constraints or physical friction, allowing the brain to simulate infinite best-case or worst-case scenarios uninterrupted.", author: "Human" },
+              { id: "gemini-opt", text: "Because the mind projects unrestricted potential, whereas the actual event is bounded by real-time reality and practical limitations.", author: "Gemini" }
             ]
           },
           {
-            id: 'r4-q2', order: '6', type: 'mcq', points: '15', durationSeconds: '60',
-            text: 'Should this research claim be accepted as stated?',
-            prompt: 'Should this research claim be accepted as stated?',
-            aiResponse: 'According to a Stanford University study published in 2023, students who use AI tools for more than two hours daily score 35% higher in engineering courses. The study proves that AI usage directly causes better academic performance.',
-            correctAnswer: 'No; the citation lacks verifiable details and correlation does not establish causation',
-            explanation: 'The citation lacks verifiable details and correlation does not establish causation.',
+            id: "r1-q3", order: "3", type: "guess-author",
+            text: "Why do people often overcomplicate simple decisions?",
+            prompt: "Why do people often overcomplicate simple decisions?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
             options: [
-              "Yes, because a Stanford attribution makes the claim automatically reliable",
-              "Yes, because a 35% difference is enough to establish causation",
-              "No; the citation lacks verifiable details and correlation does not establish causation",
-              "No; AI can never improve academic performance under any circumstances",
-              "Yes, because two hours per day is a scientifically established threshold"
+              { id: "human-opt", text: "Anxiety over potential opportunity cost. When options are plentiful, the fear of making a suboptimal choice drives over-analysis of trivial details.", author: "Human" },
+              { id: "gemini-opt", text: "Fear of regret often overrides logic, causing people to analyze minor variables to gain a false sense of control over the outcome.", author: "Gemini" }
+            ]
+          },
+          {
+            id: "r1-q4", order: "4", type: "guess-author",
+            text: "How does living in a major city alter a person's perception of time?",
+            prompt: "How does living in a major city alter a person's perception of time?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            options: [
+              { id: "human-opt", text: "Major cities accelerate micro-perceptions of time while compressing long-term memory. The constant input of traffic, schedules, and transit forces the mind to live in hyper-aware, short-term increments, making days feel packed and fast, yet blur together when looking back over years.", author: "Human" },
+              { id: "gemini-opt", text: "Urban environments often compress our awareness of time due to high density and constant schedules. The pacing of public transit, rapid environmental changes, and fixed routines create a heightened sense of urgency, making minutes feel more critical than they might in quieter, less structured settings.", author: "Gemini" }
+            ]
+          },
+          {
+            id: "r1-q5", order: "5", type: "guess-author",
+            text: "Why do humans feel a strange comfort in listening to sad music when they are down?",
+            prompt: "Why do humans feel a strange comfort in listening to sad music when they are down?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            options: [
+              { id: "human-opt", text: "Sad music provides a form of psychological validation without requiring social interaction. It creates a space where an emotion can be felt completely and safely, serving as a mirror that reassures the listener that their state of mind is shared and natural.", author: "Human" },
+              { id: "gemini-opt", text: "Listening to melancholic music can foster a sense of emotional alignment and empathy. Rather than amplifying distress, it often offers a cathartic release by reflecting the listener's internal state, allowing them to process complex emotions in a safe, controlled aesthetic context.", author: "Gemini" }
+            ]
+          },
+          {
+            id: "r1-q6", order: "6", type: "guess-author",
+            text: "What role does failure play in long-term personal growth?",
+            prompt: "What role does failure play in long-term personal growth?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            options: [
+              { id: "human-opt", text: "Failure acts as a necessary diagnostic tool. It strips away false assumptions about one's capabilities or strategies, forcing a recalibration that success rarely demands. Over time, navigating failure builds adaptability and a more grounded sense of competence.", author: "Human" },
+              { id: "gemini-opt", text: "Failure serves as a critical feedback mechanism in personal development. It highlights gaps in understanding or execution, encouraging reflection and resilience. While uncomfortable, it provides practical insights that refine future decision-making far more effectively than immediate success.", author: "Gemini" }
+            ]
+          },
+          {
+            id: "r1-q7", order: "7", type: "guess-author",
+            text: "What makes a story ending feel satisfying versus forced?",
+            prompt: "What makes a story ending feel satisfying versus forced?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            options: [
+              { id: "gemini-opt", text: "A satisfying resolution feels earned through the logical consequences of the characters' decisions, even if the outcome is unexpected. A forced ending usually relies on coincidence, unestablished mechanics, or external intervention to tie up plot points prematurely.", author: "Gemini" },
+              { id: "human-opt", text: "Satisfaction in a narrative conclusion relies on emotional and thematic coherence rather than just resolving the plot. If the characters' internal arcs reach a natural resolution that aligns with established stakes, the ending feels complete, even if loose threads remain.", author: "Human" }
+            ]
+          },
+          {
+            id: "r1-q8", order: "8", type: "guess-author",
+            text: "How does nostalgic memory differ from actual history?",
+            prompt: "How does nostalgic memory differ from actual history?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            options: [
+              { id: "human-opt", text: "History aims to preserve contextual facts and structural timelines, whereas nostalgia filters out discomfort to preserve a specific past emotional state.", author: "Human" },
+              { id: "gemini-opt", text: "History records events as they unfolded, while nostalgia edits those events to reflect how a period felt rather than what actually occurred.", author: "Gemini" }
+            ]
+          },
+          {
+            id: "r1-q9", order: "9", type: "guess-author",
+            text: "Why do old photos feel distinct from modern digital photos?",
+            prompt: "Why do old photos feel distinct from modern digital photos?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            options: [
+              { id: "gemini-opt", text: "Analog photographs carry tangible physical constraints — limited exposures, chemical grain, and color shifts that create a sense of permanent artifacting.", author: "Gemini" },
+              { id: "human-opt", text: "Film photos capture a singular, deliberate moment due to physical film limits, giving them an authenticity often lost in infinite digital takes.", author: "Human" }
+            ]
+          },
+          {
+            id: "r1-q10", order: "10", type: "guess-author",
+            text: "What is the subtle boundary between patience and procrastination?",
+            prompt: "What is the subtle boundary between patience and procrastination?",
+            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            options: [
+              { id: "gemini-opt", text: "Patience is strategic waiting while gathering context or waiting for timing; procrastination is tactical avoidance driven by discomfort or fear.", author: "Gemini" },
+              { id: "human-opt", text: "Intentionality. Patience is an active choice to wait for optimal conditions, whereas procrastination is passive delay to avoid immediate effort.", author: "Human" }
             ]
           }
         ]
+
       },
       {
         baseId: 'round_2_decode',

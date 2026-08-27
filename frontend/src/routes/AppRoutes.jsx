@@ -21,6 +21,7 @@ import UserManagement from '../pages/admin/UserManagement';
 import RoundManagement from '../pages/admin/RoundManagement';
 import QuestionManagement from '../pages/admin/QuestionManagement';
 import LiveResponses from '../pages/admin/LiveResponses';
+import RoundStats from '../pages/admin/RoundStats';
 import AdminLeaderboard from '../pages/admin/AdminLeaderboard';
 import SettingsPage from '../pages/admin/SettingsPage';
 import LogsPage from '../pages/admin/LogsPage';
@@ -55,6 +56,7 @@ export default function AppRoutes() {
         <Route path="rounds" element={<RoundManagement />} />
         <Route path="questions" element={<QuestionManagement />} />
         <Route path="responses" element={<LiveResponses />} />
+        <Route path="stats" element={<RoundStats />} />
         <Route path="leaderboard" element={<AdminLeaderboard />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="logs" element={<LogsPage />} />

@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../utils/constants';
 import { 
   LayoutDashboard, Users, Layers, HelpCircle, 
-  Activity, Trophy, Settings, FileText, LogOut 
+  Activity, Trophy, Settings, FileText, LogOut, BarChart2 
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -20,6 +20,7 @@ export default function AdminLayout() {
     { to: '/admin/rounds', icon: Layers, label: 'Rounds' },
     { to: '/admin/questions', icon: HelpCircle, label: 'Questions' },
     { to: '/admin/responses', icon: Activity, label: 'Live Responses' },
+    { to: '/admin/stats', icon: BarChart2, label: 'Round Stats' },
     { to: '/admin/leaderboard', icon: Trophy, label: 'Leaderboard' },
     { to: '/admin/settings', icon: Settings, label: 'Settings' },
     { to: '/admin/logs', icon: FileText, label: 'Logs' },

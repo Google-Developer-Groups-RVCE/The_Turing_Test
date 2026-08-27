@@ -54,24 +54,26 @@ class SeedService {
             ]
           },
           {
-            id: "r1-q2", order: "2", type: "guess-author",
-            text: "Why does anticipation of an event often feel more intense than the event itself?",
-            prompt: "Why does anticipation of an event often feel more intense than the event itself?",
-            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            id: 'q2_2', order: '2', type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?',
             options: [
-              { id: "human-opt", text: "Imagination operates without constraints or physical friction, allowing the brain to simulate infinite best-case or worst-case scenarios uninterrupted.", author: "Human" },
-              { id: "gemini-opt", text: "Because the mind projects unrestricted potential, whereas the actual event is bounded by real-time reality and practical limitations.", author: "Gemini" }
-            ]
+              { key: 'A', label: 'The head / face', text: 'The head / face' },
+              { key: 'B', label: 'The stripes on the abdomen', text: 'The stripes on the abdomen' },
+              { key: 'C', label: 'The legs', text: 'The legs' },
+              { key: 'D', label: 'The background', text: 'The background' }
+            ],
+            correctAnswer: 'B',
+            imageUrl: '/reference/r2/tiger-edited.png'
           },
           {
-            id: "r1-q3", order: "3", type: "guess-author",
-            text: "Why do people often overcomplicate simple decisions?",
-            prompt: "Why do people often overcomplicate simple decisions?",
-            durationSeconds: '60', points: '10', correctAnswer: 'Human',
+            id: 'q2_3', order: '3', type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?',
             options: [
-              { id: "human-opt", text: "Anxiety over potential opportunity cost. When options are plentiful, the fear of making a suboptimal choice drives over-analysis of trivial details.", author: "Human" },
-              { id: "gemini-opt", text: "Fear of regret often overrides logic, causing people to analyze minor variables to gain a false sense of control over the outcome.", author: "Gemini" }
-            ]
+              { key: 'A', label: 'Reflection mismatch', text: 'Reflection mismatch' },
+              { key: 'B', label: 'Shadow mismatch', text: 'Shadow mismatch' },
+              { key: 'C', label: 'Impossible perspective', text: 'Impossible perspective' },
+              { key: 'D', label: 'Nothing — the image is real', text: 'Nothing — the image is real' }
+            ],
+            correctAnswer: 'A',
+            imageUrl: '/reference/r2/dog-reflection.png'
           },
           {
             id: "r1-q4", order: "4", type: "guess-author",

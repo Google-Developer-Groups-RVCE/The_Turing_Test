@@ -11,7 +11,7 @@ const redis = new Redis({
 
 const round1Data = [
   {
-    id: "r1-q1", order: 1, title: "Round 1 — Conversation 1", focus: "Human vs Gemini",
+    id: "r1-q1", order: 1, title: "Round 1 — Question 1", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "What makes a mistake educational rather than purely wasteful?",
     options: [
@@ -20,25 +20,29 @@ const round1Data = [
     ]
   },
   {
-    id: "r1-q2", order: 2, title: "Round 1 — Conversation 2", focus: "Human vs Gemini",
-    type: "guess-author",
-    prompt: "Why does anticipation of an event often feel more intense than the event itself?",
+    id: 'q2_2', order: 2, title: "Round 1 — Question 2", type: 'mcq', points: '10', durationSeconds: '60', text: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?', prompt: 'This is a photo of a tiger in the wild. Which part of this photo was AI-edited?',
     options: [
-      { id: "human-opt", key: "A", label: "Response 1", text: "Imagination operates without constraints or physical friction, allowing the brain to simulate infinite best-case or worst-case scenarios uninterrupted.", author: "Human" },
-      { id: "gemini-opt", key: "B", label: "Response 2", text: "Because the mind projects unrestricted potential, whereas the actual event is bounded by real-time reality and practical limitations.", author: "Gemini" }
-    ]
+      { key: 'A', label: 'The head / face', text: 'The head / face' },
+      { key: 'B', label: 'The stripes on the abdomen', text: 'The stripes on the abdomen' },
+      { key: 'C', label: 'The legs', text: 'The legs' },
+      { key: 'D', label: 'The background', text: 'The background' }
+    ],
+    correctAnswer: 'B',
+    imageUrl: '/reference/r2/tiger-edited.png'
   },
   {
-    id: "r1-q3", order: 3, title: "Round 1 — Conversation 3", focus: "Human vs Gemini",
-    type: "guess-author",
-    prompt: "Why do people often overcomplicate simple decisions?",
+    id: 'q2_3', order: 3, title: "Round 1 — Question 3", type: 'mcq', points: '10', durationSeconds: '60', text: 'This image is AI-generated. What is wrong with this image?', prompt: 'This image is AI-generated. What is wrong with this image?',
     options: [
-      { id: "human-opt", key: "A", label: "Response 1", text: "Anxiety over potential opportunity cost. When options are plentiful, the fear of making a suboptimal choice drives over-analysis of trivial details.", author: "Human" },
-      { id: "gemini-opt", key: "B", label: "Response 2", text: "Fear of regret often overrides logic, causing people to analyze minor variables to gain a false sense of control over the outcome.", author: "Gemini" }
-    ]
+      { key: 'A', label: 'Reflection mismatch', text: 'Reflection mismatch' },
+      { key: 'B', label: 'Shadow mismatch', text: 'Shadow mismatch' },
+      { key: 'C', label: 'Impossible perspective', text: 'Impossible perspective' },
+      { key: 'D', label: 'Nothing — the image is real', text: 'Nothing — the image is real' }
+    ],
+    correctAnswer: 'A',
+    imageUrl: '/reference/r2/dog-reflection.png'
   },
   {
-    id: "r1-q4", order: 4, title: "Round 1 — Conversation 4", focus: "Human vs Gemini",
+    id: "r1-q4", order: 4, title: "Round 1 — Question 4", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "How does living in a major city alter a person's perception of time?",
     options: [
@@ -47,7 +51,7 @@ const round1Data = [
     ]
   },
   {
-    id: "r1-q5", order: 5, title: "Round 1 — Conversation 5", focus: "Human vs Gemini",
+    id: "r1-q5", order: 5, title: "Round 1 — Question 5", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "Why do humans feel a strange comfort in listening to sad music when they are down?",
     options: [
@@ -56,7 +60,7 @@ const round1Data = [
     ]
   },
   {
-    id: "r1-q6", order: 6, title: "Round 1 — Conversation 6", focus: "Human vs Gemini",
+    id: "r1-q6", order: 6, title: "Round 1 — Question 6", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "What role does failure play in long-term personal growth?",
     options: [
@@ -65,7 +69,7 @@ const round1Data = [
     ]
   },
   {
-    id: "r1-q7", order: 7, title: "Round 1 — Conversation 7", focus: "Human vs Gemini",
+    id: "r1-q7", order: 7, title: "Round 1 — Question 7", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "What makes a story ending feel satisfying versus forced?",
     options: [
@@ -74,7 +78,7 @@ const round1Data = [
     ]
   },
   {
-    id: "r1-q8", order: 8, title: "Round 1 — Conversation 8", focus: "Human vs Gemini",
+    id: "r1-q8", order: 8, title: "Round 1 — Question 8", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "How does nostalgic memory differ from actual history?",
     options: [
@@ -83,7 +87,7 @@ const round1Data = [
     ]
   },
   {
-    id: "r1-q9", order: 9, title: "Round 1 — Conversation 9", focus: "Human vs Gemini",
+    id: "r1-q9", order: 9, title: "Round 1 — Question 9", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "Why do old photos feel distinct from modern digital photos?",
     options: [
@@ -92,7 +96,7 @@ const round1Data = [
     ]
   },
   {
-    id: "r1-q10", order: 10, title: "Round 1 — Conversation 10", focus: "Human vs Gemini",
+    id: "r1-q10", order: 10, title: "Round 1 — Question 10", focus: "Human vs Gemini",
     type: "guess-author",
     prompt: "What is the subtle boundary between patience and procrastination?",
     options: [

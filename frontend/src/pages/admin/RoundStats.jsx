@@ -3,7 +3,8 @@ import { getRounds } from '../../api/roundApi';
 import { getQuestions } from '../../api/questionApi';
 import { getResponses } from '../../api/responseApi';
 import { BarChart2, Layers, HelpCircle, Users, Activity } from 'lucide-react';
-import socket, { SOCKET_EVENTS } from '../../socket';
+import { useSocket } from '../../hooks/useSocket';
+import { SOCKET_EVENTS } from '../../utils/constants';
 
 export default function RoundStats() {
   const [rounds, setRounds] = useState([]);
@@ -11,6 +12,7 @@ export default function RoundStats() {
   const [questions, setQuestions] = useState([]);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const socket = useSocket();
 
   useEffect(() => {
     fetchRounds();
